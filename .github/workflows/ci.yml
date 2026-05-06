@@ -99,7 +99,9 @@ jobs:
           EOF
 
       - name: Build with Maven
-        run: ./mvnw clean compile -q
+        run: |
+          chmod +x ./mvnw
+          ./mvnw clean compile -q
 
   # ==================== Frontend ====================
   frontend:
