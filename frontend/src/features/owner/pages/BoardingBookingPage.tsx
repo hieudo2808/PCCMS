@@ -3,36 +3,11 @@ import { CalendarDays, CheckCircle2, AlertCircle, PawPrint } from "lucide-react"
 import { Button, Input, Tag, Textarea } from "~/components/atoms";
 import { Card, SummaryRow } from "~/components/molecules";
 import { Stepper } from "~/components/molecules/Stepper";
-
-// ─── Mock Data ───────────────────────────────────────────────────────────────
-const mockPets = ["Milu (Poodle)", "Mít (Mèo ALN)", "Bơ (Corgi)"];
-
-const mockRoomTypes = [
-    {
-        id: "standard",
-        name: "Chuồng tiêu chuẩn",
-        desc: "Phòng riêng, có giường nằm, quạt, vệ sinh 2 lần/ngày",
-        pricePerDay: 150_000,
-        available: 3,
-        tone: "blue" as const,
-    },
-    {
-        id: "deluxe",
-        name: "Chuồng Deluxe",
-        desc: "Phòng rộng hơn, điều hoà, đệm êm, vệ sinh 3 lần/ngày",
-        pricePerDay: 280_000,
-        available: 1,
-        tone: "amber" as const,
-    },
-    {
-        id: "vip",
-        name: "Phòng VIP",
-        desc: "Phòng đơn cao cấp, TV, camera theo dõi, chăm sóc cá nhân",
-        pricePerDay: 500_000,
-        available: 0,
-        tone: "green" as const,
-    },
-];
+import {
+    type RoomType,
+    MOCK_OWNER_PETS,
+    MOCK_ROOM_TYPES,
+} from "../data/boardingBooking.mock";
 
 const steps = [
     { label: "Chọn thú cưng & ngày" },
@@ -65,7 +40,7 @@ export function BoardingBookingPage() {
     const [selectedPet, setSelectedPet] = useState("");
     const [checkIn, setCheckIn] = useState("");
     const [checkOut, setCheckOut] = useState("");
-    const [selectedRoom, setSelectedRoom] = useState<(typeof mockRoomTypes)[0] | null>(null);
+    const [selectedRoom, setSelectedRoom] = useState<RoomType | null>(null);
     const [note, setNote] = useState("");
     const [submitted, setSubmitted] = useState(false);
 
@@ -86,7 +61,7 @@ export function BoardingBookingPage() {
             : checkIn && checkIn < today
               ? "Ngày gửi không được ở quá khứ"
               : null;
-    const availableRooms = mockRoomTypes.filter((r) => r.available > 0);
+    const availableRooms = MOCK_ROOM_TYPES.filter((r) => r.available > 0);
     const noRoomsAvailable = availableRooms.length === 0;
 
     const step1Valid = !!selectedRoom;
@@ -147,7 +122,7 @@ export function BoardingBookingPage() {
                                         Thú cưng <span className="text-red-500">*</span>
                                     </p>
                                     <div className="grid gap-2 sm:grid-cols-2">
-                                        {mockPets.map((pet) => (
+                                        {MOCK_OWNER_PETS.map((pet) => (
                                             <button
                                                 key={pet}
                                                 onClick={() => setSelectedPet(pet)}
@@ -230,7 +205,7 @@ export function BoardingBookingPage() {
                                 </div>
                             ) : (
                                 <div className="space-y-3">
-                                    {mockRoomTypes.map((room) => {
+                                    {MOCK_ROOM_TYPES.map((room) => {
                                         const isSelected = selectedRoom?.id === room.id;
                                         const isFull = room.available === 0;
                                         return (
