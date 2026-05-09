@@ -15,14 +15,18 @@ import {
     PetProfilesPage,
     UnifiedBookingPage,
     BoardingTrackingPage,
+    BoardingBookingPage,
     PaymentsPage,
     ProfilePage,
 } from "~/features/owner";
+import { GroomingBookingPage } from "~/features/owner/pages/GroomingBookingPage";
 import {
     ReceptionDashboard,
     AppointmentReceptionPage,
     GroomingBoardPage,
+    BoardingReceptionPage,
     BoardingLogPage,
+    CashierPage,
 } from "~/features/reception";
 import { DoctorDashboard, DoctorQueuePage, MedicalRecordPage } from "~/features/doctor";
 import {
@@ -81,6 +85,8 @@ export const router = createBrowserRouter([
             { index: true, element: <OwnerDashboard /> },
             { path: "pets", element: <PetProfilesPage /> },
             { path: "book", element: <UnifiedBookingPage /> },
+            { path: "grooming", element: <GroomingBookingPage /> },
+            { path: "boarding/book", element: <BoardingBookingPage /> },
             { path: "boarding/tracking", element: <BoardingTrackingPage /> },
             { path: "payments", element: <PaymentsPage /> },
             { path: "profile", element: <ProfilePage /> },
@@ -99,7 +105,9 @@ export const router = createBrowserRouter([
             { index: true, element: <ReceptionDashboard /> },
             { path: "appointments", element: <AppointmentReceptionPage /> },
             { path: "grooming-board", element: <GroomingBoardPage /> },
+            { path: "boarding-reception", element: <BoardingReceptionPage /> },
             { path: "boarding-log", element: <BoardingLogPage /> },
+            { path: "cashier", element: <CashierPage /> },
         ],
     },
     {

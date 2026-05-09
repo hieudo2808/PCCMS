@@ -12,6 +12,7 @@ export const roles: Record<RoleKey, RoleConfig> = {
             "ownerDashboard",
             "pets",
             "unifiedBooking",
+            "boardingBooking",
             "boardingTracking",
             "payments",
             "profile",
@@ -19,7 +20,7 @@ export const roles: Record<RoleKey, RoleConfig> = {
     },
     reception: {
         label: "Nhân viên",
-        screens: ["receptionDashboard", "appointmentReception", "groomingBoard", "boardingLog"],
+        screens: ["receptionDashboard", "appointmentReception", "groomingBoard", "boardingReception", "boardingLog", "cashier"],
     },
     doctor: {
         label: "Bác sĩ",

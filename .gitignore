@@ -1,7 +1,82 @@
+# ============================================================
+#  ROOT .gitignore – PCCMS (Pet Care Center Management System)
+#  Áp dụng cho toàn bộ dự án. Xem thêm GIT_CONVENTIONS.md
+# ============================================================
+
+# ==================== Tài liệu nội bộ ====================
 /reports
 /analysis_docs
 
-/frontend/.env
-/frontend/node_modules
+# ==================== Môi trường (SECURITY) ====================
+.env
+.env.*
+!.env.example
+!**/.env.example
 
-/backend/src/main/resources/application.yml
+# ==================== Cấu hình ứng dụng (SECURITY) ====================
+application.yml
+application.yaml
+application.properties
+application-*.yml
+application-*.yaml
+application-*.properties
+**/src/main/resources/application.yml
+**/src/main/resources/application.yaml
+**/src/main/resources/application.properties
+**/src/main/resources/application-*.yml
+**/src/main/resources/application-*.yaml
+
+# ==================== IDE & Editor ====================
+.idea/
+.vscode/
+!.vscode/extensions.json
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
+.factorypath
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ==================== Hệ điều hành ====================
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# ==================== Log ====================
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ==================== Frontend ====================
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# ==================== Backend (Java/Maven) ====================
+backend/target/
+backend/build/
+backend/.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# ==================== Temp & Misc ====================
+*.tmp
+*.bak
+*.swp
+*~.nib

@@ -12,4 +12,7 @@ export { DataTable } from "./DataTable";
 export { SectionTitle } from "./SectionTitle";
 export { MiniGridStats } from "./MiniGridStats";
 export { EmptyState } from "./EmptyState";
+// Note: Stepper is imported directly from ~/components/molecules/Stepper
+
+
 

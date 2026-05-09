@@ -1,4 +1,24 @@
-# Logs
+# ============================================================
+#  FRONTEND .gitignore – Vite + React + TypeScript
+# ============================================================
+
+# ==================== Môi trường (SECURITY) ====================
+.env
+.env.*
+!.env.example
+
+# ==================== Dependencies ====================
+node_modules/
+.pnp
+.pnp.js
+
+# ==================== Build output ====================
+dist/
+dist-ssr/
+build/
+*.local
+
+# ==================== Log ====================
 logs
 *.log
 npm-debug.log*
@@ -7,18 +27,22 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
+# ==================== IDE & Editor ====================
+.vscode/
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# ==================== Testing ====================
+coverage/
+.nyc_output/
+
+# ==================== Cache ====================
+.eslintcache
+.stylelintcache
+*.tsbuildinfo

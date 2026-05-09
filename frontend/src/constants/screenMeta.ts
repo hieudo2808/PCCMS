@@ -15,6 +15,9 @@ import {
     Pill,
     Warehouse,
     CalendarDays,
+    BedDouble,
+    ClipboardCheck,
+    Receipt,
 } from "lucide-react";
 import type { ScreenKey, ScreenMetaItem } from "~/types/navigation";
 
@@ -28,6 +31,7 @@ export const screenMeta: Record<ScreenKey, ScreenMetaItem> = {
     ownerDashboard: { label: "Dashboard", icon: Home, path: "/owner" },
     pets: { label: "Hồ sơ thú cưng", icon: PawPrint, path: "/owner/pets" },
     unifiedBooking: { label: "Đặt lịch hẹn", icon: Stethoscope, path: "/owner/book" },
+    boardingBooking: { label: "Đặt phòng lưu trú", icon: BedDouble, path: "/owner/boarding/book" },
     boardingTracking: { label: "Theo dõi lưu trú", icon: Camera, path: "/owner/boarding/tracking" },
     payments: { label: "Lịch sử thanh toán", icon: CreditCard, path: "/owner/payments" },
     profile: { label: "Thông tin cá nhân", icon: User, path: "/owner/profile" },
@@ -44,7 +48,13 @@ export const screenMeta: Record<ScreenKey, ScreenMetaItem> = {
         icon: Sparkles,
         path: "/reception/grooming-board",
     },
+    boardingReception: {
+        label: "Tiếp nhận lưu trú",
+        icon: ClipboardCheck,
+        path: "/reception/boarding-reception",
+    },
     boardingLog: { label: "Nhật ký lưu trú", icon: FileText, path: "/reception/boarding-log" },
+    cashier: { label: "Thu ngân", icon: Receipt, path: "/reception/cashier" },
 
     // Doctor
     doctorDashboard: { label: "Dashboard bác sĩ", icon: Home, path: "/doctor" },
