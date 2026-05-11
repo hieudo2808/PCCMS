@@ -15,108 +15,31 @@ import {
 } from "lucide-react";
 import { Button, Tag } from "~/components/atoms";
 import { MiniGridStats, SummaryRow } from "~/components/molecules";
+import {
+    type ServiceType,
+    type PayMethod,
+    type Invoice,
+    MOCK_INVOICES,
+    SERVICE_TONE,
+    STATUS_TONE,
+    PAY_METHODS as PAY_METHODS_DATA,
+} from "../data/payments.mock";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-type InvoiceStatus = "Chờ thanh toán" | "Đã thanh toán" | "Đã hủy";
-type ServiceType = "Spa" | "Lưu trú" | "Khám bệnh";
-type PayMethod = "Tiền mặt" | "Chuyển khoản" | "Thẻ ngân hàng";
-
-interface Invoice {
-    id: string;
-    code: string;
-    date: string;
-    serviceType: ServiceType;
-    serviceDetail: string;
-    petName: string;
-    amount: number;
-    status: InvoiceStatus;
-    paidAt?: string;
-    payMethod?: PayMethod;
-}
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-const initialInvoices: Invoice[] = [
-    {
-        id: "1",
-        code: "HD-2026-041",
-        date: "01/06/2026",
-        serviceType: "Lưu trú",
-        serviceDetail: "Chuồng Deluxe · 3 đêm (01/06 → 04/06)",
-        petName: "Milu (Poodle)",
-        amount: 840_000,
-        status: "Chờ thanh toán",
-    },
-    {
-        id: "2",
-        code: "HD-2026-038",
-        date: "24/05/2026",
-        serviceType: "Spa",
-        serviceDetail: "Tắm + Sấy + Cắt tỉa",
-        petName: "Milu (Poodle)",
-        amount: 250_000,
-        status: "Chờ thanh toán",
-    },
-    {
-        id: "3",
-        code: "HD-2026-032",
-        date: "20/05/2026",
-        serviceType: "Khám bệnh",
-        serviceDetail: "Khám định kỳ + kê đơn",
-        petName: "Mít (Mèo ALN)",
-        amount: 420_000,
-        status: "Đã thanh toán",
-        paidAt: "20/05/2026 10:45",
-        payMethod: "Chuyển khoản",
-    },
-    {
-        id: "4",
-        code: "HD-2026-021",
-        date: "14/05/2026",
-        serviceType: "Spa",
-        serviceDetail: "Spa Premium (full option)",
-        petName: "Bơ (Corgi)",
-        amount: 450_000,
-        status: "Đã thanh toán",
-        paidAt: "14/05/2026 15:00",
-        payMethod: "Tiền mặt",
-    },
-    {
-        id: "5",
-        code: "HD-2026-011",
-        date: "05/05/2026",
-        serviceType: "Lưu trú",
-        serviceDetail: "Chuồng tiêu chuẩn · 2 đêm",
-        petName: "Milu (Poodle)",
-        amount: 300_000,
-        status: "Đã thanh toán",
-        paidAt: "07/05/2026 09:10",
-        payMethod: "Thẻ ngân hàng",
-    },
-];
-
+// SERVICE_ICON and PAY_ICONS use JSX — they stay in the component file
 const SERVICE_ICON: Record<ServiceType, React.ReactNode> = {
     Spa: <Scissors className="h-4 w-4" />,
     "Lưu trú": <BedDouble className="h-4 w-4" />,
     "Khám bệnh": <Stethoscope className="h-4 w-4" />,
 };
 
-const SERVICE_TONE: Record<ServiceType, "blue" | "amber" | "green"> = {
-    Spa: "blue",
-    "Lưu trú": "amber",
-    "Khám bệnh": "green",
+const PAY_ICON_MAP: Record<PayMethod, React.ReactNode> = {
+    "Tiền mặt": <Banknote className="h-5 w-5" />,
+    "Chuyển khoản": <QrCode className="h-5 w-5" />,
+    "Thẻ ngân hàng": <CreditCard className="h-5 w-5" />,
 };
 
-const STATUS_TONE: Record<InvoiceStatus, "amber" | "green" | "red"> = {
-    "Chờ thanh toán": "amber",
-    "Đã thanh toán": "green",
-    "Đã hủy": "red",
-};
-
-const PAY_METHODS: { method: PayMethod; icon: React.ReactNode; desc: string }[] = [
-    { method: "Tiền mặt", icon: <Banknote className="h-5 w-5" />, desc: "Thanh toán trực tiếp tại quầy lễ tân" },
-    { method: "Chuyển khoản", icon: <QrCode className="h-5 w-5" />, desc: "VietQR · MB Bank · Vietcombank" },
-    { method: "Thẻ ngân hàng", icon: <CreditCard className="h-5 w-5" />, desc: "Visa, MasterCard, Napas" },
-];
+// Merge icon into PAY_METHODS
+const PAY_METHODS = PAY_METHODS_DATA.map((m) => ({ ...m, icon: PAY_ICON_MAP[m.method] }));
 
 function fmt(n: number) {
     return n.toLocaleString("vi-VN") + "₫";
@@ -269,7 +192,7 @@ function PaymentModal({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export function PaymentsPage() {
-    const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
+    const [invoices, setInvoices] = useState<Invoice[]>(MOCK_INVOICES);
     const [selected, setSelected] = useState<Invoice | null>(null);
     const [filterStatus, setFilterStatus] = useState<string>("Tất cả");
 

@@ -2,34 +2,22 @@ import { useState } from "react";
 import { Scissors, Bell, Clock, PawPrint, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Tag } from "~/components/atoms";
 import { SectionTitle } from "~/components/molecules";
-
-// ─── Types ───────────────────────────────────────────────────────────────────
-type Status = "Chờ làm" | "Đang dùng dịch vụ" | "Hoàn thành";
-
-interface ServiceTicket {
-    id: string;
-    petName: string;
-    ownerName: string;
-    service: string;
-    slot: string;
-    note?: string;
-    status: Status;
-    updatedAt: string;
-}
-
-// ─── Mock Data ───────────────────────────────────────────────────────────────
-const initialTickets: ServiceTicket[] = [
-    { id: "SPA101", petName: "Milu", ownerName: "Nguyễn Văn A", service: "Tắm + Sấy + Cắt tỉa", slot: "09:00 - 10:00", note: "Bé sợ máy sấy", status: "Chờ làm", updatedAt: "08:45" },
-    { id: "SPA102", petName: "Luna", ownerName: "Trần Thị B", service: "Cắt móng", slot: "09:00 - 10:00", status: "Chờ làm", updatedAt: "08:52" },
-    { id: "SPA103", petName: "Mít", ownerName: "Phạm Văn C", service: "Spa Premium", slot: "09:00 - 10:30", note: "Dị ứng với mùi lavender", status: "Đang dùng dịch vụ", updatedAt: "09:10" },
-    { id: "SPA104", petName: "Bơ", ownerName: "Lê Thị D", service: "Tắm + Sấy cơ bản", slot: "08:00 - 09:00", status: "Hoàn thành", updatedAt: "09:05" },
-    { id: "SPA105", petName: "Táo", ownerName: "Hoàng Văn E", service: "Vệ sinh tai + răng", slot: "10:00 - 10:30", status: "Chờ làm", updatedAt: "09:30" },
-];
+import {
+    type GroomingStatus,
+    type ServiceTicket,
+    MOCK_GROOMING_TICKETS,
+    GROOMING_COLUMNS,
+    GROOMING_TRANSITIONS,
+    GROOMING_TRANSITION_LABELS,
+} from "../data/groomingBoard.mock";
 
 // ─── Config ──────────────────────────────────────────────────────────────────
-const COLUMNS: Status[] = ["Chờ làm", "Đang dùng dịch vụ", "Hoàn thành"];
+const COLUMNS: GroomingStatus[] = GROOMING_COLUMNS;
+const TRANSITIONS = GROOMING_TRANSITIONS;
+const transitionLabels = GROOMING_TRANSITION_LABELS;
 
-const columnConfig: Record<Status, { tone: "amber" | "blue" | "green"; bg: string; accent: string; dotColor: string; icon: React.ReactNode }> = {
+// columnConfig contains JSX icons so it stays in the component file
+const columnConfig: Record<GroomingStatus, { tone: "amber" | "blue" | "green"; bg: string; accent: string; dotColor: string; icon: React.ReactNode }> = {
     "Chờ làm": {
         tone: "amber",
         bg: "bg-amber-50 border-amber-200",
@@ -53,17 +41,6 @@ const columnConfig: Record<Status, { tone: "amber" | "blue" | "green"; bg: strin
     },
 };
 
-const TRANSITIONS: Record<Status, Status | null> = {
-    "Chờ làm": "Đang dùng dịch vụ",
-    "Đang dùng dịch vụ": "Hoàn thành",
-    "Hoàn thành": null,
-};
-
-const transitionLabels: Record<Status, string> = {
-    "Chờ làm": "Bắt đầu làm",
-    "Đang dùng dịch vụ": "Hoàn thành",
-    "Hoàn thành": "",
-};
 
 // ─── Popup component ─────────────────────────────────────────────────────────
 function CompletionPopup({ ticket, onClose }: { ticket: ServiceTicket; onClose: () => void }) {
@@ -176,7 +153,7 @@ function TicketCard({ ticket, onAdvance }: { ticket: ServiceTicket; onAdvance: (
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 export function GroomingBoardPage() {
-    const [tickets, setTickets] = useState<ServiceTicket[]>(initialTickets);
+    const [tickets, setTickets] = useState<ServiceTicket[]>(MOCK_GROOMING_TICKETS);
     const [popup, setPopup] = useState<ServiceTicket | null>(null);
 
     const advanceTicket = (id: string) => {
