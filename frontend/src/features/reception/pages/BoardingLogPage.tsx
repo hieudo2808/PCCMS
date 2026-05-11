@@ -2,17 +2,77 @@ import { useState } from "react";
 import { Camera, CheckCircle2, AlertCircle, Clock, PawPrint, Upload } from "lucide-react";
 import { Button, Select, Tag, Textarea } from "~/components/atoms";
 import { Card, SectionTitle } from "~/components/molecules";
-import {
-    type Session,
-    type EatStatus,
-    type HygieneStatus,
-    type LogEntry,
-    type BoardingPet,
-    MOCK_BOARDING_PETS,
-    ALL_SESSIONS,
-    EAT_OPTIONS,
-    HYGIENE_OPTIONS,
-} from "../data/boardingLog.mock";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+type Session = "Sáng" | "Trưa" | "Chiều";
+type EatStatus = "Ăn tốt" | "Ăn ít" | "Bỏ ăn";
+type HygieneStatus = "Bình thường" | "Theo dõi thêm" | "Bất thường";
+
+interface LogEntry {
+    session: Session;
+    eat: EatStatus;
+    hygiene: HygieneStatus;
+    note: string;
+    mediaCount: number;
+    savedAt: string;
+}
+
+interface BoardingPet {
+    id: string;
+    cage: string;
+    petName: string;
+    breed: string;
+    ownerName: string;
+    checkIn: string;
+    checkOut: string;
+    dayNum: number;
+    totalDays: number;
+    todayLogs: Session[];
+}
+
+// ─── Mock Data ────────────────────────────────────────────────────────────────
+const mockPets: BoardingPet[] = [
+    {
+        id: "1",
+        cage: "C12",
+        petName: "Milu",
+        breed: "Poodle",
+        ownerName: "Nguyễn Văn A",
+        checkIn: "22/05/2026",
+        checkOut: "26/05/2026",
+        dayNum: 3,
+        totalDays: 4,
+        todayLogs: ["Sáng"],
+    },
+    {
+        id: "2",
+        cage: "B03",
+        petName: "Bơ",
+        breed: "Corgi",
+        ownerName: "Lê Thị D",
+        checkIn: "23/05/2026",
+        checkOut: "25/05/2026",
+        dayNum: 2,
+        totalDays: 2,
+        todayLogs: [],
+    },
+    {
+        id: "3",
+        cage: "A08",
+        petName: "Mít",
+        breed: "Mèo ALN",
+        ownerName: "Phạm Văn C",
+        checkIn: "20/05/2026",
+        checkOut: "25/05/2026",
+        dayNum: 5,
+        totalDays: 5,
+        todayLogs: ["Sáng", "Trưa", "Chiều"],
+    },
+];
+
+const ALL_SESSIONS: Session[] = ["Sáng", "Trưa", "Chiều"];
+const EAT_OPTIONS: EatStatus[] = ["Ăn tốt", "Ăn ít", "Bỏ ăn"];
+const HYGIENE_OPTIONS: HygieneStatus[] = ["Bình thường", "Theo dõi thêm", "Bất thường"];
 
 function sessionStatusTag(sessions: Session[]) {
     if (sessions.length === 3)
@@ -33,7 +93,7 @@ export function BoardingLogPage() {
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [saveError, setSaveError] = useState<string | null>(null);
 
-    const [pets, setPets] = useState<BoardingPet[]>(MOCK_BOARDING_PETS);
+    const [pets, setPets] = useState<BoardingPet[]>(mockPets);
     // FIX #3: Lưu log theo petId thay vì global state — tránh mất log khi đổi thú cưng
     const [savedLogsByPet, setSavedLogsByPet] = useState<Record<string, LogEntry[]>>({});
 
