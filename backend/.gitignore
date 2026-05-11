@@ -1,36 +1,10 @@
-# ============================================================
-#  BACKEND .gitignore – Spring Boot + Maven (Java)
-# ============================================================
-
-# ==================== Cấu hình ứng dụng (SECURITY) ====================
-src/main/resources/application.yml
-src/main/resources/application.yaml
-src/main/resources/application.properties
-src/main/resources/application-*.yml
-src/main/resources/application-*.yaml
-src/main/resources/application-*.properties
-
-# ==================== Môi trường (SECURITY) ====================
-.env
-.env.*
-!.env.example
-
-# ==================== Maven build ====================
+HELP.md
 target/
+.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
-.mvn/wrapper/maven-wrapper.jar
-HELP.md
 
-# ==================== Gradle build (phòng khi dùng) ====================
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-.gradle/
-gradle-app.setting
-!gradle-wrapper.jar
-
-# ==================== IDE: Spring Tool Suite ====================
+### STS ###
 .apt_generated
 .classpath
 .factorypath
@@ -39,25 +13,22 @@ gradle-app.setting
 .springBeans
 .sts4-cache
 
-# ==================== IDE: IntelliJ IDEA ====================
-.idea/
+### IntelliJ IDEA ###
+.idea
 *.iws
 *.iml
 *.ipr
 
-# ==================== IDE: NetBeans ====================
+### NetBeans ###
 /nbproject/private/
 /nbbuild/
+/dist/
 /nbdist/
 /.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
 
-# ==================== IDE: VS Code ====================
+### VS Code ###
 .vscode/
-
-# ==================== Hệ điều hành ====================
-.DS_Store
-Thumbs.db
-
-# ==================== Log ====================
-*.log
-logs/
+/src/main/resources/application.yml

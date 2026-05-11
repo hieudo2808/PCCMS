@@ -11,7 +11,6 @@ export type ScreenKey =
     | "ownerDashboard"
     | "pets"
     | "unifiedBooking"
-    | "boardingBooking"
     | "boardingTracking"
     | "payments"
     | "profile"
@@ -19,9 +18,7 @@ export type ScreenKey =
     | "receptionDashboard"
     | "appointmentReception"
     | "groomingBoard"
-    | "boardingReception"
     | "boardingLog"
-    | "cashier"
     // Doctor
     | "doctorDashboard"
     | "doctorQueue"
