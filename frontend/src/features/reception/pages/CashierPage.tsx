@@ -15,17 +15,134 @@ import {
 } from "lucide-react";
 import { Button, Select, Tag } from "~/components/atoms";
 import { Card, SummaryRow } from "~/components/molecules";
-import {
-    type BillStatus,
-    type ServiceType,
-    type PayMethod,
-    type Bill,
-    type BillItem,
-    MOCK_BILLS,
-    SERVICE_TAG_TONE,
-    SERVICE_COLOR,
-} from "../data/cashier.mock";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+type BillStatus = "Chờ thanh toán" | "Đã thanh toán";
+type ServiceType = "Spa" | "Lưu trú" | "Khám bệnh";
+type PayMethod = "Tiền mặt" | "Chuyển khoản" | "Thẻ ngân hàng";
+
+interface BillItem {
+    desc: string;
+    qty: number;
+    unitPrice: number;
+}
+
+interface Bill {
+    id: string;
+    code: string;
+    ownerName: string;
+    ownerPhone: string;
+    petName: string;
+    serviceType: ServiceType;
+    items: BillItem[];
+    status: BillStatus;
+    createdAt: string;
+    paidAt?: string;
+    payMethod?: PayMethod;
+    note?: string;
+}
+
+// ─── Mock Data ────────────────────────────────────────────────────────────────
+// FIX #1 & #5: Xóa "Phí vệ sinh phòng", đồng bộ tổng 840k với PaymentsPage
+// FIX #5: Đồng bộ danh sách HĐ: HD-2026-041, HD-2026-038, HD-2026-032 khớp PaymentsPage
+const initialBills: Bill[] = [
+    {
+        id: "1",
+        code: "HD-2026-041",
+        ownerName: "Nguyễn Văn A",
+        ownerPhone: "0912 345 678",
+        petName: "Milu (Poodle)",
+        serviceType: "Lưu trú",
+        items: [
+            // FIX #1: Bỏ dòng "Phí vệ sinh phòng", giữ đúng 840k như PaymentsPage
+            { desc: "Chuồng Deluxe (3 đêm)", qty: 3, unitPrice: 280_000 },
+        ],
+        status: "Chờ thanh toán",
+        createdAt: "01/06/2026 - 03:15",
+        note: "Bé sợ tiếng ồn",
+    },
+    {
+        id: "2",
+        code: "HD-2026-038",
+        // FIX #5: Đồng bộ với PaymentsPage — Milu của Nguyễn Văn A
+        ownerName: "Nguyễn Văn A",
+        ownerPhone: "0912 345 678",
+        petName: "Milu (Poodle)",
+        serviceType: "Spa",
+        items: [
+            { desc: "Tắm + Sấy + Cắt tỉa", qty: 1, unitPrice: 250_000 },
+        ],
+        status: "Chờ thanh toán",
+        createdAt: "24/05/2026 - 08:30",
+    },
+    {
+        id: "3",
+        code: "HD-2026-039",
+        ownerName: "Phạm Văn C",
+        ownerPhone: "0901 111 222",
+        petName: "Mít (Mèo ALN)",
+        serviceType: "Khám bệnh",
+        items: [
+            { desc: "Khám định kỳ", qty: 1, unitPrice: 200_000 },
+            { desc: "Siêu âm bụng", qty: 1, unitPrice: 150_000 },
+            { desc: "Thuốc tiêu hóa", qty: 2, unitPrice: 35_000 },
+        ],
+        status: "Chờ thanh toán",
+        createdAt: "02/05/2026 - 09:00",
+    },
+    {
+        id: "4",
+        code: "HD-2026-032",
+        ownerName: "Phạm Văn C",
+        ownerPhone: "0901 111 222",
+        petName: "Mít (Mèo ALN)",
+        serviceType: "Khám bệnh",
+        items: [{ desc: "Khám định kỳ + kê đơn", qty: 1, unitPrice: 420_000 }],
+        status: "Đã thanh toán",
+        createdAt: "20/05/2026 - 10:00",
+        paidAt: "20/05/2026 - 10:45",
+        payMethod: "Chuyển khoản",
+    },
+    {
+        id: "5",
+        code: "HD-2026-021",
+        ownerName: "Trần Thị E",
+        ownerPhone: "0977 111 333",
+        petName: "Bơ (Corgi)",
+        serviceType: "Spa",
+        items: [{ desc: "Spa Premium (full option)", qty: 1, unitPrice: 450_000 }],
+        status: "Đã thanh toán",
+        createdAt: "14/05/2026 - 14:00",
+        paidAt: "14/05/2026 - 15:00",
+        payMethod: "Tiền mặt",
+    },
+];
+
+// FIX #8: Thêm SERVICE_LABEL để hiển thị Tag loại dịch vụ trong danh sách
+const SERVICE_ICON: Record<ServiceType, React.ReactNode> = {
+    Spa: <Scissors className="h-4 w-4" />,
+    "Lưu trú": <BedDouble className="h-4 w-4" />,
+    "Khám bệnh": <Stethoscope className="h-4 w-4" />,
+};
+
+const SERVICE_COLOR: Record<ServiceType, string> = {
+    Spa: "bg-blue-100 text-blue-600",
+    "Lưu trú": "bg-amber-100 text-amber-600",
+    "Khám bệnh": "bg-emerald-100 text-emerald-600",
+};
+
+// FIX #8: Tone cho Tag loại dịch vụ
+const SERVICE_TAG_TONE: Record<ServiceType, "blue" | "amber" | "green"> = {
+    Spa: "blue",
+    "Lưu trú": "amber",
+    "Khám bệnh": "green",
+};
+
+const PAY_ICONS: Record<PayMethod, React.ReactNode> = {
+    "Tiền mặt": <Banknote className="h-5 w-5" />,
+    "Chuyển khoản": <QrCode className="h-5 w-5" />,
+    "Thẻ ngân hàng": <CreditCard className="h-5 w-5" />,
+};
 
 function fmt(n: number) {
     return n.toLocaleString("vi-VN") + "₫";
@@ -35,26 +152,13 @@ function totalOf(items: BillItem[]) {
     return items.reduce((s, i) => s + i.qty * i.unitPrice, 0);
 }
 
-// ─── Service icon map (uses JSX, stays in component file) ───────────────────
-const SERVICE_ICON: Record<ServiceType, React.ReactNode> = {
-    Spa: <Scissors className="h-4 w-4" />,
-    "L\u01b0u tr\u00fa": <BedDouble className="h-4 w-4" />,
-    "Kh\u00e1m b\u1ec7nh": <Stethoscope className="h-4 w-4" />,
-};
-
-const PAY_ICONS: Record<PayMethod, React.ReactNode> = {
-    "Ti\u1ec1n m\u1eb7t": <Banknote className="h-5 w-5" />,
-    "Chuy\u1ec3n kho\u1ea3n": <QrCode className="h-5 w-5" />,
-    "Th\u1ebb ng\u00e2n h\u00e0ng": <CreditCard className="h-5 w-5" />,
-};
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function CashierPage() {
-    const [bills, setBills] = useState<Bill[]>(MOCK_BILLS);
+    const [bills, setBills] = useState<Bill[]>(initialBills);
     const [selected, setSelected] = useState<Bill | null>(null);
-    const [filter, setFilter] = useState("T\u1ea5t c\u1ea3");
+    const [filter, setFilter] = useState("Tất cả");
     const [search, setSearch] = useState("");
-    const [payMethod, setPayMethod] = useState<PayMethod>("Ti\u1ec1n m\u1eb7t");
+    const [payMethod, setPayMethod] = useState<PayMethod>("Tiền mặt");
     // FIX #4 (cashier): Dùng 1 state duy nhất thay vì paid + selected.status song song
     const [paidBillId, setPaidBillId] = useState<string | null>(null);
 
