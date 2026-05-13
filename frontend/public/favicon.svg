@@ -1,0 +1,41 @@
+<svg width="220" height="220" viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="petGradient" x1="40" y1="30" x2="180" y2="190" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#34D399"/>
+      <stop offset="1" stop-color="#0EA5E9"/>
+    </linearGradient>
+    <filter id="shadow" x="0" y="0" width="220" height="220" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <circle cx="110" cy="110" r="86" fill="url(#petGradient)" filter="url(#shadow)"/>
+
+  <!-- paw pads -->
+  <ellipse cx="72" cy="74" rx="16" ry="22" fill="white"/>
+  <ellipse cx="104" cy="56" rx="16" ry="22" fill="white"/>
+  <ellipse cx="138" cy="56" rx="16" ry="22" fill="white"/>
+  <ellipse cx="148" cy="92" rx="16" ry="22" fill="white"/>
+
+  <!-- main paw -->
+  <path d="M110 96
+           C82 96 60 118 60 145
+           C60 166 76 182 96 182
+           C103 182 107 179 110 175
+           C113 179 117 182 124 182
+           C144 182 160 166 160 145
+           C160 118 138 96 110 96Z"
+        fill="white"/>
+
+  <!-- small heart -->
+  <path d="M110 146
+           C110 146 94 136 94 123
+           C94 116 99 111 105 111
+           C109 111 112 113 114 117
+           C116 113 119 111 123 111
+           C129 111 134 116 134 123
+           C134 136 118 146 118 146
+           L114 149
+           L110 146Z"
+        fill="url(#petGradient)"/>
+</svg>

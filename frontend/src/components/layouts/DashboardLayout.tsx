@@ -54,7 +54,7 @@ export function DashboardLayout() {
                     {!sidebarCollapsed && (
                         <div className="overflow-hidden">
                             <p className="truncate text-[15px] font-bold tracking-tight text-text-main">
-                                PCCMS
+                                Pawluna
                             </p>
                             <p className="truncate text-[11px] font-medium text-text-muted">
                                 Quản lý chăm sóc thú cưng
