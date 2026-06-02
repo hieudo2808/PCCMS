@@ -11,7 +11,9 @@ interface CardProps {
 
 export function Card({ title, subtitle, children, right, className }: CardProps) {
     return (
-        <div className={cx("rounded-3xl border border-slate-200 bg-white p-5 shadow-sm", className)}>
+        <div
+            className={cx("rounded-3xl border border-slate-200 bg-white p-5 shadow-sm", className)}
+        >
             {(title || subtitle || right) && (
                 <div className="mb-4 flex items-start justify-between gap-3">
                     <div>

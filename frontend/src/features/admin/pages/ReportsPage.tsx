@@ -7,10 +7,30 @@ export function ReportsPage() {
         <div className="space-y-6">
             <MiniGridStats
                 items={[
-                    { label: "Doanh thu", value: "84M", hint: "30 ngày gần nhất", icon: CreditCard },
-                    { label: "Lịch khám", value: "146", hint: "Tỷ lệ đến khám 91%", icon: Stethoscope },
-                    { label: "Lưu trú", value: "62", hint: "Tỷ lệ lấp đầy TB 68%", icon: Building2 },
-                    { label: "Spa", value: "103", hint: "Dịch vụ phổ biến nhất tháng", icon: Scissors },
+                    {
+                        label: "Doanh thu",
+                        value: "84M",
+                        hint: "30 ngày gần nhất",
+                        icon: CreditCard,
+                    },
+                    {
+                        label: "Lịch khám",
+                        value: "146",
+                        hint: "Tỷ lệ đến khám 91%",
+                        icon: Stethoscope,
+                    },
+                    {
+                        label: "Lưu trú",
+                        value: "62",
+                        hint: "Tỷ lệ lấp đầy TB 68%",
+                        icon: Building2,
+                    },
+                    {
+                        label: "Spa",
+                        value: "103",
+                        hint: "Dịch vụ phổ biến nhất tháng",
+                        icon: Scissors,
+                    },
                 ]}
             />
             <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">

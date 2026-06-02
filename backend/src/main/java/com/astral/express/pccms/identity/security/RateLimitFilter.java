@@ -1,6 +1,6 @@
 package com.astral.express.pccms.identity.security;
 
-import com.astral.express.pccms.common.dto.ApiResponse;
+import com.astral.express.pccms.common.exception.ErrorResponse;
 import com.astral.express.pccms.common.exception.ErrorCode;
 import tools.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
@@ -51,11 +51,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
             log.warn("Rate limit exceeded for IP: {} on path: {}", clientIp, path);
             response.setStatus(429);
             response.setContentType("application/json");
-            ApiResponse<?> apiResponse = ApiResponse.builder()
-                    .code(ErrorCode.RATE_LIMITED.getCode())
-                    .message(ErrorCode.RATE_LIMITED.getMessage())
+            ErrorResponse errorResponse = ErrorResponse.builder()
+                    .code(ErrorCode.ERR_IAM_003_RATE_LIMITED.getHttpStatus())
+                    .message(ErrorCode.ERR_IAM_003_RATE_LIMITED.getMessage())
                     .build();
-            response.getWriter().write(new ObjectMapper().writeValueAsString(apiResponse));
+            response.getWriter().write(new ObjectMapper().writeValueAsString(errorResponse));
             return;
         }
 

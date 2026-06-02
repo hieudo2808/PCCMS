@@ -16,7 +16,12 @@ interface TagProps {
 
 export function Tag({ children, tone = "default" }: TagProps) {
     return (
-        <span className={cx("inline-flex rounded-full px-3 py-1 text-xs font-medium", toneStyles[tone])}>
+        <span
+            className={cx(
+                "inline-flex rounded-full px-3 py-1 text-xs font-medium",
+                toneStyles[tone]
+            )}
+        >
             {children}
         </span>
     );

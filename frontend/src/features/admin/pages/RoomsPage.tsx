@@ -6,12 +6,14 @@ export function RoomsPage() {
         <div className="space-y-6">
             <Card title="Quản lý phòng lưu trú">
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    {([
-                        ["C12", "Premium", "Đang có Milu", "blue"],
-                        ["A02", "Tiêu chuẩn", "Còn trống", "green"],
-                        ["B07", "Tiêu chuẩn", "Bảo trì", "red"],
-                        ["VIP1", "Phòng riêng", "Còn trống", "green"],
-                    ] as [string, string, string, "blue" | "green" | "red"][]).map(([room, type, state, tone]) => (
+                    {(
+                        [
+                            ["C12", "Premium", "Đang có Milu", "blue"],
+                            ["A02", "Tiêu chuẩn", "Còn trống", "green"],
+                            ["B07", "Tiêu chuẩn", "Bảo trì", "red"],
+                            ["VIP1", "Phòng riêng", "Còn trống", "green"],
+                        ] as [string, string, string, "blue" | "green" | "red"][]
+                    ).map(([room, type, state, tone]) => (
                         <Card key={room} className="h-full transition hover:shadow-md">
                             <div className="flex items-start justify-between">
                                 <div>

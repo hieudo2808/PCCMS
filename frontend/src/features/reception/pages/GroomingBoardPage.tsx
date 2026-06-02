@@ -35,7 +35,9 @@ export function GroomingBoardPage() {
                                     <div className="flex items-start justify-between gap-3">
                                         <div>
                                             <p className="font-medium">{card}</p>
-                                            <p className="mt-1 text-sm text-slate-500">Phiếu DV • cập nhật 10:35</p>
+                                            <p className="mt-1 text-sm text-slate-500">
+                                                Phiếu DV • cập nhật 10:35
+                                            </p>
                                         </div>
                                         <Tag tone={tones[title]}>{title}</Tag>
                                     </div>

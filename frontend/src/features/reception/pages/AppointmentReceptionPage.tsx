@@ -14,15 +14,52 @@ export function AppointmentReceptionPage() {
                             placeholder="Tìm theo SĐT hoặc tên khách"
                         />
                     </div>
-                    <Select label="" options={["Tất cả trạng thái", "Chờ tiếp nhận", "Đang chờ khám", "Đã hủy"]} />
-                    <Button variant="outline" className="py-3">Tạo nhanh lịch hẹn</Button>
+                    <Select
+                        label=""
+                        options={["Tất cả trạng thái", "Chờ tiếp nhận", "Đang chờ khám", "Đã hủy"]}
+                    />
+                    <Button variant="outline" className="py-3">
+                        Tạo nhanh lịch hẹn
+                    </Button>
                 </div>
                 <DataTable
-                    columns={["Mã lịch", "Giờ hẹn", "Khách", "Thú cưng", "Bác sĩ", "Trạng thái", "Hành động"]}
+                    columns={[
+                        "Mã lịch",
+                        "Giờ hẹn",
+                        "Khách",
+                        "Thú cưng",
+                        "Bác sĩ",
+                        "Trạng thái",
+                        "Hành động",
+                    ]}
                     rows={[
-                        ["AP0001", "09:00", "Nguyễn Minh", "Milu", "BS An", <Tag tone="amber">Chờ tiếp nhận</Tag>, "Tiếp nhận / Hủy"],
-                        ["AP0002", "09:30", "Lê Hà", "Mít", "BS Hương", <Tag tone="blue">Đang chờ khám</Tag>, "Xem"],
-                        ["AP0003", "10:00", "Hoàng Lan", "Bơ", "BS An", <Tag tone="red">Đã hủy</Tag>, "Xem"],
+                        [
+                            "AP0001",
+                            "09:00",
+                            "Nguyễn Minh",
+                            "Milu",
+                            "BS An",
+                            <Tag tone="amber">Chờ tiếp nhận</Tag>,
+                            "Tiếp nhận / Hủy",
+                        ],
+                        [
+                            "AP0002",
+                            "09:30",
+                            "Lê Hà",
+                            "Mít",
+                            "BS Hương",
+                            <Tag tone="blue">Đang chờ khám</Tag>,
+                            "Xem",
+                        ],
+                        [
+                            "AP0003",
+                            "10:00",
+                            "Hoàng Lan",
+                            "Bơ",
+                            "BS An",
+                            <Tag tone="red">Đã hủy</Tag>,
+                            "Xem",
+                        ],
                     ]}
                 />
             </Card>
@@ -33,7 +70,8 @@ export function AppointmentReceptionPage() {
                     <Select label="Thú cưng" options={["Chọn sau khi tra cứu", "Milu", "Bơ"]} />
                     <Button className="w-full py-3">Tiếp nhận ngay</Button>
                     <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-                        Khi tiếp nhận thành công, hệ thống sẽ tự động đẩy thú cưng sang danh sách chờ khám của bác sĩ.
+                        Khi tiếp nhận thành công, hệ thống sẽ tự động đẩy thú cưng sang danh sách
+                        chờ khám của bác sĩ.
                     </div>
                 </div>
             </Card>

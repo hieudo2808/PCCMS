@@ -24,4 +24,15 @@ public class SecurityHelper {
         }
         return currentUserId.equals(resourceOwnerId);
     }
+
+    public boolean isAdminOrStaff() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getAuthorities() == null) {
+            return false;
+        }
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") 
+                            || a.getAuthority().equals("ROLE_VETERINARIAN")
+                            || a.getAuthority().equals("ROLE_RECEPTIONIST"));
+    }
 }

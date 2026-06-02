@@ -26,8 +26,9 @@ public class Users {
     String avatarUrl;
     String bio;
 
+    @Enumerated(EnumType.STRING)
     @Builder.Default
-    boolean isActive = true;
+    UserStatus statusCode = UserStatus.UNVERIFIED;
     @Builder.Default
     int failedLoginAttempts = 0;
     OffsetDateTime lockUntil;

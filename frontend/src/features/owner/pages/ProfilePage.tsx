@@ -134,7 +134,11 @@ export function ProfilePage() {
     const handleChangePassword = (event: React.FormEvent) => {
         event.preventDefault();
 
-        if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+        if (
+            !passwordForm.currentPassword ||
+            !passwordForm.newPassword ||
+            !passwordForm.confirmPassword
+        ) {
             alert("Vui lòng nhập đầy đủ thông tin mật khẩu.");
             return;
         }
@@ -155,10 +159,7 @@ export function ProfilePage() {
 
     return (
         <div className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
-            <Card
-                title="Hồ sơ người dùng"
-                subtitle="Cập nhật ảnh đại diện và tên hiển thị"
-            >
+            <Card title="Hồ sơ người dùng" subtitle="Cập nhật ảnh đại diện và tên hiển thị">
                 <form onSubmit={handleSaveProfile} className="space-y-6">
                     <div className="flex flex-col items-center rounded-3xl bg-slate-50 p-6 text-center">
                         <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-emerald-100 text-emerald-700">
@@ -206,9 +207,7 @@ export function ProfilePage() {
                             </Button>
                         </div>
 
-                        <p className="mt-3 text-xs text-slate-500">
-                            Hỗ trợ ảnh dưới 20MB.
-                        </p>
+                        <p className="mt-3 text-xs text-slate-500">Hỗ trợ ảnh dưới 20MB.</p>
                     </div>
 
                     <Input
@@ -255,10 +254,7 @@ export function ProfilePage() {
             </Card>
 
             <div className="space-y-6">
-                <Card
-                    title="Cập nhật email"
-                    subtitle="Mã OTP sẽ được gửi về email mới"
-                >
+                <Card title="Cập nhật email" subtitle="Mã OTP sẽ được gửi về email mới">
                     <div className="mb-4 rounded-2xl bg-slate-50 p-4">
                         <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                             Email hiện tại
@@ -284,12 +280,7 @@ export function ProfilePage() {
                         </form>
                     ) : (
                         <form onSubmit={handleConfirmEmail} className="space-y-4">
-                            <Input
-                                label="Email mới"
-                                type="email"
-                                value={newEmail}
-                                disabled
-                            />
+                            <Input label="Email mới" type="email" value={newEmail} disabled />
 
                             <Input
                                 label="Mã OTP"
@@ -346,12 +337,7 @@ export function ProfilePage() {
                         </form>
                     ) : (
                         <form onSubmit={handleConfirmPhone} className="space-y-4">
-                            <Input
-                                label="Số điện thoại mới"
-                                type="tel"
-                                value={newPhone}
-                                disabled
-                            />
+                            <Input label="Số điện thoại mới" type="tel" value={newPhone} disabled />
 
                             <Input
                                 label="Mã OTP"
@@ -379,10 +365,7 @@ export function ProfilePage() {
                     )}
                 </Card>
 
-                <Card
-                    title="Thay đổi mật khẩu"
-                    subtitle="Cập nhật mật khẩu đăng nhập tài khoản"
-                >
+                <Card title="Thay đổi mật khẩu" subtitle="Cập nhật mật khẩu đăng nhập tài khoản">
                     <form onSubmit={handleChangePassword} className="space-y-4">
                         <div className="grid gap-4 md:grid-cols-3">
                             <Input

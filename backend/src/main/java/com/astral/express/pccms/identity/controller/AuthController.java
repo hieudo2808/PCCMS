@@ -1,7 +1,7 @@
 package com.astral.express.pccms.identity.controller;
 
 import com.astral.express.pccms.common.dto.ApiResponse;
-import com.astral.express.pccms.common.exception.AppException;
+import com.astral.express.pccms.common.exception.BusinessException;
 import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.identity.dto.request.LoginRequest;
 import com.astral.express.pccms.identity.dto.request.RegisterRequest;
@@ -36,7 +36,7 @@ public class AuthController {
         setRefreshTokenCookie(response, authResponse.getRefreshToken());
         authResponse.setRefreshToken(null);
 
-        return ApiResponse.<AuthResponse>builder().result(authResponse).build();
+        return ApiResponse.success(authResponse);
     }
 
     @PostMapping("/login")
@@ -49,7 +49,7 @@ public class AuthController {
         setRefreshTokenCookie(response, authResponse.getRefreshToken());
         authResponse.setRefreshToken(null);
 
-        return ApiResponse.<AuthResponse>builder().result(authResponse).build();
+        return ApiResponse.success(authResponse);
     }
 
     @PostMapping("/refresh")
@@ -58,7 +58,7 @@ public class AuthController {
             HttpServletResponse response) {
 
         if (refreshToken == null || refreshToken.isEmpty())
-            throw new AppException(ErrorCode.INVALID_CREDENTIALS);
+            throw new BusinessException(ErrorCode.ERR_IAM_001_INVALID_CREDENTIALS);
 
         try {
             AuthResponse authResponse = authService.refreshAccessToken(refreshToken);
@@ -66,11 +66,11 @@ public class AuthController {
             setRefreshTokenCookie(response, authResponse.getRefreshToken());
             authResponse.setRefreshToken(null);
 
-            return ApiResponse.<AuthResponse>builder().result(authResponse).build();
+            return ApiResponse.success(authResponse);
         } catch (Exception e) {
             clearRefreshTokenCookie(response);
             log.error(e.getMessage(), e);
-            throw new AppException(ErrorCode.INVALID_CREDENTIALS);
+            throw new BusinessException(ErrorCode.ERR_IAM_001_INVALID_CREDENTIALS);
         }
     }
 
@@ -92,7 +92,7 @@ public class AuthController {
         }
 
         clearRefreshTokenCookie(response);
-        return ApiResponse.<Void>builder().message("Logout success").build();
+        return ApiResponse.success(null, "Logout success");
     }
 
     private void setRefreshTokenCookie(HttpServletResponse response, String token) {

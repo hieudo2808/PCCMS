@@ -14,15 +14,52 @@ export function AccountsPage() {
                             placeholder="Tìm theo tên, email, SĐT"
                         />
                     </div>
-                    <Select label="" options={["Tất cả vai trò", "Chủ nuôi", "Nhân viên", "Bác sĩ", "Quản trị viên"]} />
+                    <Select
+                        label=""
+                        options={[
+                            "Tất cả vai trò",
+                            "Chủ nuôi",
+                            "Nhân viên",
+                            "Bác sĩ",
+                            "Quản trị viên",
+                        ]}
+                    />
                     <Select label="" options={["Tất cả trạng thái", "Hoạt động", "Bị khóa"]} />
                 </div>
                 <DataTable
-                    columns={["Người dùng", "Liên hệ", "Vai trò", "Trạng thái", "Phân quyền", "Hành động"]}
+                    columns={[
+                        "Người dùng",
+                        "Liên hệ",
+                        "Vai trò",
+                        "Trạng thái",
+                        "Phân quyền",
+                        "Hành động",
+                    ]}
                     rows={[
-                        ["Nguyễn Minh Anh", "minhanh@email.com", "Chủ nuôi", <Tag tone="green">Hoạt động</Tag>, "Giữ nguyên", "Khóa / Sửa"],
-                        ["BS. An", "bsan@pccms.vn", "Bác sĩ", <Tag tone="green">Hoạt động</Tag>, "Bác sĩ", "Sửa"],
-                        ["Lễ tân Hà", "lethan@pccms.vn", "Nhân viên", <Tag tone="red">Bị khóa</Tag>, "Nhân viên", "Mở khóa"],
+                        [
+                            "Nguyễn Minh Anh",
+                            "minhanh@email.com",
+                            "Chủ nuôi",
+                            <Tag tone="green">Hoạt động</Tag>,
+                            "Giữ nguyên",
+                            "Khóa / Sửa",
+                        ],
+                        [
+                            "BS. An",
+                            "bsan@pccms.vn",
+                            "Bác sĩ",
+                            <Tag tone="green">Hoạt động</Tag>,
+                            "Bác sĩ",
+                            "Sửa",
+                        ],
+                        [
+                            "Lễ tân Hà",
+                            "lethan@pccms.vn",
+                            "Nhân viên",
+                            <Tag tone="red">Bị khóa</Tag>,
+                            "Nhân viên",
+                            "Mở khóa",
+                        ],
                     ]}
                 />
             </Card>

@@ -28,7 +28,7 @@ public class CustomUserDetails implements UserDetails {
         this.userId = user.getUserId();
         this.email = user.getEmail();
         this.password = user.getHashPassword();
-        this.active = user.isActive();
+        this.active = user.getStatusCode() == com.astral.express.pccms.user.entity.UserStatus.ACTIVE;
         this.lockUntil = user.getLockUntil();
         this.authorities = user.getRole().getPermissions()
                 .stream()

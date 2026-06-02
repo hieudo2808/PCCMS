@@ -16,14 +16,24 @@ export function MedicalRecordPage() {
                     <Vital label="CRT (giây)" value="1.5" />
                 </div>
                 <div className="mt-4 grid gap-4">
-                    <Textarea label="Chẩn đoán ban đầu" value="Nghi viêm đường ruột cấp." rows={3} />
-                    <Textarea label="Chẩn đoán xác định" value="Theo dõi thêm sau xét nghiệm máu." rows={3} />
+                    <Textarea
+                        label="Chẩn đoán ban đầu"
+                        value="Nghi viêm đường ruột cấp."
+                        rows={3}
+                    />
+                    <Textarea
+                        label="Chẩn đoán xác định"
+                        value="Theo dõi thêm sau xét nghiệm máu."
+                        rows={3}
+                    />
                     <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-4">
                         <p className="font-medium">Tệp kết quả xét nghiệm</p>
                         <p className="mt-2 text-sm text-slate-500">
                             Hỗ trợ PDF, PNG, JPG. Tối đa 10MB mỗi tệp.
                         </p>
-                        <Button variant="outline" className="mt-3">Tải tệp lên</Button>
+                        <Button variant="outline" className="mt-3">
+                            Tải tệp lên
+                        </Button>
                     </div>
                 </div>
                 <div className="mt-6 flex gap-2">
@@ -35,7 +45,10 @@ export function MedicalRecordPage() {
             <div className="space-y-6">
                 <Card title="Kê đơn thuốc">
                     <div className="space-y-4">
-                        <Select label="Thuốc" options={["Amoxicillin", "Metronidazole", "Vitamin tổng hợp"]} />
+                        <Select
+                            label="Thuốc"
+                            options={["Amoxicillin", "Metronidazole", "Vitamin tổng hợp"]}
+                        />
                         <div className="grid gap-4 md:grid-cols-2">
                             <Input label="Liều lượng" placeholder="2 viên/lần" />
                             <Input label="Số lượng kê" placeholder="10" />

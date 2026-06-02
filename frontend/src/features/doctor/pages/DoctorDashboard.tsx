@@ -7,8 +7,18 @@ export function DoctorDashboard() {
             <MiniGridStats
                 items={[
                     { label: "Đang chờ khám", value: "7", hint: "3 ca ưu tiên", icon: Stethoscope },
-                    { label: "Đã khám hôm nay", value: "11", hint: "2 ca tái khám", icon: CheckCircle2 },
-                    { label: "Bệnh án nháp", value: "3", hint: "Cần hoàn tất trước cuối ca", icon: FileText },
+                    {
+                        label: "Đã khám hôm nay",
+                        value: "11",
+                        hint: "2 ca tái khám",
+                        icon: CheckCircle2,
+                    },
+                    {
+                        label: "Bệnh án nháp",
+                        value: "3",
+                        hint: "Cần hoàn tất trước cuối ca",
+                        icon: FileText,
+                    },
                     { label: "Đơn thuốc đã kê", value: "9", hint: "Kho còn đủ tồn", icon: Pill },
                 ]}
             />

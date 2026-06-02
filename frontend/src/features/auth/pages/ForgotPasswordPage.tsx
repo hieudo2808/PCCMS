@@ -16,12 +16,19 @@ export function ForgotPasswordPage() {
                     {step === 3 && "Thiết lập lại mật khẩu mới cho tài khoản của bạn."}
                 </p>
             </div>
-            
+
             <div className="min-h-[160px]">
                 {step === 1 && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
-                        <Input label="Email hoặc Số điện thoại" placeholder="name@domain.com hoặc 0912..." />
-                        <Button className="w-full py-3" variant="primary" onClick={() => setStep(2)}>
+                        <Input
+                            label="Email hoặc Số điện thoại"
+                            placeholder="name@domain.com hoặc 0912..."
+                        />
+                        <Button
+                            className="w-full py-3"
+                            variant="primary"
+                            onClick={() => setStep(2)}
+                        >
                             Gửi mã xác thực
                         </Button>
                     </div>
@@ -29,8 +36,16 @@ export function ForgotPasswordPage() {
 
                 {step === 2 && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
-                        <Input label="Mã xác thực (OTP)" placeholder="Nhập 6 chữ số" maxLength={6} />
-                        <Button className="w-full py-3" variant="primary" onClick={() => setStep(3)}>
+                        <Input
+                            label="Mã xác thực (OTP)"
+                            placeholder="Nhập 6 chữ số"
+                            maxLength={6}
+                        />
+                        <Button
+                            className="w-full py-3"
+                            variant="primary"
+                            onClick={() => setStep(3)}
+                        >
                             Xác minh mã
                         </Button>
                         <div className="text-center pt-2">
@@ -45,15 +60,19 @@ export function ForgotPasswordPage() {
                     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
                         <Input label="Mật khẩu mới" type="password" placeholder="••••••••" />
                         <Input label="Xác nhận mật khẩu" type="password" placeholder="••••••••" />
-                        <Button className="w-full py-3" variant="primary" onClick={() => navigate("/login")}>
+                        <Button
+                            className="w-full py-3"
+                            variant="primary"
+                            onClick={() => navigate("/login")}
+                        >
                             Lưu mật khẩu & Đăng nhập
                         </Button>
                     </div>
                 )}
             </div>
-            
+
             <p className="text-center text-sm text-slate-600 border-t border-slate-100 pt-5">
-                <button 
+                <button
                     onClick={() => navigate("/login")}
                     className="font-medium text-primary-700 hover:text-primary-800"
                 >

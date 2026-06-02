@@ -1,6 +1,6 @@
 package com.astral.express.pccms.identity.security;
 
-import com.astral.express.pccms.common.dto.ApiResponse;
+import com.astral.express.pccms.common.exception.ErrorResponse;
 import com.astral.express.pccms.common.exception.ErrorCode;
 import tools.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,17 +21,17 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
                          HttpServletResponse response,
                          AuthenticationException authException) throws IOException {
 
-        ErrorCode errorCode = ErrorCode.UNAUTHENTICATED;
+        ErrorCode errorCode = ErrorCode.ERR_401_UNAUTHORIZED;
 
-        response.setStatus(errorCode.getStatusCode().value());
+        response.setStatus(errorCode.getHttpStatus());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
-        ApiResponse<?> apiResponse = ApiResponse.builder()
-                .code(errorCode.getCode())
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .code(errorCode.getHttpStatus())
                 .message(errorCode.getMessage())
                 .build();
 
-        response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
+        response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
         response.flushBuffer();
     }
 }

@@ -17,8 +17,20 @@ export function CatalogPage() {
                 <DataTable
                     columns={["Dịch vụ", "Nhóm", "Giá", "Trạng thái", "Hành động"]}
                     rows={[
-                        ["Tắm + Sấy + Cắt tỉa", "Spa", "350.000đ", <Tag tone="green">Đang mở</Tag>, "Sửa"],
-                        ["Khám tổng quát", "Khám bệnh", "250.000đ", <Tag tone="green">Đang mở</Tag>, "Sửa"],
+                        [
+                            "Tắm + Sấy + Cắt tỉa",
+                            "Spa",
+                            "350.000đ",
+                            <Tag tone="green">Đang mở</Tag>,
+                            "Sửa",
+                        ],
+                        [
+                            "Khám tổng quát",
+                            "Khám bệnh",
+                            "250.000đ",
+                            <Tag tone="green">Đang mở</Tag>,
+                            "Sửa",
+                        ],
                     ]}
                 />
             </Card>

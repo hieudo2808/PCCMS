@@ -15,7 +15,12 @@ export function Vital({ label, value, abnormal = false }: VitalProps) {
             )}
         >
             <p className="text-sm text-slate-500">{label}</p>
-            <p className={cx("mt-2 text-xl font-semibold", abnormal ? "text-rose-700" : "text-slate-900")}>
+            <p
+                className={cx(
+                    "mt-2 text-xl font-semibold",
+                    abnormal ? "text-rose-700" : "text-slate-900"
+                )}
+            >
                 {value}
             </p>
         </div>
