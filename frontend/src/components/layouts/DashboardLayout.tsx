@@ -10,8 +10,8 @@ import { useAuth } from "~/features/auth/context/AuthContext";
 // Utility resolve role từ path
 function resolveRole(pathname: string): RoleKey {
     if (pathname.startsWith("/owner")) return "owner";
-    if (pathname.startsWith("/reception")) return "reception";
-    if (pathname.startsWith("/doctor")) return "doctor";
+    if (pathname.startsWith("/staff")) return "staff";
+    if (pathname.startsWith("/veterinarian")) return "veterinarian";
     if (pathname.startsWith("/admin")) return "admin";
     // Fallback internally
     return "owner";
@@ -20,9 +20,9 @@ function resolveRole(pathname: string): RoleKey {
 const roleNames: Record<RoleKey, string> = {
     public: "Khách",
     owner: "Chủ nuôi",
-    reception: "Lễ tân",
+    staff: "Lễ tân",
     admin: "Quản trị viên",
-    doctor: "Bác sĩ",
+    veterinarian: "Bác sĩ",
 };
 
 export function DashboardLayout() {
