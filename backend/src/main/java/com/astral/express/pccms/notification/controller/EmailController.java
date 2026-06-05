@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@RequestMapping("/api/notifications/emails")
+@RequestMapping("/notifications/emails")
 @RestController
 @RequiredArgsConstructor
 public class EmailController {

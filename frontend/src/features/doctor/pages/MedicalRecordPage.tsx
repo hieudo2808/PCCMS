@@ -8,6 +8,7 @@ import { EmptyState } from "~/components/molecules";
 import { VitalSignsForm, vitalSignsSchema } from '../components/VitalSignsForm';
 import { PrescriptionTable, prescriptionFormSchema } from '../components/PrescriptionTable';
 import { medicalRecordApi } from '~/shared/api/medicalRecordApi';
+import { PetProfileSummary } from '~/shared/components/pet';
 import { toast } from 'react-hot-toast';
 import { useEffect } from 'react';
 
@@ -123,6 +124,9 @@ export function MedicalRecordPage() {
                 />
 
                 <div className="space-y-6">
+                    {record.petId && (
+                        <PetProfileSummary petId={record.petId} showClinicalNotes />
+                    )}
                     <PrescriptionTable disabled={isFinalized} />
                 </div>
             </div>

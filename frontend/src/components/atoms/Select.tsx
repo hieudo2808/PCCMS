@@ -2,16 +2,24 @@ import { type ComponentProps, forwardRef } from "react";
 import { cx } from "~/utils/cx";
 import { ChevronDown } from "lucide-react";
 
+export type SelectOption = string | { value: string; label: string };
+
 export interface SelectProps extends ComponentProps<"select"> {
     label?: string;
-    options: string[];
+    placeholder?: string;
+    options: SelectOption[];
     error?: string;
     helperText?: string;
 }
 
+function normalizeOption(opt: SelectOption): { value: string; label: string } {
+    return typeof opt === "string" ? { value: opt, label: opt } : opt;
+}
+
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-    ({ label, options, error, helperText, className, id, ...props }, ref) => {
+    ({ label, placeholder, options, error, helperText, className, id, ...props }, ref) => {
         const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
+        const normalized = options.map(normalizeOption);
 
         return (
             <div className="flex flex-col gap-1.5">
@@ -33,9 +41,14 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                         )}
                         {...props}
                     >
-                        {options.map((opt) => (
-                            <option key={opt} value={opt}>
-                                {opt}
+                        {placeholder && (
+                            <option value="">
+                                {placeholder}
+                            </option>
+                        )}
+                        {normalized.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                                {opt.label}
                             </option>
                         ))}
                     </select>

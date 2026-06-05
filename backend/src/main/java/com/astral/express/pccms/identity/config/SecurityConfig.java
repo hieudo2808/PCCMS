@@ -77,7 +77,6 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(request -> request
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers("/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/problems/**").hasAuthority("PROBLEM_READ")
 
                         // Testcase

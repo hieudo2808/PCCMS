@@ -1,7 +1,9 @@
 import { type ReactNode } from "react";
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import { createBrowserRouter, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "~/features/auth/context/AuthContext";
 import type { RoleKey } from "~/types/navigation";
+import { recordAuthFailure } from "~/shared/auth/authSession";
+import { hasAccessToken } from "~/shared/auth/tokenStorage";
 
 // Layouts
 import { DashboardLayout } from "~/components/layouts";
@@ -34,16 +36,49 @@ import {
     ReportsPage,
 } from "~/features/admin";
 
+function normalizeRole(roleCode?: string): RoleKey {
+    if (!roleCode) return "public";
+    const key = roleCode.toLowerCase();
+    const aliases: Record<string, RoleKey> = {
+        owner: "owner",
+        customer: "owner",
+        staff: "staff",
+        receptionist: "staff",
+        veterinarian: "veterinarian",
+        admin: "admin",
+    };
+    return aliases[key] ?? "public";
+}
+
 function AuthGuard({ children, requiredRole }: { children: ReactNode; requiredRole: RoleKey }) {
-    const { user } = useAuth();
-      
-    if (!user) {
-        return <Navigate to="/login" replace />;
+    const { user, isInitializing } = useAuth();
+    const location = useLocation();
+
+    if (isInitializing) {
+        return (
+            <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-600">
+                Đang xác thực quyền truy cập…
+            </div>
+        );
     }
 
-    const currentRole = user?.roleCode?.toLowerCase() || "public";
-    
+    if (!user || !hasAccessToken()) {
+        recordAuthFailure({
+            source: "auth-guard",
+            message: !hasAccessToken()
+                ? `Không có token khi vào ${location.pathname} — đăng nhập trước`
+                : `Không có user trong context khi vào ${location.pathname}`,
+        });
+        return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+    }
+
+    const currentRole = normalizeRole(user.roleCode);
+
     if (currentRole !== requiredRole) {
+        recordAuthFailure({
+            source: "auth-guard",
+            message: `Role ${user.roleCode} (${currentRole}) không khớp ${requiredRole} tại ${location.pathname}`,
+        });
         const fallbackPath = currentRole === "public" ? "/login" : `/${currentRole}`;
         return <Navigate to={fallbackPath} replace />;
     }
@@ -53,7 +88,7 @@ function AuthGuard({ children, requiredRole }: { children: ReactNode; requiredRo
 
 function RootRedirect() {
     const { user } = useAuth();
-    const currentRole = user?.roleCode?.toLowerCase() || "public";
+    const currentRole = normalizeRole(user?.roleCode);
     return <Navigate to={currentRole === "public" ? "/login" : `/${currentRole}`} replace />;
 }
 

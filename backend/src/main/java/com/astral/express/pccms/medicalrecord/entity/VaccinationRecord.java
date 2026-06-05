@@ -23,24 +23,28 @@ public class VaccinationRecord {
     @GeneratedValue(strategy = GenerationType.UUID)
     UUID id;
 
-    @Column(nullable = false)
+    @Column(name = "pet_id", nullable = false)
     UUID petId;
 
+    @Column(name = "medical_record_id")
     UUID medicalRecordId;
 
-    @Column(nullable = false, length = 160)
+    @Column(name = "vaccine_name", nullable = false, length = 160)
     String vaccineName;
 
-    @Column(nullable = false)
+    @Column(name = "vaccination_date", nullable = false)
     LocalDate vaccinationDate;
 
+    @Column(name = "next_due_date")
     LocalDate nextDueDate;
 
+    @Column(name = "note", columnDefinition = "TEXT")
     String note;
 
+    @Column(name = "created_by")
     UUID createdBy;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     OffsetDateTime createdAt;
 }

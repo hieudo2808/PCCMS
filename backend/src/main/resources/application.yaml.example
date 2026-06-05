@@ -5,15 +5,13 @@ spring:
     application:
         name: pccms
     datasource:
-        url: jdbc:sqlserver://localhost:17288;database=CodeTrials;encrypt=true;trustServerCertificate=true
-        username: sa
-        password: 1234567890
-        driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+        url: jdbc:postgresql://localhost:5432/pccms
+        username: pccms
+        password: pccms
+        driver-class-name: org.postgresql.Driver
     jpa:
         hibernate:
             ddl-auto: validate
-            naming:
-                physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
         show-sql: true
         properties:
             hibernate:
@@ -24,7 +22,7 @@ spring:
             port: 6379
             password: redis-password
             ssl:
-                enabled: true
+                enabled: false
     mail:
         host: smtp.gmail.com
         port: 587
@@ -39,12 +37,13 @@ spring:
                         required: true
 
 jwt:
-    secret: your-own-secret-key
+    # Base64URL-encoded key >= 64 bytes (512 bits) for HS512. Generate a new secret for production.
+    secret: dWsQ3MeyblbD2_lAEqf0wSPIeXJIU6Mt8rluXB_nznKmq2Dr3IeSsSoYa9O4UTCxdx-ZXLx6CIS8StkPC2vmaA
     expiration: 600000
     refresh-expiration: 604800000
 
 security:
-    pepper: your-pepper
+    pepper: local-dev-pepper-change-me
 
 app:
     cors:

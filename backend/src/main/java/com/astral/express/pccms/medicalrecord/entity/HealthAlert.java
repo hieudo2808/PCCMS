@@ -22,9 +22,10 @@ public class HealthAlert {
     @GeneratedValue(strategy = GenerationType.UUID)
     UUID id;
 
-    @Column(nullable = false)
+    @Column(name = "pet_id", nullable = false)
     UUID petId;
 
+    @Column(name = "medical_record_id")
     UUID medicalRecordId;
 
     @Enumerated(EnumType.STRING)
@@ -34,11 +35,13 @@ public class HealthAlert {
     @Column(nullable = false, columnDefinition = "TEXT")
     String message;
 
+    @Column(name = "resolved_at")
     OffsetDateTime resolvedAt;
 
+    @Column(name = "created_by")
     UUID createdBy;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     OffsetDateTime createdAt;
 }

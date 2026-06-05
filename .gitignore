@@ -1,6 +1,10 @@
 /reports
 /analysis_docs
 
+.vscode
+.cursor
+scripts
+
 /frontend/.env
 /frontend/node_modules
 

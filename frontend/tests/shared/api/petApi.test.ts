@@ -20,7 +20,8 @@ const mockPet = {
   allergyNote: '',
   nutritionNote: '',
   isActive: true,
-  healthAlerts: []
+  speciesName: 'Chó',
+  breedName: 'Poodle',
 };
 
 describe('petApi', () => {

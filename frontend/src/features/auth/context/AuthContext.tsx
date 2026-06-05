@@ -1,71 +1,106 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import type { UserResponse } from '../../../types';
+import {
+  setUnauthorizedHandler,
+  recordAuthFailure,
+  clearLastAuthFailure,
+} from '~/shared/auth/authSession';
+import { getAccessToken } from '~/shared/auth/tokenStorage';
 
 interface AuthContextType {
   isAuthenticated: boolean;
+  isInitializing: boolean;
   user: UserResponse | null;
-  login: (token: string, refreshToken: string, user: UserResponse) => void;
+  login: (token: string, refreshToken: string | null, user: UserResponse) => void;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function clearStoredSession() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('refreshToken');
+  localStorage.removeItem('user');
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserResponse | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [isInitializing, setIsInitializing] = useState<boolean>(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
 
-  useEffect(() => {
-    const initAuth = () => {
-      const token = localStorage.getItem('token');
-      const storedUser = localStorage.getItem('user');
-
-      if (token && storedUser) {
-        try {
-          const decoded = jwtDecode(token);
-          const isExpired = decoded.exp && decoded.exp * 1000 < Date.now();
-          if (!isExpired) {
-            setUser(JSON.parse(storedUser));
-            setIsAuthenticated(true);
-          } else {
-            localStorage.removeItem('token');
-            localStorage.removeItem('refreshToken');
-            localStorage.removeItem('user');
-          }
-        } catch (error) {
-          // invalid token
-          localStorage.removeItem('token');
-        }
-      }
-      setIsInitializing(false);
-    };
-
-    initAuth();
+  const logout = useCallback(() => {
+    clearStoredSession();
+    setUser(null);
+    setIsAuthenticated(false);
   }, []);
 
-  const login = (token: string, refreshToken: string, userData: UserResponse) => {
+  useEffect(() => {
+    setUnauthorizedHandler(logout);
+    return () => setUnauthorizedHandler(null);
+  }, [logout]);
+
+  useEffect(() => {
+    const syncFromStorage = () => {
+      if (!getAccessToken() && user) {
+        logout();
+      }
+    };
+    window.addEventListener('storage', syncFromStorage);
+    return () => window.removeEventListener('storage', syncFromStorage);
+  }, [user, logout]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+
+    if (!token || !storedUser) {
+      clearStoredSession();
+      setIsInitializing(false);
+      return;
+    }
+
+    try {
+      const decoded = jwtDecode<{ exp?: number }>(token);
+      const isExpired = decoded.exp != null && decoded.exp * 1000 < Date.now();
+      if (isExpired) {
+        throw new Error('Token expired');
+      }
+      setUser(JSON.parse(storedUser) as UserResponse);
+      setIsAuthenticated(true);
+    } catch (error) {
+      recordAuthFailure({
+        source: 'token-init',
+        message:
+          error instanceof Error ? error.message : 'Token hoặc user trong localStorage không hợp lệ',
+      });
+      clearStoredSession();
+    } finally {
+      setIsInitializing(false);
+    }
+  }, []);
+
+  const login = (token: string, refreshToken: string | null, userData: UserResponse) => {
+    clearLastAuthFailure();
     localStorage.setItem('token', token);
-    localStorage.setItem('refreshToken', refreshToken);
+    if (refreshToken) {
+      localStorage.setItem('refreshToken', refreshToken);
+    }
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
     setIsAuthenticated(true);
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
-    setUser(null);
-    setIsAuthenticated(false);
-  };
-
   if (isInitializing) {
-    return null; // Or a loading spinner
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-600">
+        Đang khôi phục phiên đăng nhập…
+      </div>
+    );
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, isInitializing, user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,0 +1,35 @@
+services:
+    postgres:
+        image: postgres:16-alpine
+        container_name: pccms-postgres
+        restart: unless-stopped
+        environment:
+            POSTGRES_DB: pccms
+            POSTGRES_USER: pccms
+            POSTGRES_PASSWORD: pccms
+        ports:
+            - "5432:5432"
+        volumes:
+            - pccms_pg_data:/var/lib/postgresql/data
+            - ./database/pccms_database_schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U pccms -d pccms"]
+            interval: 5s
+            timeout: 5s
+            retries: 10
+
+    redis:
+        image: redis:7-alpine
+        container_name: pccms-redis
+        restart: unless-stopped
+        command: redis-server --requirepass redis-password
+        ports:
+            - "6379:6379"
+        healthcheck:
+            test: ["CMD", "redis-cli", "-a", "redis-password", "ping"]
+            interval: 5s
+            timeout: 5s
+            retries: 10
+
+volumes:
+    pccms_pg_data:

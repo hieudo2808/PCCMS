@@ -1,6 +1,9 @@
 package com.astral.express.pccms.identity.security;
 
+import com.astral.express.pccms.identity.service.CustomUserDetails;
 import com.astral.express.pccms.identity.service.TokenBlacklistService;
+import com.astral.express.pccms.user.entity.Users;
+import com.astral.express.pccms.user.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,6 +27,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
     private final TokenBlacklistService tokenBlacklistService;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(
@@ -41,25 +45,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         final String jwt = authorizationHeader.substring(7);
 
-        String username;
+        String email;
         String userIdStr;
 
         try {
-            username = jwtUtil.extractUsername(jwt);
+            email = jwtUtil.extractUsername(jwt);
             userIdStr = jwtUtil.extractUserId(jwt);
+            if (userIdStr == null && email != null && isUuid(email)) {
+                userIdStr = email;
+                email = userRepository.findById(UUID.fromString(email))
+                        .map(Users::getEmail)
+                        .orElse(null);
+            }
         } catch (Exception e) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        if (username != null
+        if (email != null
                 && userIdStr != null
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
 
             UserDetails userDetails =
-                    this.userDetailsService.loadUserByUsername(username);
+                    this.userDetailsService.loadUserByUsername(email);
 
-            if (jwtUtil.validateToken(jwt, userDetails)) {
+            if (isTokenAccepted(jwt, userDetails, userIdStr)) {
                 String jti = jwtUtil.extractJti(jwt);
                 if (tokenBlacklistService.isBlacklisted(jti)) {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -95,5 +105,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isTokenAccepted(String jwt, UserDetails userDetails, String userIdStr) {
+        if (jwtUtil.validateToken(jwt, userDetails)) {
+            return true;
+        }
+        if (userDetails instanceof CustomUserDetails custom
+                && userIdStr != null
+                && userIdStr.equals(custom.getId().toString())) {
+            try {
+                return !jwtUtil.isTokenExpired(jwt);
+            } catch (Exception ignored) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isUuid(String value) {
+        try {
+            UUID.fromString(value);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 }

@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -12,7 +12,10 @@ import { ROUTES } from "~/constants/routes";
 
 export function LoginPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { login } = useAuth();
+    const redirectTo =
+        (location.state as { from?: string } | null)?.from ?? null;
 
     const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
         resolver: zodResolver(loginSchema),
@@ -25,9 +28,12 @@ export function LoginPage() {
             toast.success("Đăng nhập thành công!");
             
             // Redirect based on role
-            const role = data.user.roleCode.toLowerCase();
-            const targetPath = ROUTES[role.toUpperCase() as keyof typeof ROUTES] || "/";
-            if (typeof targetPath === "object" && targetPath.DASHBOARD) {
+            const roleKey = data.user.roleCode.toUpperCase();
+            const routeKey = roleKey === 'CUSTOMER' ? 'OWNER' : roleKey;
+            const targetPath = ROUTES[routeKey as keyof typeof ROUTES] || "/";
+            if (redirectTo) {
+                navigate(redirectTo, { replace: true });
+            } else if (typeof targetPath === "object" && targetPath.DASHBOARD) {
                 navigate(targetPath.DASHBOARD);
             } else if (typeof targetPath === "string") {
                 navigate(targetPath);

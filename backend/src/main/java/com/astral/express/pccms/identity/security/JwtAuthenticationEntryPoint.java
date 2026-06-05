@@ -24,6 +24,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         ErrorCode errorCode = ErrorCode.ERR_401_UNAUTHORIZED;
 
         response.setStatus(errorCode.getHttpStatus());
+        response.setCharacterEncoding("UTF-8");
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
         ErrorResponse errorResponse = ErrorResponse.builder()

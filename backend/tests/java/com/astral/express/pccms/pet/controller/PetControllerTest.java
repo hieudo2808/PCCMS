@@ -4,6 +4,7 @@ import com.astral.express.pccms.common.exception.BusinessException;
 import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.pet.dto.request.UpdatePetRequest;
 import com.astral.express.pccms.pet.dto.response.PetResponse;
+import com.astral.express.pccms.pet.entity.PetSex;
 import com.astral.express.pccms.pet.service.PetService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +23,7 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -50,15 +52,18 @@ class PetControllerTest {
     @Test
     void should_Return200_when_CustomerUpdatesOwnPet() throws Exception {
         UUID petId = UUID.randomUUID();
+        UUID speciesId = UUID.randomUUID();
         UpdatePetRequest request = new UpdatePetRequest(
-                "Milo Updated", null, null, null, null, 12, BigDecimal.valueOf(5),
+                "Milo Updated", speciesId, null, PetSex.MALE, null, 12, BigDecimal.valueOf(5),
                 null, null, null, null, null
         );
 
-        PetResponse mockResponse = new PetResponse(petId, null, "Milo Updated", null, null, null, null, 12, BigDecimal.valueOf(5), null, null, null, null, null, true, java.util.Collections.emptyList());
+        PetResponse mockResponse = new PetResponse(
+                petId, null, "Milo Updated", speciesId, "Chó", null, null, PetSex.MALE, null, 12,
+                BigDecimal.valueOf(5), null, null, null, null, null, true);
         given(petService.updatePet(eq(petId), any(UpdatePetRequest.class))).willReturn(mockResponse);
 
-        mockMvc.perform(put("/api/v1/pets/{petId}", petId)
+        mockMvc.perform(put("/v1/pets/{petId}", petId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -69,16 +74,16 @@ class PetControllerTest {
     @Test
     void should_Return403Forbidden_when_CustomerUpdatesOtherPet() throws Exception {
         UUID petId = UUID.randomUUID();
+        UUID speciesId = UUID.randomUUID();
         UpdatePetRequest request = new UpdatePetRequest(
-                "Milo Updated", null, null, null, null, 12, BigDecimal.valueOf(5),
+                "Milo Updated", speciesId, null, PetSex.MALE, null, 12, BigDecimal.valueOf(5),
                 null, null, null, null, null
         );
 
-        // Giả lập Service ném ra lỗi IDOR
         given(petService.updatePet(eq(petId), any(UpdatePetRequest.class)))
                 .willThrow(new BusinessException(ErrorCode.ERR_403_FORBIDDEN));
 
-        mockMvc.perform(put("/api/v1/pets/{petId}", petId)
+        mockMvc.perform(put("/v1/pets/{petId}", petId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden());
@@ -92,7 +97,7 @@ class PetControllerTest {
         given(petService.getPet(eq(petId)))
                 .willThrow(new BusinessException(ErrorCode.ERR_403_FORBIDDEN));
 
-        mockMvc.perform(get("/api/v1/pets/{petId}", petId))
+        mockMvc.perform(get("/v1/pets/{petId}", petId))
                 .andExpect(status().isForbidden());
     }
 }

@@ -2,11 +2,15 @@ import { useState } from "react";
 import { Stepper } from "~/components/molecules/Stepper";
 import { Button, Input, Select, Textarea } from "~/components/atoms";
 import { Card, SummaryRow } from "~/components/molecules";
+import { PetSelect, PetProfileSummary } from "~/shared/components/pet";
+import { usePetProfile } from "~/shared/hooks/usePetProfile";
 
 const bookingSteps = [{ label: "Chọn Dịch Vụ" }, { label: "Lịch Phục Vụ" }, { label: "Xác Nhận" }];
 
 export function UnifiedBookingPage() {
     const [step, setStep] = useState(0);
+    const [selectedPetId, setSelectedPetId] = useState("");
+    const { data: selectedPet } = usePetProfile(selectedPetId || undefined);
 
     const nextStep = () => {
         if (step < 2) setStep(step + 1);
@@ -18,7 +22,6 @@ export function UnifiedBookingPage() {
 
     return (
         <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-            {/* Vùng trái: Form làm việc chính */}
             <div className="space-y-6">
                 <div className="mb-6 rounded-2xl bg-white p-6 shadow-sm border border-border-main">
                     <Stepper steps={bookingSteps} currentStep={step} />
@@ -70,16 +73,21 @@ export function UnifiedBookingPage() {
                                 />
                             </div>
 
-                            <Select
-                                label="Chọn Thú Cưng Đăng Ký"
-                                options={["Milu (Poodle)", "Bơ (Corgi)", "Mít (Mèo ALN)"]}
+                            <PetSelect
+                                label="Chọn thú cưng đăng ký"
+                                value={selectedPetId}
+                                onChange={setSelectedPetId}
                                 required
                             />
 
+                            {selectedPetId && (
+                                <PetProfileSummary petId={selectedPetId} />
+                            )}
+
                             <Textarea
-                                label="Ghi Chú Đặc Biệt"
-                                placeholder="Dị ứng, tiền sử bệnh, lời dặn bác sĩ..."
-                                rows={4}
+                                label="Ghi chú thêm cho lần đặt này"
+                                placeholder="Yêu cầu đặc biệt cho buổi hẹn (khác với ghi chú trên hồ sơ nền)..."
+                                rows={3}
                             />
                         </div>
                     )}
@@ -90,6 +98,10 @@ export function UnifiedBookingPage() {
                             <p className="text-sm text-text-muted">
                                 Kiểm tra kỹ thông tin bên lề trước khi gửi yêu cầu.
                             </p>
+
+                            {selectedPetId && (
+                                <PetProfileSummary petId={selectedPetId} />
+                            )}
 
                             <div className="rounded-xl border border-warning-200 bg-warning-50 p-4">
                                 <p className="text-sm font-semibold text-warning-700">
@@ -104,7 +116,6 @@ export function UnifiedBookingPage() {
                     )}
                 </Card>
 
-                {/* Controller Nav Bar dưới form */}
                 <div className="flex items-center justify-between border-t border-slate-200 pt-5">
                     <Button variant="outline" onClick={prevStep} disabled={step === 0}>
                         Quay lại
@@ -116,12 +127,14 @@ export function UnifiedBookingPage() {
                 </div>
             </div>
 
-            {/* Vùng phải: Summary Drawer */}
             <div className="sticky top-24 h-fit space-y-4">
                 <Card title="Tóm tắt Lịch Dự Kiến">
                     <div className="space-y-3 text-sm">
                         <SummaryRow label="Dịch vụ" value="Chưa chọn" />
-                        <SummaryRow label="Thú cưng" value="Chưa chọn" />
+                        <SummaryRow
+                            label="Thú cưng"
+                            value={selectedPet ? selectedPet.name : "Chưa chọn"}
+                        />
                         <SummaryRow label="Ngày sử dụng" value="---" />
                         <SummaryRow label="Giờ" value="---" />
                         <div className="h-px bg-slate-200 my-2" />

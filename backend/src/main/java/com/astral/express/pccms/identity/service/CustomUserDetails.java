@@ -8,11 +8,10 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.time.OffsetDateTime;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Getter
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -28,10 +27,11 @@ public class CustomUserDetails implements UserDetails {
         this.email = user.getEmail();
         this.password = user.getPasswordHash();
         this.active = user.getStatusCode() == com.astral.express.pccms.user.entity.UserStatus.ACTIVE;
-        this.authorities = user.getRole().getPermissions()
-                .stream()
-                .map(p -> new SimpleGrantedAuthority(p.getCode()))
-                .collect(Collectors.toSet());
+        Set<GrantedAuthority> granted = new HashSet<>();
+        granted.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().getCode()));
+        user.getRole().getPermissions()
+                .forEach(p -> granted.add(new SimpleGrantedAuthority(p.getCode())));
+        this.authorities = granted;
     }
 
     @Override public String getUsername() { return email; }

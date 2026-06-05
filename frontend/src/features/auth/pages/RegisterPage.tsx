@@ -24,8 +24,9 @@ export function RegisterPage() {
             login(data.token, data.refreshToken, data.user);
             toast.success("Đăng ký tài khoản thành công!");
             
-            const role = data.user.roleCode.toLowerCase();
-            const targetPath = ROUTES[role.toUpperCase() as keyof typeof ROUTES] || "/";
+            const roleKey = data.user.roleCode.toUpperCase();
+            const routeKey = roleKey === 'CUSTOMER' ? 'OWNER' : roleKey;
+            const targetPath = ROUTES[routeKey as keyof typeof ROUTES] || "/";
             if (typeof targetPath === "object" && targetPath.DASHBOARD) {
                 navigate(targetPath.DASHBOARD);
             } else if (typeof targetPath === "string") {

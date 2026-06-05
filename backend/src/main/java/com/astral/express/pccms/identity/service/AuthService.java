@@ -145,7 +145,6 @@ public class AuthService {
                 .hashedToken(hashToken(refreshToken))
                 .user(user)
                 .expiresAt(OffsetDateTime.now().plusSeconds(jwtUtil.getRefreshExpiration() / 1000))
-                .isRevoked(false)
                 .build();
         refreshTokenRepository.save(tokenEntity);
 

@@ -44,7 +44,10 @@ public enum ErrorCode {
     ERR_ACC_005_DEFAULT_ROLE_NOT_FOUND("ERR_ACC_003_DEFAULT_ROLE_NOT_FOUND", 400, "Không tìm thấy role mặc định"),
     ERR_PET_001_NOT_FOUND("ERR_PET_001_NOT_FOUND", 404, "Không tìm thấy thú cưng"),
     ERR_PET_INVALID_AGE_DATA("ERR_PET_INVALID_AGE_DATA", 400, "Phải nhập ngày sinh hoặc tháng tuổi dự kiến hợp lệ"),
-    ERR_PET_INVALID_WEIGHT("ERR_PET_INVALID_WEIGHT", 400, "Cân nặng thú cưng không hợp lệ");
+    ERR_PET_INVALID_WEIGHT("ERR_PET_INVALID_WEIGHT", 400, "Cân nặng phải là một con số hợp lệ"),
+    ERR_PET_SPECIES_NOT_FOUND("ERR_PET_SPECIES_NOT_FOUND", 404, "Không tìm thấy loài thú cưng"),
+    ERR_PET_BREED_NOT_FOUND("ERR_PET_BREED_NOT_FOUND", 404, "Không tìm thấy giống thú cưng"),
+    ERR_PET_BREED_SPECIES_MISMATCH("ERR_PET_BREED_SPECIES_MISMATCH", 400, "Giống thú cưng không thuộc loài đã chọn");
 
     private final String errorCode;
     private final int httpStatus;

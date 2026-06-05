@@ -37,28 +37,18 @@ describe('axiosClient', () => {
     expect(response).toEqual({ id: 1, name: 'Test' });
   });
 
-  it('redirects to /login and clears token on 401', async () => {
+  it('records auth failure on 401 when token was sent', async () => {
     localStorage.setItem('token', 'expired-token');
-    
-    // mock window.location.href
-    const originalLocation = window.location;
-    // @ts-ignore
-    delete window.location;
-    // @ts-ignore
-    window.location = { href: '' };
+    sessionStorage.clear();
 
     server.use(
-      http.get('*/test-401', () => {
-        return new HttpResponse(null, { status: 401 });
-      })
+      http.get('*/test-401', () => new HttpResponse(null, { status: 401 })),
+      http.post('*/auth/refresh', () => new HttpResponse(null, { status: 401 }))
     );
 
     await expect(axiosClient.get('/test-401')).rejects.toThrow();
-    expect(localStorage.getItem('token')).toBeNull();
-    expect(window.location.href).toBe('/login');
-
-    // @ts-ignore
-    window.location = originalLocation;
+    expect(sessionStorage.getItem('pccms:lastAuthFailure')).toContain('api-401');
+    expect(toast.error).toHaveBeenCalled();
   });
 
   it('shows toast error on 403', async () => {
