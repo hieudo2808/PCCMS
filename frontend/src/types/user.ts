@@ -1,4 +1,4 @@
-export type UserStatus = 'ACTIVE' | 'LOCKED' | 'INACTIVE';
+export type UserStatus = 'ACTIVE' | 'LOCKED' | 'DISABLED' | 'UNVERIFIED';
 export type UserRole = 'ADMIN' | 'VETERINARIAN' | 'STAFF' | 'OWNER';
 
 export interface UserResponse {

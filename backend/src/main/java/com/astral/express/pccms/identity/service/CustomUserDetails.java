@@ -10,6 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.OffsetDateTime;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -28,10 +29,13 @@ public class CustomUserDetails implements UserDetails {
         this.email = user.getEmail();
         this.password = user.getPasswordHash();
         this.active = user.getStatusCode() == com.astral.express.pccms.user.entity.UserStatus.ACTIVE;
-        this.authorities = user.getRole().getPermissions()
+        Set<GrantedAuthority> grantedAuthorities = user.getRole().getPermissions()
                 .stream()
                 .map(p -> new SimpleGrantedAuthority(p.getCode()))
                 .collect(Collectors.toSet());
+        grantedAuthorities = new HashSet<>(grantedAuthorities);
+        grantedAuthorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().getCode()));
+        this.authorities = grantedAuthorities;
     }
 
     @Override public String getUsername() { return email; }

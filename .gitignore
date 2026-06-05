@@ -5,3 +5,13 @@
 /frontend/node_modules
 
 /backend/src/main/resources/application.yml
+
+/.local-run
+/tmp-debug
+
+/.agentbrain
+/.agents
+/.claude
+/.cursor
+/AGENTS.md
+/.github/copilot-instructions.md

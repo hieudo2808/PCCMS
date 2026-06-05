@@ -34,7 +34,7 @@ describe('medicalRecordApi', () => {
 
     const result = await medicalRecordApi.getMedicalRecordById('mr-1');
     expect(result).toEqual(mockRecord);
-    expect(axiosClient.get).toHaveBeenCalledWith('/v1/medical-records/mr-1');
+    expect(axiosClient.get).toHaveBeenCalledWith('/api/v1/medical-records/mr-1');
   });
 
   it('updates medical record successfully', async () => {
@@ -43,7 +43,7 @@ describe('medicalRecordApi', () => {
     const data = { temperatureC: 39 };
     const result = await medicalRecordApi.updateMedicalRecord('mr-1', data);
     expect(result).toEqual(mockRecord);
-    expect(axiosClient.put).toHaveBeenCalledWith('/v1/medical-records/mr-1', data);
+    expect(axiosClient.put).toHaveBeenCalledWith('/api/v1/medical-records/mr-1', data);
   });
 
   it('finalizes medical record successfully', async () => {
@@ -52,7 +52,7 @@ describe('medicalRecordApi', () => {
     const data = { finalDiagnosis: 'Cured' };
     const result = await medicalRecordApi.finalizeMedicalRecord('mr-1', data);
     expect(result).toEqual(mockRecord);
-    expect(axiosClient.patch).toHaveBeenCalledWith('/v1/medical-records/mr-1/finalize', data);
+    expect(axiosClient.patch).toHaveBeenCalledWith('/api/v1/medical-records/mr-1/finalize', data);
   });
   
   it('creates prescription successfully', async () => {
@@ -62,6 +62,6 @@ describe('medicalRecordApi', () => {
     const data = { items: [{ medicineId: 'med-1', quantity: 10, dosageInstruction: '2 pills/day' }] };
     const result = await medicalRecordApi.createPrescription('mr-1', data);
     expect(result).toEqual(mockPrescription);
-    expect(axiosClient.post).toHaveBeenCalledWith('/v1/medical-records/mr-1/prescriptions', data);
+    expect(axiosClient.post).toHaveBeenCalledWith('/api/v1/medical-records/mr-1/prescriptions', data);
   });
 });

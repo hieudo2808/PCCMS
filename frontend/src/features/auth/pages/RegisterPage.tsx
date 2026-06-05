@@ -23,7 +23,7 @@ export function RegisterPage() {
         onSuccess: (data) => {
             login(data.token, data.refreshToken, data.user);
             toast.success("Đăng ký tài khoản thành công!");
-            
+
             const role = data.user.roleCode.toLowerCase();
             const targetPath = ROUTES[role.toUpperCase() as keyof typeof ROUTES] || "/";
             if (typeof targetPath === "object" && targetPath.DASHBOARD) {

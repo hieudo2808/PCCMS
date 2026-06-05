@@ -23,8 +23,7 @@ export function LoginPage() {
         onSuccess: (data) => {
             login(data.token, data.refreshToken, data.user);
             toast.success("Đăng nhập thành công!");
-            
-            // Redirect based on role
+
             const role = data.user.roleCode.toLowerCase();
             const targetPath = ROUTES[role.toUpperCase() as keyof typeof ROUTES] || "/";
             if (typeof targetPath === "object" && targetPath.DASHBOARD) {

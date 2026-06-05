@@ -64,7 +64,7 @@ class MedicineControllerTest {
 
         given(medicineService.createMedicine(any(MedicineCreateRequest.class))).willReturn(response);
 
-        mockMvc.perform(post("/api/v1/medicines")
+        mockMvc.perform(post("/v1/medicines")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -77,7 +77,7 @@ class MedicineControllerTest {
         // Missing name and unit
         MedicineCreateRequest request = new MedicineCreateRequest("CODE1", "", null, "", null, -10, BigDecimal.valueOf(-100));
 
-        mockMvc.perform(post("/api/v1/medicines")
+        mockMvc.perform(post("/v1/medicines")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -92,7 +92,7 @@ class MedicineControllerTest {
 
         given(medicineService.updateMedicine(eq(id), any(MedicineUpdateRequest.class))).willReturn(response);
 
-        mockMvc.perform(put("/api/v1/medicines/{id}", id)
+        mockMvc.perform(put("/v1/medicines/{id}", id)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -107,7 +107,7 @@ class MedicineControllerTest {
 
         given(medicineService.getMedicine(id)).willReturn(response);
 
-        mockMvc.perform(get("/api/v1/medicines/{id}", id))
+        mockMvc.perform(get("/v1/medicines/{id}", id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.id").value(id.toString()));
@@ -121,7 +121,7 @@ class MedicineControllerTest {
 
         given(medicineService.getAllMedicines(any(Pageable.class))).willReturn(pageResponse);
 
-        mockMvc.perform(get("/api/v1/medicines"))
+        mockMvc.perform(get("/v1/medicines"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
@@ -134,7 +134,7 @@ class MedicineControllerTest {
 
         given(medicineService.addStock(eq(id), any(AddStockRequest.class))).willReturn(response);
 
-        mockMvc.perform(patch("/api/v1/medicines/{id}/stock", id)
+        mockMvc.perform(patch("/v1/medicines/{id}/stock", id)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -146,7 +146,7 @@ class MedicineControllerTest {
     void should_ReturnSuccess_when_DeleteMedicine() throws Exception {
         UUID id = UUID.randomUUID();
 
-        mockMvc.perform(delete("/api/v1/medicines/{id}", id))
+        mockMvc.perform(delete("/v1/medicines/{id}", id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }

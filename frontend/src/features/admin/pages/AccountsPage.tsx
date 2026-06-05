@@ -56,8 +56,8 @@ export function AccountsPage() {
         return <Tag tone="green">ACTIVE</Tag>;
       case 'LOCKED':
         return <Tag tone="red">LOCKED</Tag>;
-      case 'INACTIVE':
-        return <Tag tone="amber">INACTIVE</Tag>;
+      case 'DISABLED':
+        return <Tag tone="amber">DISABLED</Tag>;
       default:
         return <Tag tone="default">{status}</Tag>;
     }
@@ -78,7 +78,7 @@ export function AccountsPage() {
   return (
     <div className="grid gap-6">
       <Card
-        title="Quản lý Tài khoản"
+        title="Quản lý tài khoản"
         right={
           <select
             className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
@@ -114,7 +114,7 @@ export function AccountsPage() {
                     Khóa
                   </Button>
                 )}
-                {user.statusCode !== 'INACTIVE' && (
+                {user.statusCode !== 'DISABLED' && (
                   <Button
                     variant="outline"
                     className="px-2 py-1 h-auto text-xs"

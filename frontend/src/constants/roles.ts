@@ -12,6 +12,8 @@ export const roles: Record<RoleKey, RoleConfig> = {
             "ownerDashboard",
             "pets",
             "unifiedBooking",
+            "groomingBooking",
+            "groomingTracking",
             "boardingTracking",
             "payments",
             "profile",

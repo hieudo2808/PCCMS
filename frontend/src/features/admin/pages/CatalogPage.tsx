@@ -8,6 +8,7 @@ import { Button, Input } from "~/components/atoms";
 import { Card, DataTable, EmptyState, Modal } from "~/components/molecules";
 import { medicineApi } from "../api/medicineApi";
 import type { MedicineResponse } from "~/types/medicine";
+import { GroomingAdminPanel } from "../components/GroomingAdminPanel";
 
 const medicineSchema = z.object({
     name: z.string().min(1, "Vui lòng nhập tên thuốc"),
@@ -138,6 +139,8 @@ export function CatalogPage() {
                     </div>
                 </form>
             </Modal>
+
+            <GroomingAdminPanel />
         </div>
     );
 }

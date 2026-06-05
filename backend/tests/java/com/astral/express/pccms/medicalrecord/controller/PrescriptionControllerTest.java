@@ -56,7 +56,7 @@ class PrescriptionControllerTest {
 
         doNothing().when(prescriptionService).createPrescription(eq(recordId), any(CreatePrescriptionRequest.class));
 
-        mockMvc.perform(post("/api/v1/medical-records/{id}/prescriptions", recordId)
+        mockMvc.perform(post("/v1/medical-records/{id}/prescriptions", recordId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -77,7 +77,7 @@ class PrescriptionControllerTest {
                 }
                 """.formatted(UUID.randomUUID());
 
-        mockMvc.perform(post("/api/v1/medical-records/{id}/prescriptions", recordId)
+        mockMvc.perform(post("/v1/medical-records/{id}/prescriptions", recordId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestJson))
                 .andExpect(status().isBadRequest());

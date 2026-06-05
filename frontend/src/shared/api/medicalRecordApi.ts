@@ -23,18 +23,18 @@ export interface PrescriptionResponse {
 
 export const medicalRecordApi = {
   getMedicalRecordById: (id: string): Promise<MedicalRecordResponse> => {
-    return axiosClient.get(`/v1/medical-records/${id}`);
+    return axiosClient.get(`/api/v1/medical-records/${id}`);
   },
 
   updateMedicalRecord: (id: string, data: UpdateMedicalRecordRequest): Promise<MedicalRecordResponse> => {
-    return axiosClient.put(`/v1/medical-records/${id}`, data);
+    return axiosClient.put(`/api/v1/medical-records/${id}`, data);
   },
 
   finalizeMedicalRecord: (id: string, data: FinalizeMedicalRecordRequest): Promise<MedicalRecordResponse> => {
-    return axiosClient.patch(`/v1/medical-records/${id}/finalize`, data);
+    return axiosClient.patch(`/api/v1/medical-records/${id}/finalize`, data);
   },
   
   createPrescription: (recordId: string, data: CreatePrescriptionRequest): Promise<PrescriptionResponse> => {
-    return axiosClient.post(`/v1/medical-records/${recordId}/prescriptions`, data);
+    return axiosClient.post(`/api/v1/medical-records/${recordId}/prescriptions`, data);
   }
 };

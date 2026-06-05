@@ -58,7 +58,7 @@ class PetControllerTest {
         PetResponse mockResponse = new PetResponse(petId, null, "Milo Updated", null, null, null, null, 12, BigDecimal.valueOf(5), null, null, null, null, null, true, java.util.Collections.emptyList());
         given(petService.updatePet(eq(petId), any(UpdatePetRequest.class))).willReturn(mockResponse);
 
-        mockMvc.perform(put("/api/v1/pets/{petId}", petId)
+        mockMvc.perform(put("/v1/pets/{petId}", petId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -78,7 +78,7 @@ class PetControllerTest {
         given(petService.updatePet(eq(petId), any(UpdatePetRequest.class)))
                 .willThrow(new BusinessException(ErrorCode.ERR_403_FORBIDDEN));
 
-        mockMvc.perform(put("/api/v1/pets/{petId}", petId)
+        mockMvc.perform(put("/v1/pets/{petId}", petId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden());
@@ -92,7 +92,7 @@ class PetControllerTest {
         given(petService.getPet(eq(petId)))
                 .willThrow(new BusinessException(ErrorCode.ERR_403_FORBIDDEN));
 
-        mockMvc.perform(get("/api/v1/pets/{petId}", petId))
+        mockMvc.perform(get("/v1/pets/{petId}", petId))
                 .andExpect(status().isForbidden());
     }
 }

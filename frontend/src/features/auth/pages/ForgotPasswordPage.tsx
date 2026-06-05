@@ -21,7 +21,7 @@ export function ForgotPasswordPage() {
                 {step === 1 && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
                         <Input
-                            label="Email hoặc Số điện thoại"
+                            label="Email hoặc số điện thoại"
                             placeholder="name@domain.com hoặc 0912..."
                         />
                         <Button
@@ -65,7 +65,7 @@ export function ForgotPasswordPage() {
                             variant="primary"
                             onClick={() => navigate("/login")}
                         >
-                            Lưu mật khẩu & Đăng nhập
+                            Lưu mật khẩu và đăng nhập
                         </Button>
                     </div>
                 )}
