@@ -3,11 +3,11 @@ server:
 
 spring:
     application:
-        name: pccms
+        name: 
     datasource:
         url: jdbc:sqlserver://localhost:17288;database=CodeTrials;encrypt=true;trustServerCertificate=true
-        username: sa
-        password: 1234567890
+        username: 
+        password: 
         driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
     jpa:
         hibernate:
