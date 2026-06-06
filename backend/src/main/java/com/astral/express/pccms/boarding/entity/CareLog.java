@@ -1,23 +1,28 @@
 package com.astral.express.pccms.boarding.entity;
 
+import com.astral.express.pccms.common.domain.AuditableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
-import org.hibernate.annotations.Immutable;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Immutable
 @Table(name = "care_logs")
 @Getter
-public class CareLog {
+@Setter
+@NoArgsConstructor
+public class CareLog extends AuditableEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "session_id", nullable = false)
@@ -46,7 +51,4 @@ public class CareLog {
 
     @Column(name = "staff_note")
     private String staffNote;
-
-    @Column(name = "created_at", nullable = false)
-    private OffsetDateTime createdAt;
 }

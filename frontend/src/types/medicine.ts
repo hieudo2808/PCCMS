@@ -12,23 +12,25 @@ export interface MedicineResponse {
 }
 
 export interface CreateMedicineRequest {
+  medicineCode: string;
   name: string;
   categoryId: string;
   unit: string;
   defaultInstruction?: string;
-  initialStock: number;
+  currentStock: number;
   unitPriceVnd: number;
 }
 
 export interface UpdateMedicineRequest {
-  name?: string;
-  categoryId?: string;
-  unit?: string;
+  medicineCode: string;
+  name: string;
+  categoryId: string;
+  unit: string;
   defaultInstruction?: string;
-  unitPriceVnd?: number;
+  currentStock: number;
+  unitPriceVnd: number;
 }
 
 export interface AddStockRequest {
-  quantity: number;
-  note?: string;
+  quantityToAdd: number;
 }

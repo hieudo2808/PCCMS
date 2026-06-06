@@ -9,6 +9,10 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 public record MedicineUpdateRequest(
+        @NotBlank(message = "Medicine code is required")
+        @Size(max = 60, message = "Medicine code must not exceed 60 characters")
+        String medicineCode,
+
         @NotBlank(message = "Name is required")
         @Size(max = 160, message = "Name must not exceed 160 characters")
         String name,

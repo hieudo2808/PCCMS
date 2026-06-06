@@ -10,7 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -24,8 +26,13 @@ public class PetCatalogServiceImpl implements PetCatalogService {
     @Transactional(readOnly = true)
     public List<PetSpeciesResponse> listActiveSpecies() {
         return petSpeciesRepository.findAllByIsActiveTrueOrderByNameAsc().stream()
+                .filter(s -> !isCorruptedCatalogName(s.getName()))
                 .map(s -> new PetSpeciesResponse(s.getId(), s.getName()))
                 .toList();
+    }
+
+    private static boolean isCorruptedCatalogName(String name) {
+        return name == null || name.contains("?") || name.contains("\uFFFD");
     }
 
     @Override
@@ -34,8 +41,12 @@ public class PetCatalogServiceImpl implements PetCatalogService {
         petSpeciesRepository.findByIdAndIsActiveTrue(speciesId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ERR_PET_SPECIES_NOT_FOUND));
 
-        return petBreedsRepository.findBySpeciesIdAndIsActiveTrueOrderByNameAsc(speciesId).stream()
-                .map(b -> new PetBreedResponse(b.getId(), speciesId, b.getName()))
-                .toList();
+        Map<String, PetBreedResponse> uniqueByName = new LinkedHashMap<>();
+        petBreedsRepository.findBySpeciesIdAndIsActiveTrueOrderByNameAsc(speciesId).stream()
+                .filter(b -> !isCorruptedCatalogName(b.getName()))
+                .forEach(b -> uniqueByName.putIfAbsent(
+                        b.getName(),
+                        new PetBreedResponse(b.getId(), speciesId, b.getName())));
+        return List.copyOf(uniqueByName.values());
     }
 }

@@ -87,7 +87,7 @@ class MedicineControllerTest {
     @Test
     void should_ReturnUpdatedMedicine_when_ValidRequest() throws Exception {
         UUID id = UUID.randomUUID();
-        MedicineUpdateRequest request = new MedicineUpdateRequest("Medicine Updated", null, "Box", null, 10, BigDecimal.valueOf(100));
+        MedicineUpdateRequest request = new MedicineUpdateRequest("CODE1", "Medicine Updated", null, "Box", null, 10, BigDecimal.valueOf(100));
         MedicineResponse response = new MedicineResponse(id, "CODE1", "Medicine Updated", null, null, "Box", null, 10, BigDecimal.valueOf(100), true);
 
         given(medicineService.updateMedicine(eq(id), any(MedicineUpdateRequest.class))).willReturn(response);
@@ -119,7 +119,7 @@ class MedicineControllerTest {
         MedicineResponse response = new MedicineResponse(id, "CODE1", "Medicine 1", null, null, "Box", null, 10, BigDecimal.valueOf(100), true);
         PageResponse<MedicineResponse> pageResponse = PageResponse.of(new org.springframework.data.domain.PageImpl<>(List.of(response)));
 
-        given(medicineService.getAllMedicines(any(Pageable.class))).willReturn(pageResponse);
+        given(medicineService.getAllMedicines(any(), any(Pageable.class))).willReturn(pageResponse);
 
         mockMvc.perform(get("/v1/medicines"))
                 .andExpect(status().isOk())

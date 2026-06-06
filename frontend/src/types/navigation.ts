@@ -11,6 +11,7 @@ export type ScreenKey =
     | "ownerDashboard"
     | "pets"
     | "unifiedBooking"
+    | "ownerAppointments"
     | "boardingTracking"
     | "payments"
     | "profile"

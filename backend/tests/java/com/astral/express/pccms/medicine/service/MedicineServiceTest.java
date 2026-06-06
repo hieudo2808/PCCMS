@@ -7,7 +7,9 @@ import com.astral.express.pccms.medicine.dto.request.MedicineCreateRequest;
 import com.astral.express.pccms.medicine.dto.request.MedicineUpdateRequest;
 import com.astral.express.pccms.medicine.dto.response.MedicineResponse;
 import com.astral.express.pccms.medicine.entity.Medicine;
+import com.astral.express.pccms.medicine.entity.MedicineCategory;
 import com.astral.express.pccms.medicine.mapper.MedicineMapper;
+import com.astral.express.pccms.medicalrecord.repository.PrescriptionItemRepository;
 import com.astral.express.pccms.medicine.repository.MedicineCategoryRepository;
 import com.astral.express.pccms.medicine.repository.MedicineRepository;
 import com.astral.express.pccms.medicine.service.impl.MedicineServiceImpl;
@@ -40,6 +42,9 @@ class MedicineServiceTest {
     @Mock
     private MedicineMapper medicineMapper;
 
+    @Mock
+    private PrescriptionItemRepository prescriptionItemRepository;
+
     @InjectMocks
     private MedicineServiceImpl medicineService;
 
@@ -47,23 +52,29 @@ class MedicineServiceTest {
     @CsvFileSource(resources = "/testcases/medicine-service.csv", numLinesToSkip = 1)
     void executeMedicineServiceTests(String ruleId, String caseId, String action, BigDecimal inputPrice, Integer inputStock, String mockState, String expectedResult, ErrorCode expectedError, String note) {
         UUID medicineId = UUID.randomUUID();
+        UUID categoryId = UUID.randomUUID();
+        MedicineCategory mockCategory = new MedicineCategory();
+        mockCategory.setId(categoryId);
+        mockCategory.setName("Kháng sinh");
+
         Medicine mockMedicine = new Medicine();
         mockMedicine.setId(medicineId);
         mockMedicine.setCurrentStock(10);
         mockMedicine.setUnitPriceVnd(BigDecimal.valueOf(150000));
         mockMedicine.setIsActive(true);
 
-        MedicineCreateRequest createReq = new MedicineCreateRequest("MED01", "Name", null, "Unit", null, inputStock, inputPrice);
-        MedicineUpdateRequest updateReq = new MedicineUpdateRequest("New Name", null, "Unit", null, inputStock, inputPrice);
+        MedicineCreateRequest createReq = new MedicineCreateRequest("MED01", "Name", categoryId, "Unit", null, inputStock, inputPrice);
+        MedicineUpdateRequest updateReq = new MedicineUpdateRequest("MED01", "New Name", null, "Unit", null, inputStock, inputPrice);
         AddStockRequest addStockReq = new AddStockRequest(inputStock); // inputStock acts as quantityToAdd here
 
         // GIVEN
         switch (action) {
             case "CREATE":
                 if ("VALID".equals(mockState) && inputPrice.compareTo(BigDecimal.ZERO) >= 0 && inputStock >= 0) {
+                    given(categoryRepository.findById(categoryId)).willReturn(Optional.of(mockCategory));
                     given(medicineMapper.toMedicine(createReq)).willReturn(mockMedicine);
                     given(medicineRepository.save(any(Medicine.class))).willAnswer(inv -> inv.getArgument(0));
-                    given(medicineMapper.toMedicineResponse(mockMedicine)).willReturn(new MedicineResponse(medicineId, "MED01", "Name", null, null, "Unit", null, inputStock, inputPrice, true));
+                    given(medicineMapper.toMedicineResponse(mockMedicine)).willReturn(new MedicineResponse(medicineId, "MED01", "Name", categoryId, "Kháng sinh", "Unit", null, inputStock, inputPrice, true));
                 }
                 break;
             case "UPDATE":

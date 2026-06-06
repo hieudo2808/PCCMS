@@ -20,4 +20,21 @@ public interface UserRepository extends JpaRepository<Users, UUID> {
     Optional<Users> findByEmailWithRoleAndPermissions(@Param("email") String email);
 
     boolean existsByEmail(String email);
+
+    @Query("""
+            SELECT u FROM Users u
+            JOIN FETCH u.role r
+            WHERE REPLACE(REPLACE(REPLACE(u.phone, ' ', ''), '.', ''), '-', '') = :normalizedPhone
+            """)
+    Optional<Users> findByNormalizedPhone(@Param("normalizedPhone") String normalizedPhone);
+
+    @Query(value = """
+            SELECT u.* FROM users u
+            INNER JOIN roles r ON r.id = u.role_id
+            WHERE r.code = :roleCode
+              AND u.status_code::text = 'ACTIVE'
+              AND u.deleted_at IS NULL
+            ORDER BY u.full_name ASC
+            """, nativeQuery = true)
+    java.util.List<Users> findActiveByRoleCode(@Param("roleCode") String roleCode);
 }

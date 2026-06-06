@@ -28,28 +28,29 @@ export const screenMeta: Record<ScreenKey, ScreenMetaItem> = {
     ownerDashboard: { label: "Dashboard", icon: Home, path: "/owner" },
     pets: { label: "Hồ sơ thú cưng", icon: PawPrint, path: "/owner/pets" },
     unifiedBooking: { label: "Đặt lịch hẹn", icon: Stethoscope, path: "/owner/book" },
+    ownerAppointments: { label: "Lịch hẹn của tôi", icon: ClipboardList, path: "/owner/appointments" },
     boardingTracking: { label: "Theo dõi lưu trú", icon: Camera, path: "/owner/boarding/tracking" },
     payments: { label: "Lịch sử thanh toán", icon: CreditCard, path: "/owner/payments" },
     profile: { label: "Thông tin cá nhân", icon: User, path: "/owner/profile" },
 
-    // Reception
-    receptionDashboard: { label: "Dashboard nhân viên", icon: Home, path: "/reception" },
+    // Staff (lễ tân / tiếp nhận)
+    receptionDashboard: { label: "Dashboard nhân viên", icon: Home, path: "/staff" },
     appointmentReception: {
         label: "Tiếp nhận hẹn khám",
         icon: ClipboardList,
-        path: "/reception/appointments",
+        path: "/staff/appointments",
     },
     groomingBoard: {
         label: "Kanban dịch vụ spa",
         icon: Sparkles,
-        path: "/reception/grooming-board",
+        path: "/staff/grooming-board",
     },
-    boardingLog: { label: "Nhật ký lưu trú", icon: FileText, path: "/reception/boarding-log" },
+    boardingLog: { label: "Nhật ký lưu trú", icon: FileText, path: "/staff/boarding-log" },
 
-    // Doctor
-    doctorDashboard: { label: "Dashboard bác sĩ", icon: Home, path: "/doctor" },
-    doctorQueue: { label: "Danh sách chờ khám", icon: HeartPulse, path: "/doctor/queue" },
-    medicalRecord: { label: "Bệnh án & kê đơn", icon: FileText, path: "/doctor/medical-record" },
+    // Veterinarian
+    doctorDashboard: { label: "Dashboard bác sĩ", icon: Home, path: "/veterinarian" },
+    doctorQueue: { label: "Danh sách chờ khám", icon: HeartPulse, path: "/veterinarian/queue" },
+    medicalRecord: { label: "Bệnh án & kê đơn", icon: FileText, path: "/veterinarian/medical-record" },
 
     // Admin
     adminDashboard: { label: "Dashboard quản trị", icon: Home, path: "/admin" },

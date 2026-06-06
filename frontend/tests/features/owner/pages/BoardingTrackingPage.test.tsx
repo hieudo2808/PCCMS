@@ -124,7 +124,7 @@ describe('BoardingTrackingPage', () => {
     renderPage();
 
     await waitFor(() => {
-      expect(screen.getAllByText(PET_MESSAGES.careLogsUpdating).length).toBeGreaterThan(0);
+      expect(screen.getByText('Chưa có nhật ký chăm sóc cho bộ lọc này.')).toBeInTheDocument();
     });
   });
 });

@@ -16,6 +16,7 @@ import {
     OwnerDashboard,
     PetProfilesPage,
     UnifiedBookingPage,
+    OwnerAppointmentsPage,
     BoardingTrackingPage,
     PaymentsPage,
     ProfilePage,
@@ -120,6 +121,7 @@ export const router = createBrowserRouter([
             { index: true, element: <OwnerDashboard /> },
             { path: "pets", element: <PetProfilesPage /> },
             { path: "book", element: <UnifiedBookingPage /> },
+            { path: "appointments", element: <OwnerAppointmentsPage /> },
             { path: "boarding/tracking", element: <BoardingTrackingPage /> },
             { path: "payments", element: <PaymentsPage /> },
             { path: "profile", element: <ProfilePage /> },
@@ -170,4 +172,13 @@ export const router = createBrowserRouter([
             { path: "reports", element: <ReportsPage /> },
         ],
     },
+
+    // Legacy path redirects
+    { path: "/reception", element: <Navigate to="/staff" replace /> },
+    { path: "/reception/appointments", element: <Navigate to="/staff/appointments" replace /> },
+    { path: "/reception/grooming-board", element: <Navigate to="/staff/grooming-board" replace /> },
+    { path: "/reception/boarding-log", element: <Navigate to="/staff/boarding-log" replace /> },
+    { path: "/doctor", element: <Navigate to="/veterinarian" replace /> },
+    { path: "/doctor/queue", element: <Navigate to="/veterinarian/queue" replace /> },
+    { path: "/doctor/medical-record", element: <Navigate to="/veterinarian/medical-record" replace /> },
 ]);

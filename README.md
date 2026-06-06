@@ -119,6 +119,26 @@ PCCMS/
 └── scripts/setup.ps1
 ```
 
+## Tài khoản demo (local)
+
+Mật khẩu trong DB phải khớp `security.pepper` của backend (`PepperBCryptEncoder`). Sau khi init schema hoặc khi đăng nhập báo **sai mật khẩu**, chạy:
+
+```powershell
+Get-Content database\seeds\reset_demo_passwords.sql -Encoding UTF8 -Raw | docker exec -i pccms-postgres psql -U pccms -d pccms
+```
+
+| Vai trò | Email | Mật khẩu | Sau đăng nhập |
+|---------|-------|----------|---------------|
+| Chủ nuôi | `owner@pccms.vn` | `owner123` | `/owner` — đặt lịch, xem lịch hẹn |
+| Chủ nuôi (có 3 thú cương) | `hoangvanthang.work@gmail.com` | `owner123` | `/owner` |
+| Nhân viên lễ tân | `staff.le@pccms.vn` | `staff123` | `/staff/appointments` — tiếp nhận, walk-in |
+| Bác sĩ | `vet.an@pccms.vn` | `vet123` | `/veterinarian/queue` |
+| Quản trị | `admin@pccms.vn` | `admin123` | `/admin` |
+
+**Duyệt lịch khám:** đăng nhập STAFF → **Tiếp nhận lịch hẹn** → lọc *Chờ tiếp nhận* → **Tiếp nhận** / **Hủy**.
+
+**Duyệt spa:** STAFF → **Bảng spa (grooming)** → chuyển trạng thái *Chờ xác nhận* → *Đang phục vụ* → *Hoàn thành*.
+
 ## Ghi chú
 
 - `spring.jpa.hibernate.ddl-auto: validate` — schema phải khớp với DB (dùng file SQL trong `database/`).

@@ -24,6 +24,25 @@ public enum ErrorCode {
     ERR_MED_004_MEDICINE_NOT_FOUND("ERR_MED_004_MEDICINE_NOT_FOUND", 404, "Không tìm thấy thuốc"),
     ERR_MED_005_MEDICINE_CODE_EXISTS("ERR_MED_005_MEDICINE_CODE_EXISTS", 400, "Mã thuốc đã tồn tại"),
     ERR_MED_006_MEDICINE_CATEGORY_NOT_FOUND("ERR_MED_006_MEDICINE_CATEGORY_NOT_FOUND", 404, "Không tìm thấy danh mục thuốc"),
+    ERR_MED_007_MEDICINE_NAME_EXISTS("ERR_MED_007_MEDICINE_NAME_EXISTS", 400, "Tên thuốc và đơn vị đã tồn tại"),
+    ERR_MED_008_MEDICINE_IN_USE("ERR_MED_008_MEDICINE_IN_USE", 400, "Thuốc đang được sử dụng, không thể xóa"),
+    ERR_MED_009_CATEGORY_NAME_EXISTS("ERR_MED_009_CATEGORY_NAME_EXISTS", 400, "Tên nhóm thuốc đã tồn tại"),
+    ERR_MED_010_CATEGORY_IN_USE("ERR_MED_010_CATEGORY_IN_USE", 400, "Nhóm thuốc đang được sử dụng, không thể xóa"),
+
+    // Catalog — Service
+    ERR_SVC_001_NOT_FOUND("ERR_SVC_001_NOT_FOUND", 404, "Không tìm thấy dịch vụ"),
+    ERR_SVC_002_CODE_EXISTS("ERR_SVC_002_CODE_EXISTS", 400, "Mã dịch vụ đã tồn tại"),
+    ERR_SVC_003_NAME_EXISTS("ERR_SVC_003_NAME_EXISTS", 400, "Tên dịch vụ đã tồn tại"),
+    ERR_SVC_004_IN_USE("ERR_SVC_004_IN_USE", 400, "Dịch vụ đang được sử dụng, không thể xóa"),
+
+    // Catalog — Room
+    ERR_ROOM_001_NOT_FOUND("ERR_ROOM_001_NOT_FOUND", 404, "Không tìm thấy phòng lưu trú"),
+    ERR_ROOM_002_CODE_EXISTS("ERR_ROOM_002_CODE_EXISTS", 400, "Mã phòng đã tồn tại"),
+    ERR_ROOM_003_NAME_EXISTS("ERR_ROOM_003_NAME_EXISTS", 400, "Tên phòng đã tồn tại"),
+    ERR_ROOM_004_TYPE_NOT_FOUND("ERR_ROOM_004_TYPE_NOT_FOUND", 404, "Không tìm thấy loại phòng"),
+    ERR_ROOM_005_TYPE_CODE_EXISTS("ERR_ROOM_005_TYPE_CODE_EXISTS", 400, "Mã loại phòng đã tồn tại"),
+    ERR_ROOM_006_ROOM_OCCUPIED("ERR_ROOM_006_ROOM_OCCUPIED", 400, "Phòng đang sử dụng, không thể xóa"),
+    ERR_ROOM_007_TYPE_IN_USE("ERR_ROOM_007_TYPE_IN_USE", 400, "Loại phòng đang được sử dụng, không thể xóa"),
     ERR_VACC_001_INVALID_DUE_DATE("ERR_VACC_001_INVALID_DUE_DATE", 400, "Ngày hẹn tiêm tiếp theo không được trước ngày tiêm"),
     
     // Medical Record
@@ -47,7 +66,22 @@ public enum ErrorCode {
     ERR_PET_INVALID_WEIGHT("ERR_PET_INVALID_WEIGHT", 400, "Cân nặng phải là một con số hợp lệ"),
     ERR_PET_SPECIES_NOT_FOUND("ERR_PET_SPECIES_NOT_FOUND", 404, "Không tìm thấy loài thú cưng"),
     ERR_PET_BREED_NOT_FOUND("ERR_PET_BREED_NOT_FOUND", 404, "Không tìm thấy giống thú cưng"),
-    ERR_PET_BREED_SPECIES_MISMATCH("ERR_PET_BREED_SPECIES_MISMATCH", 400, "Giống thú cưng không thuộc loài đã chọn");
+    ERR_PET_BREED_SPECIES_MISMATCH("ERR_PET_BREED_SPECIES_MISMATCH", 400, "Giống thú cưng không thuộc loài đã chọn"),
+
+    // 5. Appointment & Reception
+    ERR_APT_001_NOT_FOUND("ERR_APT_001_NOT_FOUND", 404, "Không tìm thấy lịch hẹn"),
+    ERR_APT_002_PAST_DATETIME("ERR_APT_002_PAST_DATETIME", 400, "Thời gian hẹn không hợp lệ (thuộc về quá khứ)"),
+    ERR_APT_003_ALREADY_CANCELLED("ERR_APT_003_ALREADY_CANCELLED", 400, "Lịch hẹn đã bị hủy"),
+    ERR_APT_004_ALREADY_CHECKED_IN("ERR_APT_004_ALREADY_CHECKED_IN", 400, "Lịch hẹn đã được tiếp nhận trước đó"),
+    ERR_APT_005_NO_VET_AVAILABLE("ERR_APT_005_NO_VET_AVAILABLE", 400, "Không còn bác sĩ hoặc khung giờ phù hợp"),
+    ERR_APT_006_SERVICE_NOT_FOUND("ERR_APT_006_SERVICE_NOT_FOUND", 404, "Không tìm thấy dịch vụ khám"),
+    ERR_APT_007_CANNOT_CANCEL("ERR_APT_007_CANNOT_CANCEL", 400, "Không thể hủy lịch hẹn ở trạng thái hiện tại"),
+    ERR_APT_008_PHONE_REQUIRED("ERR_APT_008_PHONE_REQUIRED", 400, "Cần nhập SĐT khi tạo nhanh"),
+    ERR_APT_009_SLOT_FULL("ERR_APT_009_SLOT_FULL", 400, "Rất tiếc, khung giờ này phòng khám đã kín lịch. Vui lòng chọn khung giờ khác!"),
+
+    // Boarding
+    ERR_BRG_001_SESSION_NOT_FOUND("ERR_BRG_001_SESSION_NOT_FOUND", 404, "Không tìm thấy phiên lưu trú"),
+    ERR_BRG_002_SESSION_NOT_ACTIVE("ERR_BRG_002_SESSION_NOT_ACTIVE", 400, "Thú cưng không còn trong thời gian lưu trú");
 
     private final String errorCode;
     private final int httpStatus;

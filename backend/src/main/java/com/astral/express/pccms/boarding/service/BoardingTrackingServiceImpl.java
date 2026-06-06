@@ -4,6 +4,7 @@ import com.astral.express.pccms.boarding.dto.response.BoardingStayResponse;
 import com.astral.express.pccms.boarding.dto.response.CareLogResponse;
 import com.astral.express.pccms.boarding.entity.CareLog;
 import com.astral.express.pccms.boarding.repository.CareLogRepository;
+import com.astral.express.pccms.boarding.support.BoardingPeriodLabels;
 import com.astral.express.pccms.pet.entity.Pets;
 import com.astral.express.pccms.pet.repository.PetRepository;
 import lombok.RequiredArgsConstructor;
@@ -59,7 +60,7 @@ public class BoardingTrackingServiceImpl implements BoardingTrackingService {
                             petName,
                             log.getLogDate(),
                             log.getPeriodCode(),
-                            toPeriodLabel(log.getPeriodCode()),
+                            BoardingPeriodLabels.toPeriodLabel(log.getPeriodCode()),
                             log.getFeedingStatus(),
                             log.getHygieneStatus(),
                             log.getHealthNote(),
@@ -68,14 +69,5 @@ public class BoardingTrackingServiceImpl implements BoardingTrackingService {
                     );
                 })
                 .toList();
-    }
-
-    private static String toPeriodLabel(String periodCode) {
-        return switch (periodCode) {
-            case "MORNING" -> "Sáng";
-            case "NOON" -> "Trưa";
-            case "AFTERNOON" -> "Chiều";
-            default -> periodCode;
-        };
     }
 }

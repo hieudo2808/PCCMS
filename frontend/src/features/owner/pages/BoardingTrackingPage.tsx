@@ -91,7 +91,7 @@ export function BoardingTrackingPage() {
 
           {!logsLoading && careLogs.length === 0 && (
             <p className="py-8 text-center text-sm text-slate-500">
-              {PET_MESSAGES.careLogsUpdating}
+              Chưa có nhật ký chăm sóc cho bộ lọc này.
             </p>
           )}
 
@@ -129,7 +129,7 @@ export function BoardingTrackingPage() {
         <Card title="Chi tiết nhật ký">
           {!selectedLog ? (
             <p className="py-8 text-center text-sm text-slate-500">
-              {PET_MESSAGES.careLogsUpdating}
+              Chọn một mục nhật ký bên trái để xem chi tiết.
             </p>
           ) : (
             <>

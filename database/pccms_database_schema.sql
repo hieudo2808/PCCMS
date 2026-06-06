@@ -700,6 +700,74 @@ INSERT INTO exam_rooms (room_code, name, floor) VALUES
 ('PKB-02', 'Phòng khám 2', 1)
 ON CONFLICT DO NOTHING;
 
+-- Bác sĩ thú y mặc định (phục vụ đặt lịch / khung giờ khám)
+INSERT INTO users (id, email, phone, password_hash, full_name, role_id, status_code)
+VALUES
+    ('11111111-1111-1111-1111-000000000001', 'vet.an@pccms.vn', '0901000001',
+     crypt('vet123', gen_salt('bf')), 'Trần Văn An',
+     (SELECT id FROM roles WHERE code = 'VETERINARIAN'), 'ACTIVE'),
+    ('11111111-1111-1111-1111-000000000002', 'vet.huong@pccms.vn', '0901000002',
+     crypt('vet123', gen_salt('bf')), 'Lê Thị Hương',
+     (SELECT id FROM roles WHERE code = 'VETERINARIAN'), 'ACTIVE')
+ON CONFLICT (email) DO NOTHING;
+
+INSERT INTO staff_profiles (user_id, staff_code, professional_title, is_service_provider)
+SELECT u.id, v.staff_code, 'Bác sĩ thú y', TRUE
+FROM (VALUES
+    ('11111111-1111-1111-1111-000000000001'::uuid, 'VET-001'),
+    ('11111111-1111-1111-1111-000000000002'::uuid, 'VET-002')
+) AS v(user_id, staff_code)
+JOIN users u ON u.id = v.user_id
+ON CONFLICT (user_id) DO NOTHING;
+
+INSERT INTO work_schedules (staff_id, work_date, shift_id, exam_room_id, capacity, status_code)
+SELECT v.staff_id, d.work_date, sh.id, er.id, 4, 'ASSIGNED'
+FROM (VALUES
+    ('11111111-1111-1111-1111-000000000001'::uuid),
+    ('11111111-1111-1111-1111-000000000002'::uuid)
+) AS v(staff_id)
+CROSS JOIN generate_series(CURRENT_DATE, CURRENT_DATE + 60, INTERVAL '1 day') AS d(work_date)
+CROSS JOIN shifts sh
+CROSS JOIN LATERAL (SELECT id FROM exam_rooms WHERE room_code = 'PKB-01' LIMIT 1) er
+WHERE sh.code IN ('MORNING', 'AFTERNOON')
+ON CONFLICT (staff_id, work_date, shift_id) DO NOTHING;
+
+-- Nhân viên lễ tân mặc định (tiếp nhận lịch hẹn UC013)
+INSERT INTO users (id, email, phone, password_hash, full_name, role_id, status_code)
+VALUES (
+    '22222222-2222-2222-2222-000000000001',
+    'staff.le@pccms.vn',
+    '0902000001',
+    crypt('staff123', gen_salt('bf')),
+    'Nguyễn Thị Lệ',
+    (SELECT id FROM roles WHERE code = 'STAFF'),
+    'ACTIVE'
+) ON CONFLICT (email) DO NOTHING;
+
+INSERT INTO staff_profiles (user_id, staff_code, professional_title, is_service_provider)
+VALUES (
+    '22222222-2222-2222-2222-000000000001',
+    'STAFF-001',
+    'Nhân viên tiếp nhận',
+    FALSE
+) ON CONFLICT (user_id) DO NOTHING;
+
+INSERT INTO medicine_categories (id, name, description) VALUES
+('aaaaaaaa-aaaa-aaaa-aaaa-000000000001', 'Kháng sinh', 'Nhóm thuốc kháng sinh điều trị nhiễm khuẩn'),
+('aaaaaaaa-aaaa-aaaa-aaaa-000000000002', 'Giảm đau - Hạ sốt', 'Thuốc giảm đau, hạ sốt cho thú cưng'),
+('aaaaaaaa-aaaa-aaaa-aaaa-000000000003', 'Vitamin & Bổ sung', 'Vitamin và dưỡng chất bổ sung'),
+('aaaaaaaa-aaaa-aaaa-aaaa-000000000004', 'Kháng viêm', 'Thuốc kháng viêm, chống dị ứng'),
+('aaaaaaaa-aaaa-aaaa-aaaa-000000000005', 'Tiêu hóa', 'Thuốc hỗ trợ tiêu hóa')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO medicines (medicine_code, name, category_id, unit, default_instruction, current_stock, unit_price_vnd) VALUES
+('MED001', 'Amoxicillin 500mg', 'aaaaaaaa-aaaa-aaaa-aaaa-000000000001', 'Viên', 'Ngày 2 lần sau ăn', 120, 5000),
+('MED002', 'Meloxicam 1.5mg', 'aaaaaaaa-aaaa-aaaa-aaaa-000000000002', 'Viên', 'Ngày 1 lần sau ăn', 80, 8000),
+('MED003', 'Vitamin B Complex', 'aaaaaaaa-aaaa-aaaa-aaaa-000000000003', 'Viên', 'Ngày 1 lần', 200, 3000),
+('MED004', 'Prednisolone 5mg', 'aaaaaaaa-aaaa-aaaa-aaaa-000000000004', 'Viên', 'Theo chỉ định bác sĩ', 60, 4500),
+('MED005', 'Probiotics Pet', 'aaaaaaaa-aaaa-aaaa-aaaa-000000000005', 'Gói', 'Pha vào thức ăn ngày 1 lần', 45, 12000)
+ON CONFLICT DO NOTHING;
+
 INSERT INTO grooming_stations (station_code, name) VALUES
 ('SPA-01', 'Bàn spa 1'),
 ('SPA-02', 'Bàn spa 2'),
