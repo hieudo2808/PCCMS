@@ -1,0 +1,58 @@
+package com.astral.express.pccms.billing.entity;
+
+import com.astral.express.pccms.boarding.entity.ServiceOrder;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.math.BigDecimal;
+import java.util.UUID;
+
+@Entity
+@Table(name = "invoice_lines")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class InvoiceLine {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "invoice_id", nullable = false)
+    private Invoice invoice;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "service_order_id")
+    private ServiceOrder serviceOrder;
+
+    @Column(name = "description", nullable = false, columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "quantity", nullable = false, precision = 12, scale = 2)
+    private BigDecimal quantity;
+
+    @Column(name = "unit_price_vnd", nullable = false, precision = 14, scale = 2)
+    private BigDecimal unitPriceVnd;
+
+    @Column(name = "subtotal_vnd", insertable = false, updatable = false, precision = 14, scale = 2)
+    private BigDecimal subtotalVnd;
+
+    @Column(name = "line_order", nullable = false)
+    @Builder.Default
+    private Integer lineOrder = 1;
+}

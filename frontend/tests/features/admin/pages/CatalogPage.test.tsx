@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import userEvent from '@testing-library/user-event';
 import type { PageResponse } from '~/types/api';
 import type { MedicineResponse } from '~/types/medicine';
+import { groomingApi } from '~/features/grooming/api/groomingApi';
 
 vi.mock('~/features/admin/api/medicineApi', () => ({
   medicineApi: {
@@ -13,6 +14,17 @@ vi.mock('~/features/admin/api/medicineApi', () => ({
     createMedicine: vi.fn(),
     updateMedicine: vi.fn(),
     deleteMedicine: vi.fn(),
+  },
+}));
+
+vi.mock('~/features/grooming/api/groomingApi', () => ({
+  groomingApi: {
+    getAdminServices: vi.fn(),
+    getAdminStations: vi.fn(),
+    createAdminService: vi.fn(),
+    deactivateAdminService: vi.fn(),
+    createStation: vi.fn(),
+    deactivateStation: vi.fn(),
   },
 }));
 
@@ -66,6 +78,8 @@ const renderWithProviders = (ui: React.ReactElement) => {
 describe('CatalogPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(groomingApi.getAdminServices).mockResolvedValue([]);
+    vi.mocked(groomingApi.getAdminStations).mockResolvedValue([]);
   });
 
   it('renders loading state initially', () => {
@@ -115,10 +129,10 @@ describe('CatalogPage', () => {
     await userEvent.type(screen.getByLabelText(/Tên thuốc/i), 'Vitamin C');
     await userEvent.type(screen.getByLabelText(/Danh mục/i), 'cat-2');
     await userEvent.type(screen.getByLabelText(/Đơn vị/i), 'Vỉ');
-    await userEvent.type(screen.getByLabelText(/Giá/i), '50000');
+    await userEvent.type(screen.getByLabelText(/^Giá \(VND\)$/i), '50000');
     await userEvent.type(screen.getByLabelText(/Tồn kho ban đầu/i), '100');
 
-    const submitBtn = screen.getByRole('button', { name: /Lưu/i });
+    const submitBtn = screen.getByRole('button', { name: /^Lưu$/i });
     await userEvent.click(submitBtn);
 
     await waitFor(() => {

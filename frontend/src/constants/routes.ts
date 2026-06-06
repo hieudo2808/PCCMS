@@ -12,15 +12,15 @@ export const ROUTES = {
     PROFILE: '/owner/profile',
   },
   RECEPTION: {
-    DASHBOARD: '/reception',
-    APPOINTMENTS: '/reception/appointments',
-    GROOMING_BOARD: '/reception/grooming-board',
-    BOARDING_LOG: '/reception/boarding-log',
+    DASHBOARD: '/staff',
+    APPOINTMENTS: '/staff/appointments',
+    GROOMING_BOARD: '/staff/grooming-board',
+    BOARDING_LOG: '/staff/boarding-log',
   },
   DOCTOR: {
-    DASHBOARD: '/doctor',
-    QUEUE: '/doctor/queue',
-    MEDICAL_RECORD: '/doctor/medical-record',
+    DASHBOARD: '/veterinarian',
+    QUEUE: '/veterinarian/queue',
+    MEDICAL_RECORD: '/veterinarian/medical-record',
   },
   ADMIN: {
     DASHBOARD: '/admin',

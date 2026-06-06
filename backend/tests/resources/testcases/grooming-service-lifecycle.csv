@@ -1,0 +1,7 @@
+rule_id,case_id,action,mock_state,expected_result,expected_error,note
+GRM-OWN-001,OWNER_CREATE_SUCCESS,CREATE_BOOKING,VALID,SUCCESS,,Owner creates a grooming ticket for owned pet
+GRM-OWN-002,OWNER_PET_FORBIDDEN,CREATE_BOOKING,PET_OTHER_OWNER,EXCEPTION,ERR_403_FORBIDDEN,Owner cannot book grooming for another owner's pet
+GRM-OWN-003,DUPLICATE_BOOKING_REJECTED,CREATE_BOOKING,DUPLICATE_BOOKING,EXCEPTION,ERR_GROOMING_009_DUPLICATE_BOOKING,Owner cannot create duplicate grooming booking for same pet service and time
+GRM-TIME-001,PAST_TIME_REJECTED,CREATE_BOOKING,PAST_TIME,EXCEPTION,ERR_GROOMING_003_INVALID_TIME_RANGE,Grooming appointment must be in the future
+GRM-RES-001,STATION_CONFLICT_REJECTED,CONFIRM_TICKET,STATION_CONFLICT,EXCEPTION,ERR_GROOMING_006_STATION_UNAVAILABLE,Staff cannot assign a conflicting grooming station
+GRM-BILL-001,COMPLETE_CREATES_INVOICE,COMPLETE_TICKET,VALID,SUCCESS,,Completing in-service grooming creates an unpaid invoice

@@ -38,7 +38,7 @@ public class UserService {
     // ==================== ADMIN OPERATIONS ====================
 
     @Transactional
-    @PreAuthorize("hasAuthority('USER_MANAGE')")
+    @PreAuthorize("hasAuthority('ACCOUNT_MANAGE')")
     public UserResponse createUser(CreateUserRequest request) {
         if (userRepository.existsByEmail(request.email())) {
             throw new BusinessException(ErrorCode.ERR_ACC_001_EMAIL_EXISTS);
@@ -57,7 +57,7 @@ public class UserService {
     }
 
     @Transactional
-    @PreAuthorize("hasAuthority('USER_MANAGE')")
+    @PreAuthorize("hasAuthority('ACCOUNT_MANAGE')")
     public UserResponse adminUpdateUser(UUID userId, AdminUpdateUserRequest request) {
         Users user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ERR_ACC_002_USER_NOT_FOUND));
@@ -69,7 +69,7 @@ public class UserService {
     }
 
     @Transactional
-    @PreAuthorize("hasAuthority('USER_MANAGE')")
+    @PreAuthorize("hasAuthority('ACCOUNT_MANAGE')")
     public void adminLockUser(UUID id) {
         Users user = userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ERR_ACC_002_USER_NOT_FOUND));
@@ -80,7 +80,7 @@ public class UserService {
     }
 
     @Transactional
-    @PreAuthorize("hasAuthority('USER_MANAGE')")
+    @PreAuthorize("hasAuthority('ACCOUNT_MANAGE')")
     public void adminDisableUser(UUID id) {
         Users user = userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ERR_ACC_002_USER_NOT_FOUND));
@@ -91,7 +91,7 @@ public class UserService {
     }
 
     @Transactional
-    @PreAuthorize("hasAuthority('USER_MANAGE')")
+    @PreAuthorize("hasAuthority('ACCOUNT_MANAGE')")
     public void deleteUser(UUID id) {
         Users user = userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ERR_ACC_002_USER_NOT_FOUND));
@@ -100,14 +100,14 @@ public class UserService {
         log.info("Deleted (soft) user: {}", id);
     }
 
-    @PreAuthorize("hasAuthority('USER_MANAGE')")
+    @PreAuthorize("hasAuthority('ACCOUNT_MANAGE')")
     public UserResponse getUser(UUID id) {
         Users user = userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ERR_ACC_002_USER_NOT_FOUND));
         return userMapper.toUserResponse(user);
     }
 
-    @PreAuthorize("hasAuthority('USER_MANAGE')")
+    @PreAuthorize("hasAuthority('ACCOUNT_MANAGE')")
     public List<UserResponse> getAllUsers() {
         return userRepository.findAll()
                 .stream().map(userMapper::toUserResponse)
@@ -116,7 +116,7 @@ public class UserService {
 
     // ==================== USER SELF OPERATIONS ====================
 
-    @PreAuthorize("hasAuthority('USER_UPDATE_SELF')")
+    @PreAuthorize("hasAuthority('OWNER_PROFILE_UPDATE')")
     public UserResponse getMyProfile() {
         UUID userId = securityHelper.getCurrentUserId();
         Users user = userRepository.findById(userId)
@@ -125,7 +125,7 @@ public class UserService {
     }
 
     @Transactional
-    @PreAuthorize("hasAuthority('USER_UPDATE_SELF')")
+    @PreAuthorize("hasAuthority('OWNER_PROFILE_UPDATE')")
     public UserResponse updateMyProfile(UserProfileUpdateRequest request) {
         UUID userId = securityHelper.getCurrentUserId();
         Users user = userRepository.findById(userId)
@@ -138,7 +138,7 @@ public class UserService {
     }
 
     @Transactional
-    @PreAuthorize("hasAuthority('USER_UPDATE_SELF')")
+    @PreAuthorize("hasAuthority('OWNER_PROFILE_UPDATE')")
     public void changePassword(ChangePasswordRequest request) {
         UUID userId = securityHelper.getCurrentUserId();
         Users user = userRepository.findById(userId)

@@ -37,7 +37,7 @@ describe('petApi', () => {
 
     const result = await petApi.getPets();
     expect(result).toEqual(mockPage);
-    expect(axiosClient.get).toHaveBeenCalledWith('/v1/pets', { params: undefined });
+    expect(axiosClient.get).toHaveBeenCalledWith('/api/v1/pets', { params: undefined });
   });
 
   it('gets pet by id successfully', async () => {
@@ -45,7 +45,7 @@ describe('petApi', () => {
 
     const result = await petApi.getPetById('pet-123');
     expect(result).toEqual(mockPet);
-    expect(axiosClient.get).toHaveBeenCalledWith('/v1/pets/pet-123');
+    expect(axiosClient.get).toHaveBeenCalledWith('/api/v1/pets/pet-123');
   });
 
   it('creates pet successfully', async () => {
@@ -54,7 +54,7 @@ describe('petApi', () => {
     const request = { name: 'Milu', sex: 'MALE' as const, speciesId: 'species-1' };
     const result = await petApi.createPet(request);
     expect(result).toEqual(mockPet);
-    expect(axiosClient.post).toHaveBeenCalledWith('/v1/pets', request);
+    expect(axiosClient.post).toHaveBeenCalledWith('/api/v1/pets', request);
   });
 
   it('updates pet successfully', async () => {
@@ -63,12 +63,12 @@ describe('petApi', () => {
     const request = { name: 'Milu 2', sex: 'MALE' as const, speciesId: 'species-1' };
     const result = await petApi.updatePet('pet-123', request);
     expect(result).toEqual(mockPet);
-    expect(axiosClient.put).toHaveBeenCalledWith('/v1/pets/pet-123', request);
+    expect(axiosClient.put).toHaveBeenCalledWith('/api/v1/pets/pet-123', request);
   });
   
   it('deletes pet successfully', async () => {
     vi.mocked(axiosClient.delete).mockResolvedValueOnce(undefined);
     await petApi.deletePet('pet-123');
-    expect(axiosClient.delete).toHaveBeenCalledWith('/v1/pets/pet-123');
+    expect(axiosClient.delete).toHaveBeenCalledWith('/api/v1/pets/pet-123');
   });
 });

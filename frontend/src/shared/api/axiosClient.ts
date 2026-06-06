@@ -1,7 +1,7 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig, type AxiosResponse } from 'axios';
 import toast from 'react-hot-toast';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 const axiosClient = axios.create({
   baseURL: API_BASE_URL,
@@ -13,6 +13,9 @@ const axiosClient = axios.create({
 
 axiosClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    if (config.url?.startsWith('/') && !config.url.startsWith('/api/')) {
+      config.url = `/api${config.url}`;
+    }
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.set('Authorization', `Bearer ${token}`);

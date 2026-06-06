@@ -39,11 +39,11 @@ describe('userAdminApi', () => {
   };
 
   it('gets users with pagination and role filter', async () => {
-    vi.mocked(axiosClient.get).mockResolvedValue(mockUsersPage as any);
+    vi.mocked(axiosClient.get).mockResolvedValue(mockUsersPage.content as any);
 
     const result = await userAdminApi.getUsers({ page: 1, limit: 10, role: 'ADMIN' });
 
-    expect(axiosClient.get).toHaveBeenCalledWith('/api/v1/admin/accounts', {
+    expect(axiosClient.get).toHaveBeenCalledWith('/users', {
       params: { page: 1, limit: 10, role: 'ADMIN' },
     });
     expect(result).toEqual(mockUsersPage);
@@ -60,7 +60,7 @@ describe('userAdminApi', () => {
     };
     const result = await userAdminApi.createUser(request);
 
-    expect(axiosClient.post).toHaveBeenCalledWith('/api/v1/admin/accounts', request);
+    expect(axiosClient.post).toHaveBeenCalledWith('/users', request);
     expect(result).toEqual(mockUser);
   });
 
@@ -71,7 +71,7 @@ describe('userAdminApi', () => {
     const request: UpdateUserRequest = { fullName: 'Updated Admin' };
     const result = await userAdminApi.updateUser('u1', request);
 
-    expect(axiosClient.put).toHaveBeenCalledWith('/api/v1/admin/accounts/u1', request);
+    expect(axiosClient.put).toHaveBeenCalledWith('/users/u1', request);
     expect(result).toEqual(mockUser);
   });
 
@@ -80,7 +80,7 @@ describe('userAdminApi', () => {
 
     await userAdminApi.lockUser('u1');
 
-    expect(axiosClient.patch).toHaveBeenCalledWith('/api/v1/admin/accounts/u1/lock');
+    expect(axiosClient.patch).toHaveBeenCalledWith('/users/u1/lock');
   });
 
   it('disables user', async () => {
@@ -88,6 +88,6 @@ describe('userAdminApi', () => {
 
     await userAdminApi.disableUser('u1');
 
-    expect(axiosClient.patch).toHaveBeenCalledWith('/api/v1/admin/accounts/u1/disable');
+    expect(axiosClient.patch).toHaveBeenCalledWith('/users/u1/disable');
   });
 });

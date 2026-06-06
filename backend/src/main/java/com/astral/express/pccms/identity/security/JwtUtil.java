@@ -68,10 +68,12 @@ public class JwtUtil {
     public String generateToken(Users user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("jti", UUID.randomUUID().toString());
+        claims.put("userId", user.getId().toString());
+        claims.put("role", user.getRole().getCode());
+        claims.put("email", user.getEmail());
         return Jwts.builder()
-                .subject(user.getId().toString())
-                .claim("role", user.getRole().getCode())
-                .claim("email", user.getEmail())
+                .claims(claims)
+                .subject(user.getEmail())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey(), Jwts.SIG.HS512)

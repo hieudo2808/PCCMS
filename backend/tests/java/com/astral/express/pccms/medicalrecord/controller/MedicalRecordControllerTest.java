@@ -71,7 +71,7 @@ class MedicalRecordControllerTest {
         given(medicalRecordService.updateMedicalRecord(eq(recordId), any(UpdateMedicalRecordRequest.class)))
                 .willReturn(mockResponse);
 
-        mockMvc.perform(put("/api/v1/medical-records/{id}", recordId)
+        mockMvc.perform(put("/v1/medical-records/{id}", recordId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -89,7 +89,7 @@ class MedicalRecordControllerTest {
                 "Fever", "Rest"
         );
 
-        mockMvc.perform(put("/api/v1/medical-records/{id}", recordId)
+        mockMvc.perform(put("/v1/medical-records/{id}", recordId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -124,7 +124,7 @@ class MedicalRecordControllerTest {
                 }
                 """;
 
-        mockMvc.perform(patch("/api/v1/medical-records/{id}/finalize", recordId)
+        mockMvc.perform(patch("/v1/medical-records/{id}/finalize", recordId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonContent))
                 .andExpect(status().isOk())
@@ -144,7 +144,7 @@ class MedicalRecordControllerTest {
                 }
                 """;
 
-        mockMvc.perform(patch("/api/v1/medical-records/{id}/finalize", recordId)
+        mockMvc.perform(patch("/v1/medical-records/{id}/finalize", recordId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonContent))
                 .andExpect(status().isBadRequest())

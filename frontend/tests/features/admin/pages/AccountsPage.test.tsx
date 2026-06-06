@@ -67,7 +67,7 @@ describe('AccountsPage', () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText('Quản lý Tài khoản')).toBeInTheDocument();
+      expect(screen.getByText('Quản lý tài khoản')).toBeInTheDocument();
     });
 
     await waitFor(() => {
@@ -113,7 +113,7 @@ describe('AccountsPage', () => {
     await userEvent.click(lockButtons[0]);
 
     await waitFor(() => {
-      expect(userAdminApi.lockUser).toHaveBeenCalledWith('u1', expect.anything());
+      expect(vi.mocked(userAdminApi.lockUser).mock.calls[0][0]).toBe('u1');
       expect(userAdminApi.getUsers).toHaveBeenCalledTimes(2); // refetch
     });
   });

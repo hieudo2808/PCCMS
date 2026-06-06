@@ -5,6 +5,7 @@ import com.astral.express.pccms.pet.dto.response.PetResponse;
 import com.astral.express.pccms.pet.mapper.PetMapper;
 import com.astral.express.pccms.pet.repository.PetRepository;
 import com.astral.express.pccms.user.repository.UserRepository;
+import com.astral.express.pccms.common.dto.PageResponse;
 import com.astral.express.pccms.common.exception.BusinessException;
 import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.pet.entity.Pets;
@@ -14,6 +15,8 @@ import com.astral.express.pccms.pet.event.PetDeactivatedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,6 +56,24 @@ public class PetServiceImpl implements PetService {
         log.info("Created pet with id: {}", savedPet.getId());
 
         return petMapper.toResponse(savedPet, java.util.Collections.emptyList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<PetResponse> listPets(Boolean isActive, Pageable pageable) {
+        java.util.UUID currentUserId = securityHelper.getCurrentUserId();
+        Page<Pets> pets;
+        if (securityHelper.isAdminOrStaff()) {
+            pets = isActive == null
+                    ? petRepository.findAll(pageable)
+                    : petRepository.findByIsActive(isActive, pageable);
+        } else {
+            pets = isActive == null
+                    ? petRepository.findByOwner_Id(currentUserId, pageable)
+                    : petRepository.findByOwner_IdAndIsActive(currentUserId, isActive, pageable);
+        }
+
+        return PageResponse.of(pets.map(pet -> petMapper.toResponse(pet, java.util.Collections.emptyList())));
     }
 
     @Override

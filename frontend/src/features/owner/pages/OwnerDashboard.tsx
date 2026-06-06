@@ -36,7 +36,7 @@ export function OwnerDashboard() {
                 <Card title="Đặt dịch vụ nhanh">
                     <div className="grid gap-4 md:grid-cols-1">
                         <div
-                            onClick={() => (window.location.href = "/owner/book")}
+                            onClick={() => (window.location.href = "/owner/grooming/book")}
                             className="cursor-pointer rounded-3xl border border-slate-200 p-6 transition hover:border-primary-300 hover:shadow-md flex items-center gap-4 bg-primary-50"
                         >
                             <div className="inline-flex rounded-2xl bg-white p-4 text-primary-700 shadow-sm">
@@ -44,10 +44,10 @@ export function OwnerDashboard() {
                             </div>
                             <div>
                                 <h4 className="text-lg font-bold text-slate-900">
-                                    Tiến hành đặt lịch dịch vụ mới
+                                    Đăng ký dịch vụ làm đẹp
                                 </h4>
                                 <p className="mt-1 text-sm text-slate-500">
-                                    Khám mổ, Spa làm đẹp, hoặc Ký gửi Lưu trú chó mèo...
+                                    Chọn thú cưng, gói tắm sấy/cắt tỉa và giờ hẹn phù hợp.
                                 </p>
                             </div>
                         </div>

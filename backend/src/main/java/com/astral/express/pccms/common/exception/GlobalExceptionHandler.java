@@ -3,11 +3,14 @@ package com.astral.express.pccms.common.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -49,6 +52,25 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(ErrorCode.ERR_VALIDATION_FAILED.getHttpStatus())
+                .body(errorResponse);
+    }
+
+    @ExceptionHandler(value = {
+            MethodArgumentTypeMismatchException.class,
+            MissingServletRequestParameterException.class,
+            HttpMessageNotReadableException.class
+    })
+    public ResponseEntity<ErrorResponse> handleBadRequest(Exception exception) {
+        log.warn("Invalid request parameter: {}", exception.getMessage());
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .code(ErrorCode.ERR_400_BAD_REQUEST.getHttpStatus())
+                .message(ErrorCode.ERR_400_BAD_REQUEST.getMessage())
+                .errorCode(ErrorCode.ERR_400_BAD_REQUEST.getErrorCode())
+                .build();
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
                 .body(errorResponse);
     }
 
