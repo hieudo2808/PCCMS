@@ -1,19 +1,19 @@
-import { useParams } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm, FormProvider } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useForm, FormProvider } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Tag } from "~/components/atoms";
 import { EmptyState } from "~/components/molecules";
-import { VitalSignsForm, vitalSignsSchema } from '../components/VitalSignsForm';
-import { PrescriptionTable, prescriptionFormSchema } from '../components/PrescriptionTable';
-import { medicalRecordApi } from '~/shared/api/medicalRecordApi';
-import { toast } from 'react-hot-toast';
-import { useEffect } from 'react';
+import { VitalSignsForm, vitalSignsSchema } from "../components/VitalSignsForm";
+import { PrescriptionTable, prescriptionFormSchema } from "../components/PrescriptionTable";
+import { medicalRecordApi } from "~/shared/api/medicalRecordApi";
+import { toast } from "react-hot-toast";
+import { useEffect } from "react";
 
 const fullRecordSchema = z.object({
-  vitalSigns: vitalSignsSchema,
-  prescription: prescriptionFormSchema,
+    vitalSigns: vitalSignsSchema,
+    prescription: prescriptionFormSchema,
 });
 
 type FullRecordFormValues = z.infer<typeof fullRecordSchema>;
@@ -22,20 +22,24 @@ export function MedicalRecordPage() {
     const { id } = useParams<{ id: string }>();
     const queryClient = useQueryClient();
 
-    const { data: record, isLoading, isError } = useQuery({
-        queryKey: ['medicalRecord', id],
+    const {
+        data: record,
+        isLoading,
+        isError,
+    } = useQuery({
+        queryKey: ["medicalRecord", id],
         queryFn: () => medicalRecordApi.getMedicalRecordById(id as string),
         enabled: !!id,
     });
 
-    const isFinalized = record?.recordStatus === 'FINALIZED';
+    const isFinalized = record?.recordStatus === "FINALIZED";
 
     const methods = useForm<FullRecordFormValues>({
         resolver: zodResolver(fullRecordSchema) as any,
         defaultValues: {
             vitalSigns: {},
             prescription: { items: [] },
-        }
+        },
     });
 
     useEffect(() => {
@@ -53,7 +57,7 @@ export function MedicalRecordPage() {
                     preliminaryDiagnosis: record.preliminaryDiagnosis,
                     finalDiagnosis: record.finalDiagnosis,
                 },
-                prescription: { items: [] } // In a real app we'd fetch prescription items too
+                prescription: { items: [] }, // In a real app we'd fetch prescription items too
             });
         }
     }, [record, methods]);
@@ -68,15 +72,15 @@ export function MedicalRecordPage() {
         },
         onSuccess: () => {
             toast.success("Đã lưu nháp thành công");
-            queryClient.invalidateQueries({ queryKey: ['medicalRecord', id] });
-        }
+            queryClient.invalidateQueries({ queryKey: ["medicalRecord", id] });
+        },
     });
 
     const finalizeMutation = useMutation({
         mutationFn: async (data: FullRecordFormValues) => {
             if (!id) throw new Error("Missing ID");
             await medicalRecordApi.finalizeMedicalRecord(id, {
-                finalDiagnosis: data.vitalSigns.finalDiagnosis || '',
+                finalDiagnosis: data.vitalSigns.finalDiagnosis || "",
             });
             if (data.prescription.items.length > 0) {
                 await medicalRecordApi.createPrescription(id, { items: data.prescription.items });
@@ -84,8 +88,8 @@ export function MedicalRecordPage() {
         },
         onSuccess: () => {
             toast.success("Đã chốt bệnh án thành công");
-            queryClient.invalidateQueries({ queryKey: ['medicalRecord', id] });
-        }
+            queryClient.invalidateQueries({ queryKey: ["medicalRecord", id] });
+        },
     });
 
     if (isLoading) {
@@ -107,15 +111,15 @@ export function MedicalRecordPage() {
                 {isFinalized && <Tag tone="green">Đã chốt</Tag>}
             </div>
             <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-                <VitalSignsForm 
+                <VitalSignsForm
                     disabled={isFinalized}
                     initialData={methods.getValues().vitalSigns}
                     onSaveDraft={(data) => {
-                        methods.setValue('vitalSigns', data);
+                        methods.setValue("vitalSigns", data);
                         saveDraftMutation.mutate(methods.getValues());
                     }}
                     onFinalize={(data) => {
-                        methods.setValue('vitalSigns', data);
+                        methods.setValue("vitalSigns", data);
                         finalizeMutation.mutate(methods.getValues());
                     }}
                     isSaving={saveDraftMutation.isPending}
@@ -129,4 +133,3 @@ export function MedicalRecordPage() {
         </FormProvider>
     );
 }
-

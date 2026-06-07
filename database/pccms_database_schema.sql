@@ -26,7 +26,9 @@ CREATE TABLE roles (
     code        VARCHAR(60) NOT NULL UNIQUE,
     name        VARCHAR(120) NOT NULL,
     description TEXT,
-    is_active            BOOLEAN NOT NULL DEFAULT TRUE
+    is_active            BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 INSERT INTO roles (code, name) VALUES
@@ -56,7 +58,9 @@ CREATE TABLE permissions (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     code        VARCHAR(120) NOT NULL UNIQUE,
     name        VARCHAR(150) NOT NULL,
-    description TEXT
+    description TEXT,
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE role_permissions (
@@ -172,7 +176,8 @@ CREATE TABLE otp_tokens (
     expires_at      TIMESTAMPTZ NOT NULL,
     consumed_at     TIMESTAMPTZ,
     attempt_count   INT NOT NULL DEFAULT 0,
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE refresh_tokens (
@@ -181,8 +186,7 @@ CREATE TABLE refresh_tokens (
     token_hash      TEXT NOT NULL UNIQUE,
     issued_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     expires_at      TIMESTAMPTZ NOT NULL,
-    revoked_at      TIMESTAMPTZ,
-    revoked_reason  TEXT
+    revoked_at      TIMESTAMPTZ
 );
 
 -- =========================================================
@@ -197,7 +201,8 @@ CREATE TABLE file_assets (
     checksum_sha256   CHAR(64),
     uploaded_by       UUID REFERENCES users(id) ON DELETE SET NULL,
     visibility_code   file_visibility_enum NOT NULL DEFAULT 'PRIVATE',
-    created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE file_links (
@@ -207,7 +212,8 @@ CREATE TABLE file_links (
     entity_id     UUID NOT NULL,
     purpose       VARCHAR(80) NOT NULL, -- AVATAR, PET_IMAGE, LAB_ATTACHMENT, CARE_LOG_MEDIA, etc.
     created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (file_id, entity_type, entity_id, purpose)
+    UNIQUE (file_id, entity_type, entity_id, purpose),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- =========================================================
@@ -216,7 +222,9 @@ CREATE TABLE file_links (
 CREATE TABLE pet_species (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name        VARCHAR(80) NOT NULL UNIQUE,
-    is_active            BOOLEAN NOT NULL DEFAULT TRUE
+    is_active            BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE pet_breeds (
@@ -224,7 +232,9 @@ CREATE TABLE pet_breeds (
     species_id  UUID NOT NULL REFERENCES pet_species(id) ON DELETE RESTRICT,
     name        VARCHAR(120) NOT NULL,
     is_active            BOOLEAN NOT NULL DEFAULT TRUE,
-    UNIQUE (species_id, name)
+    UNIQUE (species_id, name),
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE pets (
@@ -238,10 +248,7 @@ CREATE TABLE pets (
     estimated_age_months INT CHECK (estimated_age_months IS NULL OR estimated_age_months >= 0),
     weight_kg            NUMERIC(7,2) CHECK (weight_kg IS NULL OR weight_kg > 0),
     color                VARCHAR(80),
-    identification_note  TEXT,
-    special_note         TEXT,
-    allergy_note         TEXT,
-    nutrition_note       TEXT,
+    attributes           JSONB,
     is_active            BOOLEAN NOT NULL DEFAULT TRUE,
     created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -258,7 +265,7 @@ CREATE TABLE service_catalog (
     name               VARCHAR(160) NOT NULL,
     category_code      service_category_enum NOT NULL,
     description        TEXT,
-    base_price_vnd     NUMERIC(14,2) NOT NULL DEFAULT 0 CHECK (base_price_vnd >= 0),
+    base_price_vnd     BIGINT NOT NULL DEFAULT 0 CHECK (base_price_vnd >= 0),
     duration_minutes   INT CHECK (duration_minutes IS NULL OR duration_minutes > 0),
     is_active            BOOLEAN NOT NULL DEFAULT TRUE,
     effective_from     DATE,
@@ -272,7 +279,9 @@ CREATE TABLE medicine_categories (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name        VARCHAR(120) NOT NULL UNIQUE,
     description TEXT,
-    is_active            BOOLEAN NOT NULL DEFAULT TRUE
+    is_active            BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE medicines (
@@ -283,7 +292,7 @@ CREATE TABLE medicines (
     unit                   VARCHAR(40) NOT NULL,
     default_instruction    TEXT,
     current_stock          INT NOT NULL DEFAULT 0 CHECK (current_stock >= 0),
-    unit_price_vnd         NUMERIC(14,2) NOT NULL DEFAULT 0 CHECK (unit_price_vnd >= 0),
+    unit_price_vnd         BIGINT NOT NULL DEFAULT 0 CHECK (unit_price_vnd >= 0),
     is_active            BOOLEAN NOT NULL DEFAULT TRUE,
     created_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -295,14 +304,18 @@ CREATE TABLE exam_rooms (
     room_code   VARCHAR(20) NOT NULL UNIQUE,
     name        VARCHAR(80) NOT NULL,
     floor       INT NOT NULL DEFAULT 1,
-    is_active   BOOLEAN NOT NULL DEFAULT TRUE
+    is_active   BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE grooming_stations (
     id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     station_code  VARCHAR(20) NOT NULL UNIQUE,
     name          VARCHAR(80) NOT NULL,
-    is_active     BOOLEAN NOT NULL DEFAULT TRUE
+    is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE room_types (
@@ -310,9 +323,11 @@ CREATE TABLE room_types (
     code                  VARCHAR(60) NOT NULL UNIQUE,
     name                  VARCHAR(120) NOT NULL,
     default_capacity      INT NOT NULL DEFAULT 1 CHECK (default_capacity > 0),
-    base_daily_price_vnd  NUMERIC(14,2) NOT NULL DEFAULT 0 CHECK (base_daily_price_vnd >= 0),
+    base_daily_price_vnd  BIGINT NOT NULL DEFAULT 0 CHECK (base_daily_price_vnd >= 0),
     description           TEXT,
-    is_active            BOOLEAN NOT NULL DEFAULT TRUE
+    is_active            BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE rooms (
@@ -348,9 +363,9 @@ CREATE TABLE service_orders (
     completed_at        TIMESTAMPTZ,
     cancelled_at        TIMESTAMPTZ,
     cancellation_reason TEXT,
-    base_amount_vnd     NUMERIC(14,2) NOT NULL DEFAULT 0 CHECK (base_amount_vnd >= 0),
-    extra_amount_vnd    NUMERIC(14,2) NOT NULL DEFAULT 0 CHECK (extra_amount_vnd >= 0),
-    final_amount_vnd    NUMERIC(14,2) CHECK (final_amount_vnd IS NULL OR final_amount_vnd >= 0),
+    base_amount_vnd     BIGINT NOT NULL DEFAULT 0 CHECK (base_amount_vnd >= 0),
+    extra_amount_vnd    BIGINT NOT NULL DEFAULT 0 CHECK (extra_amount_vnd >= 0),
+    final_amount_vnd    BIGINT CHECK (final_amount_vnd IS NULL OR final_amount_vnd >= 0),
     created_by          UUID REFERENCES users(id),
     updated_by          UUID REFERENCES users(id),
     created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -388,7 +403,9 @@ CREATE TABLE reception_tickets (
     checked_in_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     queue_number     INT,
     assigned_vet_id  UUID REFERENCES users(id) ON DELETE RESTRICT,
-    note             TEXT
+    note             TEXT,
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- =========================================================
@@ -425,7 +442,8 @@ CREATE TABLE lab_results (
     result_text        TEXT,
     file_id            UUID REFERENCES file_assets(id) ON DELETE SET NULL,
     created_by         UUID REFERENCES users(id),
-    created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE prescriptions (
@@ -435,7 +453,8 @@ CREATE TABLE prescriptions (
     vet_id             UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     note               TEXT,
     issued_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE prescription_items (
@@ -445,7 +464,9 @@ CREATE TABLE prescription_items (
     dosage            VARCHAR(120) NOT NULL,
     quantity          INT NOT NULL CHECK (quantity > 0),
     instruction       TEXT,
-    unit_price_vnd    NUMERIC(14,2) NOT NULL DEFAULT 0 CHECK (unit_price_vnd >= 0)
+    unit_price_vnd    BIGINT NOT NULL DEFAULT 0 CHECK (unit_price_vnd >= 0),
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE vaccination_records (
@@ -458,7 +479,8 @@ CREATE TABLE vaccination_records (
     note                 TEXT,
     created_by           UUID REFERENCES users(id),
     created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CHECK (next_due_date IS NULL OR next_due_date >= vaccination_date)
+    CHECK (next_due_date IS NULL OR next_due_date >= vaccination_date),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE health_alerts (
@@ -469,7 +491,8 @@ CREATE TABLE health_alerts (
     message            TEXT NOT NULL,
     resolved_at        TIMESTAMPTZ,
     created_by         UUID REFERENCES users(id),
-    created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- =========================================================
@@ -502,7 +525,7 @@ CREATE TABLE boarding_bookings (
     expected_checkin_at       TIMESTAMPTZ NOT NULL,
     expected_checkout_at      TIMESTAMPTZ NOT NULL,
     special_care_request      TEXT,
-    estimated_price_vnd       NUMERIC(14,2) NOT NULL DEFAULT 0 CHECK (estimated_price_vnd >= 0),
+    estimated_price_vnd       BIGINT NOT NULL DEFAULT 0 CHECK (estimated_price_vnd >= 0),
     status_code               boarding_status_enum NOT NULL DEFAULT 'RESERVED',
     created_by                UUID REFERENCES users(id),
     created_at                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -520,7 +543,8 @@ CREATE TABLE room_allocations (
     released_at         TIMESTAMPTZ,
     status_code         VARCHAR(30) NOT NULL DEFAULT 'ALLOCATED' CHECK (status_code IN ('ALLOCATED','RELEASED','CANCELLED')),
     created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CHECK (allocated_to > allocated_from)
+    CHECK (allocated_to > allocated_from),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE boarding_sessions (
@@ -559,7 +583,8 @@ CREATE TABLE care_log_media (
     file_id      UUID NOT NULL REFERENCES file_assets(id) ON DELETE RESTRICT,
     caption      TEXT,
     created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (care_log_id, file_id)
+    UNIQUE (care_log_id, file_id),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- =========================================================
@@ -572,7 +597,9 @@ CREATE TABLE shifts (
     start_time  TIME NOT NULL,
     end_time    TIME NOT NULL,
     is_active            BOOLEAN NOT NULL DEFAULT TRUE,
-    CHECK (end_time > start_time)
+    CHECK (end_time > start_time),
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE work_schedules (
@@ -601,7 +628,8 @@ CREATE TABLE shift_change_requests (
     status_code     shift_request_status_enum NOT NULL DEFAULT 'PENDING',
     resolved_by     UUID REFERENCES users(id),
     resolved_at     TIMESTAMPTZ,
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- =========================================================
@@ -615,10 +643,10 @@ CREATE TABLE invoices (
     status_code         invoice_status_enum NOT NULL DEFAULT 'UNPAID',
     issued_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     due_at              TIMESTAMPTZ,
-    discount_vnd        NUMERIC(14,2) NOT NULL DEFAULT 0 CHECK (discount_vnd >= 0),
-    tax_vnd             NUMERIC(14,2) NOT NULL DEFAULT 0 CHECK (tax_vnd >= 0),
-    total_amount_vnd    NUMERIC(14,2) NOT NULL DEFAULT 0 CHECK (total_amount_vnd >= 0),
-    paid_amount_vnd     NUMERIC(14,2) NOT NULL DEFAULT 0 CHECK (paid_amount_vnd >= 0),
+    discount_vnd        BIGINT NOT NULL DEFAULT 0 CHECK (discount_vnd >= 0),
+    tax_vnd             BIGINT NOT NULL DEFAULT 0 CHECK (tax_vnd >= 0),
+    total_amount_vnd    BIGINT NOT NULL DEFAULT 0 CHECK (total_amount_vnd >= 0),
+    paid_amount_vnd     BIGINT NOT NULL DEFAULT 0 CHECK (paid_amount_vnd >= 0),
     note                TEXT,
     created_by          UUID REFERENCES users(id),
     created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -633,16 +661,18 @@ CREATE TABLE invoice_lines (
     medicine_id        UUID REFERENCES medicines(id) ON DELETE RESTRICT,
     description        TEXT NOT NULL,
     quantity           NUMERIC(12,2) NOT NULL DEFAULT 1 CHECK (quantity > 0),
-    unit_price_vnd     NUMERIC(14,2) NOT NULL DEFAULT 0 CHECK (unit_price_vnd >= 0),
-    subtotal_vnd       NUMERIC(14,2) GENERATED ALWAYS AS (ROUND(quantity * unit_price_vnd, 2)) STORED,
-    line_order         INT NOT NULL DEFAULT 1
+    unit_price_vnd     BIGINT NOT NULL DEFAULT 0 CHECK (unit_price_vnd >= 0),
+    subtotal_vnd       BIGINT GENERATED ALWAYS AS (CAST(quantity * unit_price_vnd AS BIGINT)) STORED,
+    line_order         INT NOT NULL DEFAULT 1,
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE payments (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     payment_code         VARCHAR(60) NOT NULL UNIQUE,
     invoice_id           UUID NOT NULL REFERENCES invoices(id) ON DELETE RESTRICT,
-    amount_vnd           NUMERIC(14,2) NOT NULL CHECK (amount_vnd > 0),
+    amount_vnd           BIGINT NOT NULL CHECK (amount_vnd > 0),
     method_code          payment_method_enum NOT NULL,
     status_code          payment_status_enum NOT NULL DEFAULT 'PENDING',
     paid_at              TIMESTAMPTZ,
@@ -665,7 +695,8 @@ CREATE TABLE notifications (
     body                TEXT NOT NULL,
     status_code         notification_status_enum NOT NULL DEFAULT 'UNREAD',
     read_at             TIMESTAMPTZ,
-    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- =========================================================
@@ -794,3 +825,6 @@ CREATE INDEX idx_invoice_lines_order ON invoice_lines (service_order_id);
 CREATE INDEX idx_payments_invoice_status ON payments (invoice_id, status_code);
 
 CREATE INDEX idx_notifications_recipient ON notifications (recipient_user_id, status_code, created_at DESC);
+
+CREATE INDEX idx_refresh_tokens_expires_at ON refresh_tokens (expires_at);
+CREATE INDEX idx_otp_tokens_expires_at ON otp_tokens (expires_at);

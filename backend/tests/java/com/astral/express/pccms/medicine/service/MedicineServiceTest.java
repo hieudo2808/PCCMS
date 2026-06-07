@@ -18,7 +18,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -45,12 +44,12 @@ class MedicineServiceTest {
 
     @ParameterizedTest(name = "[{0}] {1}: {8}")
     @CsvFileSource(resources = "/testcases/medicine-service.csv", numLinesToSkip = 1)
-    void executeMedicineServiceTests(String ruleId, String caseId, String action, BigDecimal inputPrice, Integer inputStock, String mockState, String expectedResult, ErrorCode expectedError, String note) {
+    void executeMedicineServiceTests(String ruleId, String caseId, String action, Long inputPrice, Integer inputStock, String mockState, String expectedResult, ErrorCode expectedError, String note) {
         UUID medicineId = UUID.randomUUID();
         Medicine mockMedicine = new Medicine();
         mockMedicine.setId(medicineId);
         mockMedicine.setCurrentStock(10);
-        mockMedicine.setUnitPriceVnd(BigDecimal.valueOf(150000));
+        mockMedicine.setUnitPriceVnd(150000L);
         mockMedicine.setIsActive(true);
 
         MedicineCreateRequest createReq = new MedicineCreateRequest("MED01", "Name", null, "Unit", null, inputStock, inputPrice);
@@ -60,14 +59,14 @@ class MedicineServiceTest {
         // GIVEN
         switch (action) {
             case "CREATE":
-                if ("VALID".equals(mockState) && inputPrice.compareTo(BigDecimal.ZERO) >= 0 && inputStock >= 0) {
+                if ("VALID".equals(mockState) && inputPrice.compareTo(0L) >= 0 && inputStock >= 0) {
                     given(medicineMapper.toMedicine(createReq)).willReturn(mockMedicine);
                     given(medicineRepository.save(any(Medicine.class))).willAnswer(inv -> inv.getArgument(0));
                     given(medicineMapper.toMedicineResponse(mockMedicine)).willReturn(new MedicineResponse(medicineId, "MED01", "Name", null, null, "Unit", null, inputStock, inputPrice, true));
                 }
                 break;
             case "UPDATE":
-                if ("VALID".equals(mockState) && inputPrice.compareTo(BigDecimal.ZERO) >= 0 && inputStock >= 0) {
+                if ("VALID".equals(mockState) && inputPrice.compareTo(0L) >= 0 && inputStock >= 0) {
                     given(medicineRepository.findById(medicineId)).willReturn(Optional.of(mockMedicine));
                     given(medicineRepository.save(any(Medicine.class))).willAnswer(inv -> inv.getArgument(0));
                 }

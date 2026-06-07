@@ -1,16 +1,20 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Plus } from 'lucide-react';
-import { Button, Tag } from '~/components/atoms';
-import { Card, EmptyState, Modal } from '~/components/molecules';
-import { petApi } from '~/shared/api/petApi';
-import { PetForm } from '../components/PetForm';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
+import { Button, Tag } from "~/components/atoms";
+import { Card, EmptyState, Modal } from "~/components/molecules";
+import { petApi } from "~/shared/api/petApi";
+import { PetForm } from "../components/PetForm";
 
 export function PetProfilesPage() {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-    const { data: petsPage, isLoading, isError } = useQuery({
-        queryKey: ['pets'],
+    const {
+        data: petsPage,
+        isLoading,
+        isError,
+    } = useQuery({
+        queryKey: ["pets"],
         queryFn: () => petApi.getPets(),
     });
 
@@ -59,8 +63,17 @@ export function PetProfilesPage() {
                         <Card key={pet.id} className="overflow-hidden p-0 relative">
                             {pet.healthAlerts && pet.healthAlerts.length > 0 && (
                                 <div className="absolute top-2 right-2 z-10 flex flex-col gap-1">
-                                    {pet.healthAlerts.map(alert => (
-                                        <Tag key={alert.id} tone={alert.severity === 'CRITICAL' ? 'red' : alert.severity === 'WARNING' ? 'amber' : 'blue'}>
+                                    {pet.healthAlerts.map((alert) => (
+                                        <Tag
+                                            key={alert.id}
+                                            tone={
+                                                alert.severity === "CRITICAL"
+                                                    ? "red"
+                                                    : alert.severity === "WARNING"
+                                                      ? "amber"
+                                                      : "blue"
+                                            }
+                                        >
                                             Cảnh báo: {alert.message}
                                         </Tag>
                                     ))}
@@ -71,21 +84,29 @@ export function PetProfilesPage() {
                                 <div className="flex items-start justify-between gap-3">
                                     <div>
                                         <h3 className="text-lg font-semibold">{pet.name}</h3>
-                                        <p className="text-sm text-slate-500">{pet.speciesId} • {pet.breedId}</p>
+                                        <p className="text-sm text-slate-500">
+                                            {pet.speciesId} • {pet.breedId}
+                                        </p>
                                     </div>
                                     <Tag tone={pet.isActive ? "green" : "default"}>
-                                        {pet.isActive ? 'Đang hoạt động' : 'Đã ẩn'}
+                                        {pet.isActive ? "Đang hoạt động" : "Đã ẩn"}
                                     </Tag>
                                 </div>
                                 <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                                     <div className="rounded-2xl bg-slate-50 p-3">
                                         <p className="text-slate-500">Cân nặng</p>
-                                        <p className="mt-1 font-medium">{pet.weightKg ? `${pet.weightKg} kg` : 'Chưa cập nhật'}</p>
+                                        <p className="mt-1 font-medium">
+                                            {pet.weightKg ? `${pet.weightKg} kg` : "Chưa cập nhật"}
+                                        </p>
                                     </div>
                                     <div className="rounded-2xl bg-slate-50 p-3">
                                         <p className="text-slate-500">Giới tính</p>
                                         <p className="mt-1 font-medium">
-                                            {pet.sex === 'MALE' ? 'Đực' : pet.sex === 'FEMALE' ? 'Cái' : 'Chưa rõ'}
+                                            {pet.sex === "MALE"
+                                                ? "Đực"
+                                                : pet.sex === "FEMALE"
+                                                  ? "Cái"
+                                                  : "Chưa rõ"}
                                         </p>
                                     </div>
                                 </div>
@@ -103,17 +124,16 @@ export function PetProfilesPage() {
                 </div>
             )}
 
-            <Modal 
-                isOpen={isAddModalOpen} 
+            <Modal
+                isOpen={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}
                 title="Thêm thú cưng mới"
             >
-                <PetForm 
-                    onSuccess={() => setIsAddModalOpen(false)} 
-                    onCancel={() => setIsAddModalOpen(false)} 
+                <PetForm
+                    onSuccess={() => setIsAddModalOpen(false)}
+                    onCancel={() => setIsAddModalOpen(false)}
                 />
             </Modal>
         </div>
     );
 }
-

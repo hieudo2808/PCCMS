@@ -20,9 +20,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -49,10 +49,10 @@ class BillingHandoffServiceTest {
             String ruleId,
             String caseId,
             int durationHours,
-            BigDecimal unitPrice,
+            Long unitPrice,
             boolean invoiceExists,
             String expectedResult,
-            BigDecimal expectedTotal) {
+            Long expectedTotal) {
         UUID serviceOrderId = UUID.randomUUID();
         OffsetDateTime startAt = OffsetDateTime.parse("2026-06-01T09:00:00+07:00");
         OffsetDateTime endAt = startAt.plusHours(durationHours);
@@ -105,9 +105,9 @@ class BillingHandoffServiceTest {
 
         verify(invoiceRepository).save(invoiceCaptor.capture());
         verify(invoiceLineRepository).save(lineCaptor.capture());
-        assertThat(invoice.getTotalAmountVnd()).isEqualByComparingTo(expectedTotal);
-        assertThat(invoiceCaptor.getValue().getTotalAmountVnd()).isEqualByComparingTo(expectedTotal);
-        assertThat(lineCaptor.getValue().getQuantity()).isEqualByComparingTo(expectedTotal.divide(unitPrice));
-        assertThat(lineCaptor.getValue().getUnitPriceVnd()).isEqualByComparingTo(unitPrice);
+        assertThat(invoice.getTotalAmountVnd()).isEqualTo(expectedTotal);
+        assertThat(invoiceCaptor.getValue().getTotalAmountVnd()).isEqualTo(expectedTotal);
+        assertThat(lineCaptor.getValue().getQuantity()).isEqualByComparingTo(BigDecimal.valueOf(expectedTotal / unitPrice));
+        assertThat(lineCaptor.getValue().getUnitPriceVnd()).isEqualTo(unitPrice);
     }
 }

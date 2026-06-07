@@ -14,7 +14,11 @@ export function LoginPage() {
     const navigate = useNavigate();
     const { login } = useAuth();
 
-    const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<LoginFormData>({
         resolver: zodResolver(loginSchema),
     });
 
@@ -53,12 +57,27 @@ export function LoginPage() {
             </div>
             <div className="space-y-4">
                 <div>
-                    <Input id="email" label="Email" placeholder="nhap@email.com" {...register('email')} />
-                    {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>}
+                    <Input
+                        id="email"
+                        label="Email"
+                        placeholder="nhap@email.com"
+                        {...register("email")}
+                    />
+                    {errors.email && (
+                        <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>
+                    )}
                 </div>
                 <div>
-                    <Input id="password" label="Mật khẩu" type="password" placeholder="••••••••" {...register('password')} />
-                    {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>}
+                    <Input
+                        id="password"
+                        label="Mật khẩu"
+                        type="password"
+                        placeholder="••••••••"
+                        {...register("password")}
+                    />
+                    {errors.password && (
+                        <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>
+                    )}
                 </div>
             </div>
             <div className="flex items-center justify-between text-sm">
@@ -74,7 +93,12 @@ export function LoginPage() {
                     Quên mật khẩu?
                 </button>
             </div>
-            <Button type="submit" className="w-full py-3" variant="primary" disabled={mutation.isPending}>
+            <Button
+                type="submit"
+                className="w-full py-3"
+                variant="primary"
+                disabled={mutation.isPending}
+            >
                 {mutation.isPending ? "Đang xử lý..." : "Đăng nhập"}
             </Button>
 

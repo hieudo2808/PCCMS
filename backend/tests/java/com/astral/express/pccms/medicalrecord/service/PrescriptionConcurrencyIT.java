@@ -132,7 +132,7 @@ class PrescriptionConcurrencyIT {
         medicine.setCategory(category);
         medicine.setUnit("Box");
         medicine.setCurrentStock(10); // Stock is 10
-        medicine.setUnitPriceVnd(BigDecimal.valueOf(100000));
+        medicine.setUnitPriceVnd(100000L);
         medicine.setIsActive(true);
         medicine = medicineRepository.save(medicine);
         medicineId = medicine.getId();

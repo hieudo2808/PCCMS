@@ -71,7 +71,7 @@ class PrescriptionServiceTest {
         Medicine medicine = new Medicine();
         medicine.setId(medicineId);
         medicine.setCurrentStock(mockStock);
-        medicine.setUnitPriceVnd(BigDecimal.valueOf(50000));
+        medicine.setUnitPriceVnd(50000L);
         medicine.setIsActive(true);
         given(medicineRepository.findByIdWithLock(medicineId)).willReturn(Optional.of(medicine));
 
@@ -92,7 +92,7 @@ class PrescriptionServiceTest {
             assertThat(savedPrescription.getVetId()).isEqualTo(vetId);
             assertThat(savedPrescription.getItems()).hasSize(1);
             assertThat(savedPrescription.getItems().get(0).getQuantity()).isEqualTo(inputQuantity);
-            assertThat(savedPrescription.getItems().get(0).getUnitPriceVnd()).isEqualTo(BigDecimal.valueOf(50000));
+            assertThat(savedPrescription.getItems().get(0).getUnitPriceVnd()).isEqualTo(50000L);
 
             verify(medicineRepository).save(medicineCaptor.capture());
             Medicine updatedMedicine = medicineCaptor.getValue();

@@ -12,7 +12,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -52,7 +51,7 @@ class MedicineRepositoryIT {
         medicine.setName("Test Medicine");
         medicine.setUnit("Box");
         medicine.setCurrentStock(10);
-        medicine.setUnitPriceVnd(BigDecimal.valueOf(1000));
+        medicine.setUnitPriceVnd(1000L);
         medicine.setIsActive(true);
 
         Medicine saved = medicineRepository.save(medicine);
@@ -69,7 +68,7 @@ class MedicineRepositoryIT {
         medicine.setName("Concurrent Test");
         medicine.setUnit("Box");
         medicine.setCurrentStock(100);
-        medicine.setUnitPriceVnd(BigDecimal.valueOf(1000));
+        medicine.setUnitPriceVnd(1000L);
         medicine.setIsActive(true);
 
         Medicine saved = medicineRepository.save(medicine);

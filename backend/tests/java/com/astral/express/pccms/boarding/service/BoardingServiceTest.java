@@ -39,7 +39,6 @@ import org.junit.jupiter.params.provider.CsvFileSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -154,7 +153,7 @@ class BoardingServiceTest {
                 .id(roomTypeId)
                 .code("STANDARD")
                 .name("Phòng thường")
-                .baseDailyPriceVnd(BigDecimal.valueOf(150000))
+                .baseDailyPriceVnd(150000L)
                 .isActive(true)
                 .build();
         ServiceCatalog serviceCatalog = ServiceCatalog.builder()
@@ -162,7 +161,7 @@ class BoardingServiceTest {
                 .serviceCode("BRD-STAY")
                 .name("Lưu trú theo ngày")
                 .categoryCode(ServiceCategory.BOARDING)
-                .basePriceVnd(BigDecimal.valueOf(150000))
+                .basePriceVnd(150000L)
                 .isActive(true)
                 .build();
 
@@ -205,7 +204,7 @@ class BoardingServiceTest {
 
         assertThat(response).isNotNull();
         assertThat(response.statusCode()).isEqualTo(BoardingStatus.RESERVED);
-        assertThat(response.estimatedPriceVnd()).isEqualByComparingTo(BigDecimal.valueOf(300000));
+        assertThat(response.estimatedPriceVnd()).isEqualTo(300000L);
         assertThat(response.petId()).isEqualTo(petId);
         assertThat(response.requestedRoomTypeId()).isEqualTo(roomTypeId);
     }

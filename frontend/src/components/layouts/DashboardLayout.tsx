@@ -136,11 +136,16 @@ export function DashboardLayout() {
                         <div className="h-6 w-px bg-border-main" />
 
                         <div className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white transition hover:bg-slate-700">
-                            {user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
+                            {user?.fullName?.charAt(0)?.toUpperCase() || "U"}
                         </div>
                         <div className="flex flex-col text-sm mr-2">
-                            <span className="font-semibold text-text-main">{user?.fullName || 'User'}</span>
-                            <button onClick={logout} className="text-xs text-red-500 hover:text-red-700 text-left">
+                            <span className="font-semibold text-text-main">
+                                {user?.fullName || "User"}
+                            </span>
+                            <button
+                                onClick={logout}
+                                className="text-xs text-red-500 hover:text-red-700 text-left"
+                            >
                                 Đăng xuất
                             </button>
                         </div>

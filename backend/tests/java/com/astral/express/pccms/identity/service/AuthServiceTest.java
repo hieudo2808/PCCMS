@@ -129,7 +129,7 @@ class AuthServiceTest {
                 
             case "REFRESH":
                 if ("VALID".equals(mockState)) {
-                    RefreshToken rt = RefreshToken.builder().user(mockUser).isRevoked(false).expiresAt(OffsetDateTime.now().plusDays(1)).build();
+                    RefreshToken rt = RefreshToken.builder().user(mockUser).revokedAt(null).expiresAt(OffsetDateTime.now().plusDays(1)).build();
                     given(refreshTokenRepository.findByHashedToken(anyString())).willReturn(Optional.of(rt));
                     given(jwtUtil.generateToken(mockUser)).willReturn(dummyToken);
                     given(jwtUtil.generateRefreshToken(mockUser)).willReturn(dummyRefresh);
@@ -138,10 +138,10 @@ class AuthServiceTest {
                 } else if ("TOKEN_NOT_FOUND".equals(mockState)) {
                     given(refreshTokenRepository.findByHashedToken(anyString())).willReturn(Optional.empty());
                 } else if ("TOKEN_REVOKED".equals(mockState)) {
-                    RefreshToken rt = RefreshToken.builder().user(mockUser).isRevoked(true).expiresAt(OffsetDateTime.now().plusDays(1)).build();
+                    RefreshToken rt = RefreshToken.builder().user(mockUser).revokedAt(OffsetDateTime.now()).expiresAt(OffsetDateTime.now().plusDays(1)).build();
                     given(refreshTokenRepository.findByHashedToken(anyString())).willReturn(Optional.of(rt));
                 } else if ("TOKEN_EXPIRED".equals(mockState)) {
-                    RefreshToken rt = RefreshToken.builder().user(mockUser).isRevoked(false).expiresAt(OffsetDateTime.now().minusDays(1)).build();
+                    RefreshToken rt = RefreshToken.builder().user(mockUser).revokedAt(null).expiresAt(OffsetDateTime.now().minusDays(1)).build();
                     given(refreshTokenRepository.findByHashedToken(anyString())).willReturn(Optional.of(rt));
                 }
                 break;
@@ -149,7 +149,7 @@ class AuthServiceTest {
             case "LOGOUT":
                 given(jwtUtil.extractJti(dummyToken)).willReturn("jti");
                 given(jwtUtil.extractExpiration(dummyToken)).willReturn(new Date(System.currentTimeMillis() + 10000));
-                RefreshToken rt = RefreshToken.builder().user(mockUser).isRevoked(false).build();
+                RefreshToken rt = RefreshToken.builder().user(mockUser).revokedAt(null).build();
                 given(refreshTokenRepository.findByHashedToken(anyString())).willReturn(Optional.of(rt));
                 break;
         }
@@ -181,7 +181,7 @@ class AuthServiceTest {
                 case "LOGOUT":
                     authService.logout(dummyToken, dummyRefresh);
                     verify(tokenBlacklistService).blacklist(eq("jti"), anyLong());
-                    verify(refreshTokenRepository).save(argThat(rt -> rt.isRevoked()));
+                    verify(refreshTokenRepository).save(argThat(rt -> rt.getRevokedAt() != null));
                     break;
             }
         }

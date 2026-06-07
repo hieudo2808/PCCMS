@@ -20,14 +20,16 @@ const profileSchema = z.object({
 });
 type ProfileForm = z.infer<typeof profileSchema>;
 
-const passwordSchema = z.object({
-    oldPassword: z.string().min(1, "Vui lòng nhập đầy đủ thông tin mật khẩu."),
-    newPassword: z.string().min(8, "Mật khẩu phải từ 8 ký tự"),
-    confirmPassword: z.string().min(1, "Vui lòng nhập đầy đủ thông tin mật khẩu."),
-}).refine(data => data.newPassword === data.confirmPassword, {
-    message: "Mật khẩu mới và xác nhận mật khẩu không khớp.",
-    path: ["confirmPassword"],
-});
+const passwordSchema = z
+    .object({
+        oldPassword: z.string().min(1, "Vui lòng nhập đầy đủ thông tin mật khẩu."),
+        newPassword: z.string().min(8, "Mật khẩu phải từ 8 ký tự"),
+        confirmPassword: z.string().min(1, "Vui lòng nhập đầy đủ thông tin mật khẩu."),
+    })
+    .refine((data) => data.newPassword === data.confirmPassword, {
+        message: "Mật khẩu mới và xác nhận mật khẩu không khớp.",
+        path: ["confirmPassword"],
+    });
 type PasswordForm = z.infer<typeof passwordSchema>;
 
 export function ProfilePage() {
@@ -44,9 +46,14 @@ export function ProfilePage() {
     const [phoneOtp, setPhoneOtp] = useState("");
 
     // --- Data Fetching ---
-    const { data: profile, isLoading, isError, refetch } = useQuery({
-        queryKey: ['profile'],
-        queryFn: userApi.getProfile
+    const {
+        data: profile,
+        isLoading,
+        isError,
+        refetch,
+    } = useQuery({
+        queryKey: ["profile"],
+        queryFn: userApi.getProfile,
     });
 
     // --- Forms ---
@@ -54,18 +61,18 @@ export function ProfilePage() {
         register: registerProfile,
         handleSubmit: handleProfileSubmit,
         reset: resetProfile,
-        formState: { errors: profileErrors, isSubmitting: isUpdatingProfile }
+        formState: { errors: profileErrors, isSubmitting: isUpdatingProfile },
     } = useForm<ProfileForm>({
-        resolver: zodResolver(profileSchema)
+        resolver: zodResolver(profileSchema),
     });
 
     const {
         register: registerPassword,
         handleSubmit: handlePasswordSubmit,
         reset: resetPassword,
-        formState: { errors: passwordErrors, isSubmitting: isUpdatingPassword }
+        formState: { errors: passwordErrors, isSubmitting: isUpdatingPassword },
     } = useForm<PasswordForm>({
-        resolver: zodResolver(passwordSchema)
+        resolver: zodResolver(passwordSchema),
     });
 
     // Load data into forms when fetched
@@ -83,12 +90,12 @@ export function ProfilePage() {
     const updateProfileMutation = useMutation({
         mutationFn: userApi.updateProfile,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['profile'] });
+            queryClient.invalidateQueries({ queryKey: ["profile"] });
             toast.success("Cập nhật hồ sơ thành công");
         },
         onError: () => {
             toast.error("Không thể cập nhật hồ sơ");
-        }
+        },
     });
 
     const changePasswordMutation = useMutation({
@@ -99,7 +106,7 @@ export function ProfilePage() {
         },
         onError: () => {
             toast.error("Không thể cập nhật mật khẩu");
-        }
+        },
     });
 
     // --- Handlers ---
@@ -165,7 +172,9 @@ export function ProfilePage() {
     }
 
     if (isError || !profile) {
-        return <ErrorState onRetry={() => refetch()} message="Không thể tải thông tin người dùng" />;
+        return (
+            <ErrorState onRetry={() => refetch()} message="Không thể tải thông tin người dùng" />
+        );
     }
 
     return (
@@ -178,7 +187,9 @@ export function ProfilePage() {
                         </div>
 
                         <h3 className="mt-4 text-lg font-semibold">{profile.fullName}</h3>
-                        <p className="text-sm text-slate-500">Chủ nuôi • ID: {profile.id.substring(0, 8)}</p>
+                        <p className="text-sm text-slate-500">
+                            Chủ nuôi • ID: {profile.id.substring(0, 8)}
+                        </p>
 
                         {draftAvatarFileName ? (
                             <p className="mt-2 max-w-full truncate text-xs text-slate-500">
@@ -248,7 +259,7 @@ export function ProfilePage() {
 
                     <div className="flex gap-2">
                         <Button type="submit" disabled={isUpdatingProfile}>
-                            {isUpdatingProfile ? 'Đang lưu...' : 'Lưu hồ sơ'}
+                            {isUpdatingProfile ? "Đang lưu..." : "Lưu hồ sơ"}
                         </Button>
                         <Button
                             type="button"
@@ -284,7 +295,9 @@ export function ProfilePage() {
                                 onChange={(event) => setNewEmail(event.target.value)}
                             />
                             <div className="flex justify-end">
-                                <Button type="submit" variant="outline">Gửi OTP</Button>
+                                <Button type="submit" variant="outline">
+                                    Gửi OTP
+                                </Button>
                             </div>
                         </form>
                     ) : (
@@ -335,7 +348,9 @@ export function ProfilePage() {
                                 onChange={(event) => setNewPhone(event.target.value)}
                             />
                             <div className="flex justify-end">
-                                <Button type="submit" variant="outline">Gửi OTP</Button>
+                                <Button type="submit" variant="outline">
+                                    Gửi OTP
+                                </Button>
                             </div>
                         </form>
                     ) : (
@@ -397,7 +412,7 @@ export function ProfilePage() {
                         </div>
                         <div className="flex justify-end">
                             <Button type="submit" disabled={isUpdatingPassword}>
-                                {isUpdatingPassword ? 'Đang lưu...' : 'Cập nhật mật khẩu'}
+                                {isUpdatingPassword ? "Đang lưu..." : "Cập nhật mật khẩu"}
                             </Button>
                         </div>
                     </form>

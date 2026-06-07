@@ -14,7 +14,11 @@ export function RegisterPage() {
     const navigate = useNavigate();
     const { login } = useAuth();
 
-    const { register, handleSubmit, formState: { errors } } = useForm<RegisterFormData>({
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<RegisterFormData>({
         resolver: zodResolver(registerSchema),
     });
 
@@ -54,26 +58,63 @@ export function RegisterPage() {
 
             <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                    <Input id="fullName" label="Họ tên" placeholder="Nguyễn Văn A" {...register('fullName')} />
-                    {errors.fullName && <p className="mt-1 text-sm text-red-500">{errors.fullName.message}</p>}
+                    <Input
+                        id="fullName"
+                        label="Họ tên"
+                        placeholder="Nguyễn Văn A"
+                        {...register("fullName")}
+                    />
+                    {errors.fullName && (
+                        <p className="mt-1 text-sm text-red-500">{errors.fullName.message}</p>
+                    )}
                 </div>
                 <div>
-                    <Input id="email" label="Email" placeholder="owner@email.com" {...register('email')} />
-                    {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>}
+                    <Input
+                        id="email"
+                        label="Email"
+                        placeholder="owner@email.com"
+                        {...register("email")}
+                    />
+                    {errors.email && (
+                        <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>
+                    )}
                 </div>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                    <Input id="password" label="Mật khẩu" type="password" placeholder="••••••••" {...register('password')} />
-                    {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>}
+                    <Input
+                        id="password"
+                        label="Mật khẩu"
+                        type="password"
+                        placeholder="••••••••"
+                        {...register("password")}
+                    />
+                    {errors.password && (
+                        <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>
+                    )}
                 </div>
                 <div>
-                    <Input id="confirmPassword" label="Xác nhận mật khẩu" type="password" placeholder="••••••••" {...register('confirmPassword')} />
-                    {errors.confirmPassword && <p className="mt-1 text-sm text-red-500">{errors.confirmPassword.message}</p>}
+                    <Input
+                        id="confirmPassword"
+                        label="Xác nhận mật khẩu"
+                        type="password"
+                        placeholder="••••••••"
+                        {...register("confirmPassword")}
+                    />
+                    {errors.confirmPassword && (
+                        <p className="mt-1 text-sm text-red-500">
+                            {errors.confirmPassword.message}
+                        </p>
+                    )}
                 </div>
             </div>
 
-            <Button type="submit" className="w-full py-3" variant="primary" disabled={mutation.isPending}>
+            <Button
+                type="submit"
+                className="w-full py-3"
+                variant="primary"
+                disabled={mutation.isPending}
+            >
                 {mutation.isPending ? "Đang xử lý..." : "Tạo tài khoản"}
             </Button>
 

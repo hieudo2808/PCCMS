@@ -38,13 +38,13 @@ import {
 
 function AuthGuard({ children, requiredRole }: { children: ReactNode; requiredRole: RoleKey }) {
     const { user } = useAuth();
-      
+
     if (!user) {
         return <Navigate to="/login" replace />;
     }
 
     const currentRole = user?.roleCode?.toLowerCase() || "public";
-    
+
     if (currentRole !== requiredRole) {
         const fallbackPath = currentRole === "public" ? "/login" : `/${currentRole}`;
         return <Navigate to={fallbackPath} replace />;

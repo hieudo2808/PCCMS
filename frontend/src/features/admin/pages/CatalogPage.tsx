@@ -25,36 +25,46 @@ export function CatalogPage() {
     const queryClient = useQueryClient();
     const [page] = useState(1);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    
-    const { data: pageResponse, isLoading, isError } = useQuery({
-        queryKey: ['medicines', page],
+
+    const {
+        data: pageResponse,
+        isLoading,
+        isError,
+    } = useQuery({
+        queryKey: ["medicines", page],
         queryFn: () => medicineApi.getMedicines(page, 10),
     });
 
     const createMutation = useMutation({
-        mutationFn: (data: MedicineFormValues) => medicineApi.createMedicine({
-            ...data,
-            defaultInstruction: data.defaultInstruction || '',
-        }),
+        mutationFn: (data: MedicineFormValues) =>
+            medicineApi.createMedicine({
+                ...data,
+                defaultInstruction: data.defaultInstruction || "",
+            }),
         onSuccess: () => {
             toast.success("Thêm thuốc thành công");
             setIsModalOpen(false);
-            queryClient.invalidateQueries({ queryKey: ['medicines'] });
+            queryClient.invalidateQueries({ queryKey: ["medicines"] });
             reset();
         },
-        onError: () => toast.error("Có lỗi xảy ra")
+        onError: () => toast.error("Có lỗi xảy ra"),
     });
 
-    const { register, handleSubmit, reset, formState: { errors } } = useForm<MedicineFormValues>({
+    const {
+        register,
+        handleSubmit,
+        reset,
+        formState: { errors },
+    } = useForm<MedicineFormValues>({
         resolver: zodResolver(medicineSchema) as any,
         defaultValues: {
-            name: '',
-            categoryId: '',
-            unit: '',
+            name: "",
+            categoryId: "",
+            unit: "",
             unitPriceVnd: 0,
             initialStock: 0,
-            defaultInstruction: '',
-        }
+            defaultInstruction: "",
+        },
     });
 
     if (isLoading) {
@@ -69,21 +79,22 @@ export function CatalogPage() {
         return <EmptyState title="Lỗi" description="Không thể tải danh sách thuốc" />;
     }
 
-    const rows = pageResponse?.content.map((med: MedicineResponse) => [
-        med.name,
-        med.currentStock.toString(),
-        med.unit,
-        med.defaultInstruction || '-',
-        <Button key={`edit-${med.id}`} variant="outline" className="px-2 py-1 h-auto text-xs">Sửa</Button>
-    ]) || [];
+    const rows =
+        pageResponse?.content.map((med: MedicineResponse) => [
+            med.name,
+            med.currentStock.toString(),
+            med.unit,
+            med.defaultInstruction || "-",
+            <Button key={`edit-${med.id}`} variant="outline" className="px-2 py-1 h-auto text-xs">
+                Sửa
+            </Button>,
+        ]) || [];
 
     return (
         <div className="grid gap-6">
-            <Card 
+            <Card
                 title="Danh mục thuốc"
-                right={
-                    <Button onClick={() => setIsModalOpen(true)}>Thêm thuốc mới</Button>
-                }
+                right={<Button onClick={() => setIsModalOpen(true)}>Thêm thuốc mới</Button>}
             >
                 <DataTable
                     columns={["Tên thuốc", "Tồn kho", "Đơn vị", "Hướng dẫn", "Hành động"]}
@@ -91,50 +102,48 @@ export function CatalogPage() {
                 />
             </Card>
 
-            <Modal 
-                isOpen={isModalOpen} 
+            <Modal
+                isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 title="Thêm Thuốc Mới"
             >
-                <form onSubmit={handleSubmit((data) => createMutation.mutate(data))} className="space-y-4">
-                    <Input 
-                        label="Tên thuốc" 
-                        {...register('name')} 
-                        error={errors.name?.message} 
-                    />
-                    <Input 
-                        label="Danh mục (ID)" 
-                        {...register('categoryId')} 
-                        error={errors.categoryId?.message} 
+                <form
+                    onSubmit={handleSubmit((data) => createMutation.mutate(data))}
+                    className="space-y-4"
+                >
+                    <Input label="Tên thuốc" {...register("name")} error={errors.name?.message} />
+                    <Input
+                        label="Danh mục (ID)"
+                        {...register("categoryId")}
+                        error={errors.categoryId?.message}
                     />
                     <div className="grid grid-cols-2 gap-4">
-                        <Input 
-                            label="Đơn vị" 
-                            {...register('unit')} 
-                            error={errors.unit?.message} 
-                        />
-                        <Input 
-                            label="Giá (VND)" 
+                        <Input label="Đơn vị" {...register("unit")} error={errors.unit?.message} />
+                        <Input
+                            label="Giá (VND)"
                             type="number"
-                            {...register('unitPriceVnd')} 
-                            error={errors.unitPriceVnd?.message} 
+                            {...register("unitPriceVnd")}
+                            error={errors.unitPriceVnd?.message}
                         />
                     </div>
-                    <Input 
-                        label="Tồn kho ban đầu" 
+                    <Input
+                        label="Tồn kho ban đầu"
                         type="number"
-                        {...register('initialStock')} 
-                        error={errors.initialStock?.message} 
+                        {...register("initialStock")}
+                        error={errors.initialStock?.message}
                     />
-                    <Input 
-                        label="Hướng dẫn mặc định" 
-                        {...register('defaultInstruction')} 
-                    />
-                    
+                    <Input label="Hướng dẫn mặc định" {...register("defaultInstruction")} />
+
                     <div className="mt-6 flex justify-end gap-2">
-                        <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Hủy</Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setIsModalOpen(false)}
+                        >
+                            Hủy
+                        </Button>
                         <Button type="submit" disabled={createMutation.isPending}>
-                            {createMutation.isPending ? 'Đang lưu...' : 'Lưu'}
+                            {createMutation.isPending ? "Đang lưu..." : "Lưu"}
                         </Button>
                     </div>
                 </form>

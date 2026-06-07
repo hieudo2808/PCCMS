@@ -18,7 +18,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.lang.reflect.Method;
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -58,7 +57,7 @@ class GroomingControllerTest {
                 "GRM-BATH",
                 "Tam say",
                 null,
-                BigDecimal.valueOf(100000),
+                100000L,
                 60,
                 true);
         given(groomingService.listActiveServices()).willReturn(List.of(response));

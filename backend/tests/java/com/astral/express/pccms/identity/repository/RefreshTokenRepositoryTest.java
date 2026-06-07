@@ -79,7 +79,7 @@ class RefreshTokenRepositoryTest {
                 .hashedToken("hashed_token")
                 .user(savedUser)
                 .expiresAt(OffsetDateTime.now().plusDays(1))
-                .isRevoked(false)
+                .revokedAt(null)
                 .build();
         refreshTokenRepository.saveAndFlush(token);
 
@@ -98,13 +98,13 @@ class RefreshTokenRepositoryTest {
                 .hashedToken("hash1")
                 .user(savedUser)
                 .expiresAt(OffsetDateTime.now().plusDays(1))
-                .isRevoked(false)
+                .revokedAt(null)
                 .build();
         RefreshToken token2 = RefreshToken.builder()
                 .hashedToken("hash2")
                 .user(savedUser)
                 .expiresAt(OffsetDateTime.now().plusDays(1))
-                .isRevoked(false)
+                .revokedAt(null)
                 .build();
         refreshTokenRepository.save(token1);
         refreshTokenRepository.save(token2);
@@ -120,9 +120,9 @@ class RefreshTokenRepositoryTest {
         Optional<RefreshToken> retrieved2 = refreshTokenRepository.findByHashedToken("hash2");
         
         assertThat(retrieved1).isPresent();
-        assertThat(retrieved1.get().isRevoked()).isTrue();
+        assertThat(retrieved1.get().getRevokedAt()).isNotNull();
         
         assertThat(retrieved2).isPresent();
-        assertThat(retrieved2.get().isRevoked()).isTrue();
+        assertThat(retrieved2.get().getRevokedAt()).isNotNull();
     }
 }

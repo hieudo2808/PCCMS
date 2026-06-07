@@ -20,7 +20,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -59,8 +58,8 @@ class MedicineControllerTest {
     @Test
     void should_ReturnCreatedMedicine_when_ValidRequest() throws Exception {
         UUID id = UUID.randomUUID();
-        MedicineCreateRequest request = new MedicineCreateRequest("CODE1", "Medicine 1", null, "Box", null, 10, BigDecimal.valueOf(100));
-        MedicineResponse response = new MedicineResponse(id, "CODE1", "Medicine 1", null, null, "Box", null, 10, BigDecimal.valueOf(100), true);
+        MedicineCreateRequest request = new MedicineCreateRequest("CODE1", "Medicine 1", null, "Box", null, 10, 100L);
+        MedicineResponse response = new MedicineResponse(id, "CODE1", "Medicine 1", null, null, "Box", null, 10, 100L, true);
 
         given(medicineService.createMedicine(any(MedicineCreateRequest.class))).willReturn(response);
 
@@ -75,7 +74,7 @@ class MedicineControllerTest {
     @Test
     void should_ReturnBadRequest_when_CreateWithInvalidData() throws Exception {
         // Missing name and unit
-        MedicineCreateRequest request = new MedicineCreateRequest("CODE1", "", null, "", null, -10, BigDecimal.valueOf(-100));
+        MedicineCreateRequest request = new MedicineCreateRequest("CODE1", "", null, "", null, -10, Long.valueOf(-100));
 
         mockMvc.perform(post("/v1/medicines")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -87,8 +86,8 @@ class MedicineControllerTest {
     @Test
     void should_ReturnUpdatedMedicine_when_ValidRequest() throws Exception {
         UUID id = UUID.randomUUID();
-        MedicineUpdateRequest request = new MedicineUpdateRequest("Medicine Updated", null, "Box", null, 10, BigDecimal.valueOf(100));
-        MedicineResponse response = new MedicineResponse(id, "CODE1", "Medicine Updated", null, null, "Box", null, 10, BigDecimal.valueOf(100), true);
+        MedicineUpdateRequest request = new MedicineUpdateRequest("Medicine Updated", null, "Box", null, 10, 100L);
+        MedicineResponse response = new MedicineResponse(id, "CODE1", "Medicine Updated", null, null, "Box", null, 10, 100L, true);
 
         given(medicineService.updateMedicine(eq(id), any(MedicineUpdateRequest.class))).willReturn(response);
 
@@ -103,7 +102,7 @@ class MedicineControllerTest {
     @Test
     void should_ReturnMedicine_when_GetById() throws Exception {
         UUID id = UUID.randomUUID();
-        MedicineResponse response = new MedicineResponse(id, "CODE1", "Medicine 1", null, null, "Box", null, 10, BigDecimal.valueOf(100), true);
+        MedicineResponse response = new MedicineResponse(id, "CODE1", "Medicine 1", null, null, "Box", null, 10, 100L, true);
 
         given(medicineService.getMedicine(id)).willReturn(response);
 
@@ -116,7 +115,7 @@ class MedicineControllerTest {
     @Test
     void should_ReturnPageOfMedicines_when_GetAll() throws Exception {
         UUID id = UUID.randomUUID();
-        MedicineResponse response = new MedicineResponse(id, "CODE1", "Medicine 1", null, null, "Box", null, 10, BigDecimal.valueOf(100), true);
+        MedicineResponse response = new MedicineResponse(id, "CODE1", "Medicine 1", null, null, "Box", null, 10, 100L, true);
         PageResponse<MedicineResponse> pageResponse = PageResponse.of(new org.springframework.data.domain.PageImpl<>(List.of(response)));
 
         given(medicineService.getAllMedicines(any(Pageable.class))).willReturn(pageResponse);
@@ -130,7 +129,7 @@ class MedicineControllerTest {
     void should_ReturnSuccess_when_AddStock() throws Exception {
         UUID id = UUID.randomUUID();
         AddStockRequest request = new AddStockRequest(5);
-        MedicineResponse response = new MedicineResponse(id, "CODE1", "Medicine 1", null, null, "Box", null, 15, BigDecimal.valueOf(100), true);
+        MedicineResponse response = new MedicineResponse(id, "CODE1", "Medicine 1", null, null, "Box", null, 15, 100L, true);
 
         given(medicineService.addStock(eq(id), any(AddStockRequest.class))).willReturn(response);
 

@@ -37,7 +37,6 @@ import org.junit.jupiter.params.provider.CsvFileSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -133,7 +132,7 @@ class GroomingServiceTest {
                 .serviceCode("GRM-BATH")
                 .name("Tam say")
                 .categoryCode(ServiceCategory.GROOMING)
-                .basePriceVnd(BigDecimal.valueOf(100000))
+                .basePriceVnd(100000L)
                 .durationMinutes(60)
                 .isActive(true)
                 .build();
@@ -199,8 +198,8 @@ class GroomingServiceTest {
                     .invoiceCode("INV-001")
                     .owner(owner)
                     .pet(pet)
-                    .totalAmountVnd(BigDecimal.valueOf(100000))
-                    .paidAmountVnd(BigDecimal.ZERO)
+                    .totalAmountVnd(100000L)
+                    .paidAmountVnd(0L)
                     .build();
             given(securityHelper.getCurrentUserId()).willReturn(staff.getId());
             given(userRepository.findById(staff.getId())).willReturn(Optional.of(staff));
@@ -226,7 +225,7 @@ class GroomingServiceTest {
         assertThat(response).isNotNull();
         if ("CREATE_BOOKING".equals(action)) {
             assertThat(response.statusCode()).isEqualTo(GroomingStatus.PENDING);
-            assertThat(response.estimatedAmountVnd()).isEqualByComparingTo(BigDecimal.valueOf(100000));
+            assertThat(response.estimatedAmountVnd()).isEqualTo(100000L);
         }
         if ("COMPLETE_TICKET".equals(action)) {
             assertThat(response.statusCode()).isEqualTo(GroomingStatus.COMPLETED);
@@ -269,7 +268,7 @@ class GroomingServiceTest {
                 .service(service)
                 .statusCode(status == GroomingStatus.IN_SERVICE ? ServiceOrderStatus.IN_PROGRESS : ServiceOrderStatus.REQUESTED)
                 .baseAmountVnd(service.getBasePriceVnd())
-                .extraAmountVnd(BigDecimal.ZERO)
+                .extraAmountVnd(0L)
                 .build();
         Appointment appointment = Appointment.builder()
                 .id(UUID.randomUUID())
