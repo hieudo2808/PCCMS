@@ -50,7 +50,6 @@ const mockMedicines: Medicine[] = [
         unit: "Hộp",
         stock: 124,
         unitPriceVnd: 100000,
-        defaultUsageGuide: "Ngày 2 lần",
         note: "",
     },
 ];
@@ -165,7 +164,6 @@ describe("CatalogPage", () => {
         await userEvent.type(screen.getByLabelText(/Đơn vị/i), "Vỉ");
         await userEvent.type(screen.getByLabelText(/Tồn kho ban đầu/i), "100");
         await userEvent.type(screen.getByLabelText(/Giá \(VND\)/i), "50000");
-        await userEvent.type(screen.getByLabelText(/Mẫu liều/i), "1 viên x 2 lần/ngày sau ăn");
 
         // Submit
         const submitBtn = screen.getByRole("button", { name: /^Lưu$/i });

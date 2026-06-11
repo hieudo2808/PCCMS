@@ -1,0 +1,7 @@
+rule_id,case_id,action,input_name,input_description,input_is_active,expected_status,expected_error_code
+BR-MEDCAT-01,API-MEDCAT-007-1,CREATE,,Valid description,true,400,ERR_400_BAD_REQUEST
+BR-MEDCAT-01,API-MEDCAT-007-2,CREATE," ",Valid description,true,400,ERR_400_BAD_REQUEST
+BR-MEDCAT-01,API-MEDCAT-007-3,CREATE,Antibiotics,Valid description,,400,ERR_400_BAD_REQUEST
+BR-MEDCAT-01,API-MEDCAT-009-1,UPDATE,,Valid description,true,400,ERR_400_BAD_REQUEST
+BR-MEDCAT-01,API-MEDCAT-009-2,UPDATE," ",Valid description,true,400,ERR_400_BAD_REQUEST
+BR-MEDCAT-01,API-MEDCAT-009-3,UPDATE,Antibiotics,Valid description,,400,ERR_400_BAD_REQUEST

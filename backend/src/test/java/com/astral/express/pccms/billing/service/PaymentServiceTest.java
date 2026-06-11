@@ -1,6 +1,7 @@
 package com.astral.express.pccms.billing.service;
 
 import com.astral.express.pccms.billing.dto.request.OwnerPaymentRequest;
+import com.astral.express.pccms.billing.dto.request.RecordPaymentRequest;
 import com.astral.express.pccms.billing.dto.response.PaymentResponse;
 import com.astral.express.pccms.billing.entity.Invoice;
 import com.astral.express.pccms.billing.entity.InvoiceStatus;
@@ -11,16 +12,18 @@ import com.astral.express.pccms.billing.repository.InvoiceRepository;
 import com.astral.express.pccms.billing.repository.PaymentRepository;
 import com.astral.express.pccms.common.exception.BusinessException;
 import com.astral.express.pccms.common.exception.ErrorCode;
-import com.astral.express.pccms.identity.security.SecurityHelper;
+import com.astral.express.pccms.identity.security.SecurityContextService;
 import com.astral.express.pccms.user.entity.Users;
 import com.astral.express.pccms.user.repository.UserRepository;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvFileSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -32,7 +35,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class PaymentServiceImplTest {
+class PaymentServiceTest {
 
     @Mock
     private InvoiceRepository invoiceRepository;
@@ -44,76 +47,140 @@ class PaymentServiceImplTest {
     private UserRepository userRepository;
 
     @Mock
-    private SecurityHelper securityHelper;
+    private SecurityContextService securityContextService;
 
     @InjectMocks
     private PaymentService paymentService;
 
-    @ParameterizedTest(name = "[{0}] {1}: amount={2}, expected={6}")
-    @CsvFileSource(resources = "/testcases/payment-owner-request.csv", numLinesToSkip = 1)
-    void should_ProcessOwnerPaymentRequest_AccordingToRules(
-            String ruleId, String caseId, Long inputAmount, Long invoiceTotal,
-            Long invoicePaid, boolean isOwner, String expectedResult, String expectedError) {
+    @ParameterizedTest(name = "[{0}] {1}: {2} (amount={3})")
+    @CsvFileSource(resources = "/testcases/billing-payment-service.csv", numLinesToSkip = 1)
+    void should_ProcessPaymentLogic_AccordingToRules(
+            String testCaseId, String method, String scenario,
+            Long amount, Long totalAmount, Long paidAmount,
+            boolean isOwner, boolean currentUserExists, boolean invoiceExists, boolean paymentExists,
+            String targetStatusStr, String expectedResult, String expectedErrorCode, String expectedInvoiceStatus) {
 
         // GIVEN
         UUID invoiceId = UUID.randomUUID();
         UUID currentUserId = UUID.randomUUID();
         UUID ownerId = isOwner ? currentUserId : UUID.randomUUID();
+        UUID paymentId = UUID.randomUUID();
 
         Users owner = new Users();
         owner.setId(ownerId);
 
+        Users receiver = new Users();
+        receiver.setId(currentUserId);
+
         Invoice mockInvoice = new Invoice();
         mockInvoice.setId(invoiceId);
         mockInvoice.setOwner(owner);
-        mockInvoice.setTotalAmountVnd(invoiceTotal);
-        mockInvoice.setPaidAmountVnd(invoicePaid);
+        mockInvoice.setTotalAmountVnd(totalAmount);
+        mockInvoice.setPaidAmountVnd(paidAmount);
         mockInvoice.setStatusCode(InvoiceStatus.UNPAID);
 
-        OwnerPaymentRequest request = new OwnerPaymentRequest(
-                inputAmount, PaymentMethod.BANK_TRANSFER, "REF123", null, "Note"
-        );
+        Payment mockPayment = new Payment();
+        mockPayment.setId(paymentId);
+        mockPayment.setInvoice(mockInvoice);
+        mockPayment.setStatusCode(PaymentStatus.PENDING);
+        mockPayment.setAmountVnd(amount == null || amount <= 0 ? 1000L : amount); // Valid initial payment amount
 
-        if (inputAmount != null && inputAmount > 0) {
-            given(invoiceRepository.findByIdForUpdate(invoiceId)).willReturn(Optional.of(mockInvoice));
-            given(securityHelper.getCurrentUserId()).willReturn(currentUserId);
+        PaymentStatus targetStatus = targetStatusStr != null && !targetStatusStr.isBlank() ? PaymentStatus.valueOf(targetStatusStr) : null;
+
+        if ("recordPayment".equals(method)) {
+            if (amount != null && amount > 0) {
+                given(invoiceRepository.findByIdForUpdate(invoiceId))
+                        .willReturn(invoiceExists ? Optional.of(mockInvoice) : Optional.empty());
+                
+                if (invoiceExists) {
+                    long remainingAmount = Math.max(0L, mockInvoice.getTotalAmountVnd() - mockInvoice.getPaidAmountVnd());
+                    if (remainingAmount > 0 && amount <= remainingAmount) {
+                        given(securityContextService.getCurrentUserId()).willReturn(currentUserId);
+                        given(userRepository.findById(currentUserId))
+                                .willReturn(currentUserExists ? Optional.of(receiver) : Optional.empty());
+                    }
+                }
+            }
+        } else if ("createOwnerPaymentRequest".equals(method)) {
+            if (amount != null && amount > 0) {
+                given(invoiceRepository.findByIdForUpdate(invoiceId))
+                        .willReturn(invoiceExists ? Optional.of(mockInvoice) : Optional.empty());
+                
+                if (invoiceExists) {
+                    given(securityContextService.getCurrentUserId()).willReturn(currentUserId);
+                }
+            }
+        } else if ("updatePaymentStatus".equals(method)) {
+            given(paymentRepository.findById(paymentId))
+                    .willReturn(paymentExists ? Optional.of(mockPayment) : Optional.empty());
+            
+            if (paymentExists && targetStatus == PaymentStatus.SUCCEEDED && mockPayment.getStatusCode() != PaymentStatus.SUCCEEDED) {
+                given(securityContextService.getCurrentUserId()).willReturn(currentUserId);
+                given(userRepository.findById(currentUserId))
+                        .willReturn(currentUserExists ? Optional.of(receiver) : Optional.empty());
+            }
         }
 
-        if ("VALID".equals(expectedResult)) {
+        if ("SUCCESS".equals(expectedResult)) {
             Payment savedPayment = new Payment();
             savedPayment.setId(UUID.randomUUID());
             savedPayment.setInvoice(mockInvoice);
-            savedPayment.setAmountVnd(inputAmount);
-            savedPayment.setStatusCode(PaymentStatus.SUCCEEDED); // Expecting SUCCEEDED based on new logic
-            savedPayment.setPaymentCode("PAY-123");
+            savedPayment.setAmountVnd(amount);
+            savedPayment.setStatusCode(targetStatus);
+            savedPayment.setPaymentCode("PAY-TEST");
 
             given(paymentRepository.save(any(Payment.class))).willReturn(savedPayment);
 
             // WHEN
-            PaymentResponse response = paymentService.createOwnerPaymentRequest(invoiceId, request);
+            PaymentResponse response = null;
+            if ("recordPayment".equals(method)) {
+                RecordPaymentRequest request = new RecordPaymentRequest(invoiceId, amount, PaymentMethod.CASH, OffsetDateTime.now(), "Note");
+                response = paymentService.recordPayment(request);
+            } else if ("createOwnerPaymentRequest".equals(method)) {
+                OwnerPaymentRequest request = new OwnerPaymentRequest(amount, PaymentMethod.BANK_TRANSFER, "REF", "Note", null);
+                response = paymentService.createOwnerPaymentRequest(invoiceId, request);
+            } else if ("updatePaymentStatus".equals(method)) {
+                response = paymentService.updatePaymentStatus(paymentId, targetStatus, "Note");
+            }
 
             // THEN
             assertThat(response).isNotNull();
-            assertThat(response.statusCode()).isEqualTo(PaymentStatus.SUCCEEDED);
-            verify(paymentRepository).save(any(Payment.class));
-            verify(invoiceRepository).save(mockInvoice);
+            assertThat(response.statusCode()).isEqualTo(targetStatus);
             
-            long expectedPaid = invoicePaid + inputAmount;
-            assertThat(mockInvoice.getPaidAmountVnd()).isEqualTo(expectedPaid);
-            if (expectedPaid >= invoiceTotal) {
-                assertThat(mockInvoice.getStatusCode()).isEqualTo(InvoiceStatus.PAID);
+            if ("updatePaymentStatus".equals(method)) {
+                ArgumentCaptor<Payment> paymentCaptor = ArgumentCaptor.forClass(Payment.class);
+                verify(paymentRepository).save(paymentCaptor.capture());
+                Payment capturedPayment = paymentCaptor.getValue();
+                assertThat(capturedPayment.getStatusCode()).isEqualTo(targetStatus);
             } else {
-                assertThat(mockInvoice.getStatusCode()).isEqualTo(InvoiceStatus.PARTIALLY_PAID);
+                verify(paymentRepository).save(any(Payment.class));
             }
-        } else {
+            
+            if (expectedInvoiceStatus != null && !expectedInvoiceStatus.isBlank()) {
+                verify(invoiceRepository).save(mockInvoice);
+                assertThat(mockInvoice.getStatusCode()).isEqualTo(InvoiceStatus.valueOf(expectedInvoiceStatus));
+            }
+            
+        } else if ("ERROR".equals(expectedResult)) {
             // WHEN & THEN
-            assertThatThrownBy(() -> paymentService.createOwnerPaymentRequest(invoiceId, request))
-                    .isInstanceOf(BusinessException.class)
-                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.valueOf(expectedError));
+            assertThatThrownBy(() -> {
+                if ("recordPayment".equals(method)) {
+                    RecordPaymentRequest request = new RecordPaymentRequest(invoiceId, amount, PaymentMethod.CASH, OffsetDateTime.now(), "Note");
+                    paymentService.recordPayment(request);
+                } else if ("createOwnerPaymentRequest".equals(method)) {
+                    OwnerPaymentRequest request = new OwnerPaymentRequest(amount, PaymentMethod.BANK_TRANSFER, "REF", "Note", null);
+                    paymentService.createOwnerPaymentRequest(invoiceId, request);
+                } else if ("updatePaymentStatus".equals(method)) {
+                    paymentService.updatePaymentStatus(paymentId, targetStatus, "Note");
+                }
+            })
+            .isInstanceOf(BusinessException.class)
+            .hasFieldOrPropertyWithValue("errorCode", ErrorCode.valueOf(expectedErrorCode));
 
             verify(paymentRepository, never()).save(any(Payment.class));
+            if ("updatePaymentStatus".equals(method) || "createOwnerPaymentRequest".equals(method) || "recordPayment".equals(method)) {
+                verify(invoiceRepository, never()).save(any(Invoice.class));
+            }
         }
     }
 }
-
-

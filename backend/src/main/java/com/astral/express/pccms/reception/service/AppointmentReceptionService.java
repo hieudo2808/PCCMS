@@ -9,7 +9,6 @@ import com.astral.express.pccms.reception.dto.request.AppointmentCancelRequest;
 import com.astral.express.pccms.reception.dto.request.AppointmentReceiveRequest;
 import com.astral.express.pccms.reception.dto.request.QuickAppointmentRequest;
 import com.astral.express.pccms.reception.dto.response.AppointmentReceptionResponse;
-import com.astral.express.pccms.reception.service.AppointmentReceptionService;
 import com.astral.express.pccms.reception.service.ReceptionValidation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-@Service("receptionAppointmentReceptionService")
+@Service
 @RequiredArgsConstructor
 public class AppointmentReceptionService {
     private final JdbcTemplate jdbc;

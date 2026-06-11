@@ -4,7 +4,7 @@ import com.astral.express.pccms.appointment.entity.ServiceCategory;
 import com.astral.express.pccms.catalog.dto.request.CreateServiceCatalogRequest;
 import com.astral.express.pccms.catalog.dto.request.UpdateServiceCatalogRequest;
 import com.astral.express.pccms.catalog.dto.response.ServiceCatalogResponse;
-import com.astral.express.pccms.catalog.security.CatalogPermissions;
+import com.astral.express.pccms.catalog.security.ServiceCatalogPermissions;
 import com.astral.express.pccms.catalog.service.ServiceCatalogAdminService;
 import com.astral.express.pccms.common.dto.ApiResponse;
 import com.astral.express.pccms.common.dto.PageResponse;
@@ -34,13 +34,13 @@ public class ServiceCatalogController {
 
     private final ServiceCatalogAdminService serviceCatalogAdminService;
 
-    @PreAuthorize(CatalogPermissions.SERVICE_MANAGE)
+    @PreAuthorize(ServiceCatalogPermissions.SERVICE_MANAGE)
     @PostMapping
     public ApiResponse<ServiceCatalogResponse> create(@Valid @RequestBody CreateServiceCatalogRequest request) {
         return ApiResponse.created(serviceCatalogAdminService.create(request));
     }
 
-    @PreAuthorize(CatalogPermissions.SERVICE_MANAGE)
+    @PreAuthorize(ServiceCatalogPermissions.SERVICE_MANAGE)
     @PutMapping("/{id}")
     public ApiResponse<ServiceCatalogResponse> update(
             @PathVariable UUID id,
@@ -48,13 +48,13 @@ public class ServiceCatalogController {
         return ApiResponse.success(serviceCatalogAdminService.update(id, request));
     }
 
-    @PreAuthorize(CatalogPermissions.SERVICE_READ)
+    @PreAuthorize(ServiceCatalogPermissions.SERVICE_READ)
     @GetMapping("/categories")
     public ApiResponse<List<ServiceCategory>> listCategories() {
         return ApiResponse.success(serviceCatalogAdminService.listCategories());
     }
 
-    @PreAuthorize(CatalogPermissions.SERVICE_READ)
+    @PreAuthorize(ServiceCatalogPermissions.SERVICE_READ)
     @GetMapping
     public ApiResponse<PageResponse<ServiceCatalogResponse>> list(
             @RequestParam(required = false) ServiceCategory categoryCode,
@@ -62,13 +62,13 @@ public class ServiceCatalogController {
         return ApiResponse.success(serviceCatalogAdminService.list(categoryCode, pageable));
     }
 
-    @PreAuthorize(CatalogPermissions.SERVICE_READ)
+    @PreAuthorize(ServiceCatalogPermissions.SERVICE_READ)
     @GetMapping("/{id}")
     public ApiResponse<ServiceCatalogResponse> getById(@PathVariable UUID id) {
         return ApiResponse.success(serviceCatalogAdminService.getById(id));
     }
 
-    @PreAuthorize(CatalogPermissions.SERVICE_MANAGE)
+    @PreAuthorize(ServiceCatalogPermissions.SERVICE_MANAGE)
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable UUID id) {
         serviceCatalogAdminService.delete(id);

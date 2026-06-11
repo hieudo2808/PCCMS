@@ -1,9 +1,0 @@
-rule_id,case_id,action,input_name,input_instruction,input_active,is_medicine_exist,is_template_exist,name_exists,expected_result,expected_error
-BR-MUT-01,TC001,CREATE,Liều 1,Uống sau ăn,true,true,false,false,VALID,null
-BR-MUT-02,TC002,CREATE,Liều 1,Uống sau ăn,true,false,false,false,INVALID,ERR_MED_004_MEDICINE_NOT_FOUND
-BR-MUT-03,TC003,CREATE,Liều trùng,Uống sau ăn,true,true,false,true,INVALID,ERR_MED_012_TEMPLATE_NAME_EXISTS
-BR-MUT-04,TC004,UPDATE,Liều 2,Uống sau ăn,false,true,true,false,VALID,null
-BR-MUT-05,TC005,UPDATE,Liều 2,Uống sau ăn,true,true,false,false,INVALID,ERR_MED_011_TEMPLATE_NOT_FOUND
-BR-MUT-06,TC006,UPDATE,Liều trùng,Uống sau ăn,true,true,true,true,INVALID,ERR_MED_012_TEMPLATE_NAME_EXISTS
-BR-MUT-07,TC007,DELETE,null,null,null,true,true,false,VALID,null
-BR-MUT-08,TC008,DELETE,null,null,null,true,false,false,INVALID,ERR_MED_011_TEMPLATE_NOT_FOUND

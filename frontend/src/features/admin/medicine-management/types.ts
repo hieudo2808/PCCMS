@@ -9,7 +9,6 @@ export interface Medicine {
     unit: string;
     stock: number;
     unitPriceVnd?: number;
-    defaultUsageGuide: string;
     note: string;
     isReferenced?: boolean;
 }
@@ -22,7 +21,6 @@ export interface MedicineFormValues {
     unit: string;
     stock: string;
     unitPriceVnd: string;
-    defaultUsageGuide: string;
     note: string;
 }
 

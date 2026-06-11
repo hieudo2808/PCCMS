@@ -37,7 +37,7 @@ public class QuickCheckInUseCase {
     private final ServiceOrderFactory serviceOrderFactory;
     private final ServiceOrderRepository serviceOrderRepository;
     private final AppointmentRepository appointmentRepository;
-    private final AppointmentReceptionService receptionService;
+    private final ReceptionTicketService receptionService;
 
     public Result execute(QuickCheckInRequest request, UUID staffId) {
         if (request.phone() == null || request.phone().isBlank()) {

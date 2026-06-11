@@ -1,6 +1,6 @@
 package com.astral.express.pccms.medicine.controller;
 
-import com.astral.express.pccms.catalog.security.CatalogPermissions;
+import com.astral.express.pccms.medicine.security.MedicinePermissions;
 import com.astral.express.pccms.common.dto.PageResponse;
 import com.astral.express.pccms.common.dto.ApiResponse;
 import com.astral.express.pccms.medicine.dto.request.AddStockRequest;
@@ -33,16 +33,15 @@ import java.util.UUID;
 @RequestMapping("/v1/medicines")
 @RequiredArgsConstructor
 public class MedicineController {
-
     private final MedicineService medicineService;
 
-    @PreAuthorize(CatalogPermissions.MEDICINE_MANAGE)
+    @PreAuthorize(MedicinePermissions.MEDICINE_MANAGE)
     @PostMapping
     public ApiResponse<MedicineResponse> createMedicine(@Valid @RequestBody MedicineCreateRequest request) {
         return ApiResponse.success(medicineService.createMedicine(request));
     }
 
-    @PreAuthorize(CatalogPermissions.MEDICINE_MANAGE)
+    @PreAuthorize(MedicinePermissions.MEDICINE_MANAGE)
     @PutMapping("/{id}")
     public ApiResponse<MedicineResponse> updateMedicine(
             @PathVariable UUID id,
@@ -50,19 +49,19 @@ public class MedicineController {
         return ApiResponse.success(medicineService.updateMedicine(id, request));
     }
 
-    @PreAuthorize(CatalogPermissions.MEDICINE_READ)
+    @PreAuthorize(MedicinePermissions.MEDICINE_READ)
     @GetMapping("/{id}")
     public ApiResponse<MedicineResponse> getMedicine(@PathVariable UUID id) {
         return ApiResponse.success(medicineService.getMedicine(id));
     }
 
-    @PreAuthorize(CatalogPermissions.MEDICINE_READ)
+    @PreAuthorize(MedicinePermissions.MEDICINE_READ)
     @GetMapping("/categories")
     public ApiResponse<List<MedicineCategoryResponse>> listCategories() {
         return ApiResponse.success(medicineService.listCategories());
     }
 
-    @PreAuthorize(CatalogPermissions.MEDICINE_READ)
+    @PreAuthorize(MedicinePermissions.MEDICINE_READ)
     @GetMapping
     public ApiResponse<PageResponse<MedicineResponse>> getAllMedicines(
             @RequestParam(required = false) String keyword,
@@ -75,7 +74,7 @@ public class MedicineController {
         return ApiResponse.success(medicineService.getAllMedicines(categoryId, pageable));
     }
 
-    @PreAuthorize(CatalogPermissions.MEDICINE_READ)
+    @PreAuthorize(MedicinePermissions.MEDICINE_READ)
     @GetMapping("/suggestions")
     public ApiResponse<PageResponse<MedicineResponse>> suggestMedicines(
             @RequestParam(required = false) String keyword,
@@ -84,7 +83,7 @@ public class MedicineController {
         return ApiResponse.success(medicineService.searchMedicines(keyword, null, activeOnly, pageable));
     }
 
-    @PreAuthorize(CatalogPermissions.MEDICINE_MANAGE)
+    @PreAuthorize(MedicinePermissions.MEDICINE_MANAGE)
     @PatchMapping("/{id}/stock")
     public ApiResponse<MedicineResponse> addStock(
             @PathVariable UUID id,
@@ -92,7 +91,7 @@ public class MedicineController {
         return ApiResponse.success(medicineService.addStock(id, request));
     }
 
-    @PreAuthorize(CatalogPermissions.MEDICINE_MANAGE)
+    @PreAuthorize(MedicinePermissions.MEDICINE_MANAGE)
     @DeleteMapping("/{id}")
     public ApiResponse<Void> deleteMedicine(@PathVariable UUID id) {
         medicineService.deleteMedicine(id);

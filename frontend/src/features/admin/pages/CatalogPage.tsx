@@ -27,7 +27,6 @@ const medicineSchema = z.object({
     unit: z.string().min(1, "Vui lòng nhập đơn vị"),
     stock: z.string().min(1, "Vui lòng nhập tồn kho ban đầu"),
     unitPriceVnd: z.string().min(1, "Vui lòng nhập giá"),
-    defaultUsageGuide: z.string().min(1, "Vui lòng nhập hướng dẫn sử dụng hoặc mẫu liều"),
     note: z.string().optional().default(""),
 });
 
@@ -60,7 +59,6 @@ const medicineDefaults: MedicineFV = {
     unit: "",
     stock: "",
     unitPriceVnd: "",
-    defaultUsageGuide: "",
     note: "",
 };
 
@@ -208,7 +206,6 @@ export function CatalogPage() {
             unit: medicine.unit,
             stock: String(medicine.stock),
             unitPriceVnd: String(medicine.unitPriceVnd ?? 0),
-            defaultUsageGuide: medicine.defaultUsageGuide,
             note: medicine.note,
         });
         setEditingMedicine(medicine);
@@ -405,17 +402,6 @@ export function CatalogPage() {
                         <Input label="Đơn vị" placeholder="Viên, chai, hộp..." {...medForm.register("unit")} error={medForm.formState.errors.unit?.message} />
                         <Input label="Tồn kho ban đầu" type="number" min="0" {...medForm.register("stock")} error={medForm.formState.errors.stock?.message} />
                         <Input label="Giá (VND)" type="number" min="0" {...medForm.register("unitPriceVnd")} error={medForm.formState.errors.unitPriceVnd?.message} />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                        <label htmlFor="med-guide" className="text-[13px] font-medium text-slate-700">Mẫu liều / hướng dẫn sử dụng</label>
-                        <textarea
-                            id="med-guide"
-                            rows={4}
-                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
-                            placeholder="Mỗi dòng một mẫu, ví dụ: 1 viên x 2 lần/ngày sau ăn trong 5 ngày"
-                            {...medForm.register("defaultUsageGuide")}
-                        />
-                        {medForm.formState.errors.defaultUsageGuide && <p className="text-[12px] font-medium text-error-600">{medForm.formState.errors.defaultUsageGuide.message}</p>}
                     </div>
                     <div className="flex justify-end gap-3 pt-2">
                         <Button variant="ghost" type="button" onClick={closeMedicineModal} disabled={isMedSubmitting}>Hủy</Button>

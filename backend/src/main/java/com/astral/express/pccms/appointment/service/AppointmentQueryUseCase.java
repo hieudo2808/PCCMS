@@ -36,7 +36,7 @@ public class AppointmentQueryUseCase {
     private final PetRepository petRepository;
     private final UserRepository userRepository;
     private final AppointmentResponseAssembler assembler;
-    private final AppointmentReceptionService receptionService;
+    private final ReceptionTicketService receptionService;
 
     @Transactional(readOnly = true)
     public AppointmentResponse getAppointmentById(UUID appointmentId) {

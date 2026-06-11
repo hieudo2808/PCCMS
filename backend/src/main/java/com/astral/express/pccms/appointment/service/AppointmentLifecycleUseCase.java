@@ -25,7 +25,7 @@ public class AppointmentLifecycleUseCase {
     private final AppointmentRepository appointmentRepository;
     private final UserRepository userRepository;
     private final AppointmentResponseAssembler assembler;
-    private final AppointmentReceptionService receptionService;
+    private final ReceptionTicketService receptionService;
 
     @Transactional
     public AppointmentResponse checkIn(UUID appointmentId, UUID staffId) {

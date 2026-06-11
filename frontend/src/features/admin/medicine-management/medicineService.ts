@@ -8,7 +8,6 @@ interface BackendMedicine {
     categoryId?: string;
     categoryName?: string;
     unit: string;
-    defaultInstruction?: string;
     currentStock: number;
     unitPriceVnd?: number;
     isActive?: boolean;
@@ -49,7 +48,6 @@ function toMedicine(item: BackendMedicine): Medicine {
         unit: item.unit,
         stock: item.currentStock,
         unitPriceVnd: item.unitPriceVnd ?? 0,
-        defaultUsageGuide: item.defaultInstruction ?? "",
         note: item.isActive === false ? "Ngừng áp dụng" : "",
     };
 }
@@ -59,9 +57,6 @@ function requireMedicineFields(payload: MedicineFormValues) {
         throw new Error("Vui lòng nhập đầy đủ thông tin thuốc");
     }
     requireCategoryId(payload.categoryId);
-    if (!payload.defaultUsageGuide.trim()) {
-        throw new Error("Vui lòng nhập ít nhất một hướng dẫn sử dụng hoặc mẫu liều");
-    }
     if (!Number.isFinite(Number(payload.stock)) || Number(payload.stock) < 0) {
         throw new Error("Số lượng tồn phải là số không âm");
     }
@@ -76,7 +71,6 @@ function createPayload(payload: MedicineFormValues) {
         name: payload.name.trim(),
         categoryId: requireCategoryId(payload.categoryId),
         unit: payload.unit.trim(),
-        defaultInstruction: payload.defaultUsageGuide.trim(),
         currentStock: Number(payload.stock),
         unitPriceVnd: Number(payload.unitPriceVnd),
     };
