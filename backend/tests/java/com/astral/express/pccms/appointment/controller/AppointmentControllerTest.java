@@ -3,15 +3,23 @@ package com.astral.express.pccms.appointment.controller;
 import com.astral.express.pccms.appointment.dto.response.AppointmentResponse;
 import com.astral.express.pccms.appointment.entity.AppointmentStatus;
 import com.astral.express.pccms.appointment.entity.AppointmentType;
-import com.astral.express.pccms.appointment.service.AppointmentServiceFacade;
+import com.astral.express.pccms.appointment.service.AppointmentAvailabilityUseCase;
+import com.astral.express.pccms.appointment.service.AppointmentLifecycleUseCase;
+import com.astral.express.pccms.appointment.service.AppointmentQueryUseCase;
+import com.astral.express.pccms.appointment.service.AppointmentResponseAssembler;
+import com.astral.express.pccms.appointment.service.BoardingBookingUseCase;
+import com.astral.express.pccms.appointment.service.CreateMedicalAppointmentUseCase;
+import com.astral.express.pccms.appointment.service.GroomingBookingUseCase;
+import com.astral.express.pccms.appointment.service.QuickCheckInUseCase;
 import com.astral.express.pccms.common.exception.GlobalExceptionHandler;
-import com.astral.express.pccms.identity.security.SecurityHelper;
+import com.astral.express.pccms.identity.security.SecurityContextService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -31,10 +39,24 @@ class AppointmentControllerTest {
     private MockMvc mockMvc;
 
     @Mock
-    private AppointmentServiceFacade appointmentService;
+    private AppointmentAvailabilityUseCase availabilityUseCase;
+    @Mock
+    private AppointmentLifecycleUseCase lifecycleUseCase;
+    @Mock
+    private AppointmentQueryUseCase queryUseCase;
+    @Mock
+    private BoardingBookingUseCase boardingBookingUseCase;
+    @Mock
+    private GroomingBookingUseCase groomingBookingUseCase;
+    @Mock
+    private CreateMedicalAppointmentUseCase createMedicalAppointmentUseCase;
+    @Mock
+    private QuickCheckInUseCase quickCheckInUseCase;
+    @Mock
+    private AppointmentResponseAssembler appointmentResponseAssembler;
 
     @Mock
-    private SecurityHelper securityHelper;
+    private SecurityContextService SecurityContextService;
 
     @InjectMocks
     private AppointmentController controller;
@@ -75,7 +97,7 @@ class AppointmentControllerTest {
                 5
         );
 
-        given(appointmentService.listTodayAppointments(any(), any(), any(), any()))
+        given(queryUseCase.listTodayAppointments(any(), any(), any(), any()))
                 .willReturn(java.util.List.of(mockedResponse));
 
         mockMvc.perform(get("/v1/appointments/today")
