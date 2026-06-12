@@ -1,0 +1,7 @@
+rule_id,case_id,use_case,scenario,precondition,input,expected_result,expected_error_code,expected_message,note
+BR-MY-SCH-01,TC_MY_SCH_001,UC024,Current user views own schedule success,Authenticated staff has schedules,fromDate=2026-04-12; toDate=2026-04-18,SUCCESS,,,Must resolve staff from current authenticated user.
+BR-MY-SCH-02,TC_MY_SCH_002,UC024,Filter personal schedule by date range success,Authenticated staff has schedules in requested range,fromDate=2026-04-01; toDate=2026-04-30,SUCCESS,,,SRS requires selecting day, week, or month; API can express as date range.
+BR-MY-SCH-03,TC_MY_SCH_003,UC024,No personal schedule returns empty result,Authenticated staff has no schedules in range,fromDate=2026-05-01; toDate=2026-05-31,SUCCESS,,,SRS alternative flow says notify no schedule; API should return empty list or message.
+BR-MY-SCH-04,TC_MY_SCH_004,UC024,Invalid date range rejected,Authenticated staff,fromDate=2026-04-18; toDate=2026-04-12,EXCEPTION,ERR_VALIDATION_FAILED,,toDate must be greater than or equal to fromDate.
+BR-MY-SCH-05,TC_MY_SCH_005,UC024,Unauthenticated request rejected,No valid access token,fromDate=2026-04-12; toDate=2026-04-18,EXCEPTION,ERR_UNAUTHORIZED,,Personal schedule requires authenticated user.
+BR-MY-SCH-06,TC_MY_SCH_006,UC024,User cannot view another staff schedule,Authenticated staff tries staffId of another user,staffId=999; fromDate=2026-04-12; toDate=2026-04-18,EXCEPTION,ERR_403_FORBIDDEN,,Endpoint must not expose arbitrary staff schedules to non-admin personal view.

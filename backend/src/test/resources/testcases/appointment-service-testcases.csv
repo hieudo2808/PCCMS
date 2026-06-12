@@ -1,0 +1,3 @@
+rule_id,case_id,scenario,date_offset_days,time_str,expected_error_code
+BR-APT-01,TC001,VALID_BOOKING,1,09:00,SUCCESS
+BR-APT-02,TC002,PAST_DATE,-1,09:00,ERR_APT_002_PAST_DATETIME

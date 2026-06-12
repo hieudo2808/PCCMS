@@ -16,10 +16,18 @@ export function Stepper({ steps, currentStep, className }: StepperProps) {
         <div className={cx("w-full", className)}>
             <div className="flex items-center justify-between">
                 {steps.map((step, index) => {
-                    const status = index < currentStep ? "completed" : index === currentStep ? "current" : "upcoming";
+                    const status =
+                        index < currentStep
+                            ? "completed"
+                            : index === currentStep
+                              ? "current"
+                              : "upcoming";
 
                     return (
-                        <div key={step.label} className="flex flex-1 flex-col items-center relative">
+                        <div
+                            key={step.label}
+                            className="flex flex-1 flex-col items-center relative"
+                        >
                             {/* Line connecting steps */}
                             {index !== steps.length - 1 && (
                                 <div

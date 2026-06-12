@@ -1,28 +1,39 @@
 package com.astral.express.pccms.identity.controller;
 
+import java.time.Duration;
+
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.astral.express.pccms.common.dto.ApiResponse;
-import com.astral.express.pccms.common.exception.AppException;
+import com.astral.express.pccms.common.exception.BusinessException;
 import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.identity.dto.request.LoginRequest;
+import com.astral.express.pccms.identity.dto.request.OtpRequest;
+import com.astral.express.pccms.identity.dto.request.PasswordResetConfirmRequest;
 import com.astral.express.pccms.identity.dto.request.RegisterRequest;
 import com.astral.express.pccms.identity.dto.response.AuthResponse;
 import com.astral.express.pccms.identity.service.AuthService;
+import com.astral.express.pccms.identity.service.OtpService;
+
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
-import org.springframework.web.bind.annotation.*;
-
-import java.time.Duration;
 
 @Slf4j
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/v1/auth")
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthService authService;
+    private final OtpService otpService;
     private static final String REFRESH_TOKEN_COOKIE = "refresh_token";
     private static final Duration REFRESH_TOKEN_MAX_AGE = Duration.ofDays(7);
 
@@ -36,7 +47,7 @@ public class AuthController {
         setRefreshTokenCookie(response, authResponse.getRefreshToken());
         authResponse.setRefreshToken(null);
 
-        return ApiResponse.<AuthResponse>builder().result(authResponse).build();
+        return ApiResponse.success(authResponse);
     }
 
     @PostMapping("/login")
@@ -44,12 +55,14 @@ public class AuthController {
             @Valid @RequestBody LoginRequest request,
             HttpServletResponse response) {
 
+        log.info("LOGIN_CONTROLLER_REACHED email={}", request.email());
+
         AuthResponse authResponse = authService.login(request);
 
         setRefreshTokenCookie(response, authResponse.getRefreshToken());
         authResponse.setRefreshToken(null);
 
-        return ApiResponse.<AuthResponse>builder().result(authResponse).build();
+        return ApiResponse.success(authResponse);
     }
 
     @PostMapping("/refresh")
@@ -58,7 +71,7 @@ public class AuthController {
             HttpServletResponse response) {
 
         if (refreshToken == null || refreshToken.isEmpty())
-            throw new AppException(ErrorCode.INVALID_CREDENTIALS);
+            throw new BusinessException(ErrorCode.ERR_IAM_001_INVALID_CREDENTIALS);
 
         try {
             AuthResponse authResponse = authService.refreshAccessToken(refreshToken);
@@ -66,12 +79,24 @@ public class AuthController {
             setRefreshTokenCookie(response, authResponse.getRefreshToken());
             authResponse.setRefreshToken(null);
 
-            return ApiResponse.<AuthResponse>builder().result(authResponse).build();
+            return ApiResponse.success(authResponse);
         } catch (Exception e) {
             clearRefreshTokenCookie(response);
-            log.error(e.getMessage(), e);
-            throw new AppException(ErrorCode.INVALID_CREDENTIALS);
+            log.error("Token refresh failed: {}", e.getMessage());
+            throw new BusinessException(ErrorCode.ERR_IAM_001_INVALID_CREDENTIALS);
         }
+    }
+
+    @PostMapping("/password-reset/otp")
+    public ApiResponse<Void> requestPasswordResetOtp(@Valid @RequestBody OtpRequest request) {
+        otpService.requestPasswordResetOtp(request);
+        return ApiResponse.success(null);
+    }
+
+    @PostMapping("/password-reset/confirm")
+    public ApiResponse<Void> confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmRequest request) {
+        otpService.confirmPasswordReset(request);
+        return ApiResponse.success(null);
     }
 
     @PostMapping("/logout")
@@ -92,7 +117,7 @@ public class AuthController {
         }
 
         clearRefreshTokenCookie(response);
-        return ApiResponse.<Void>builder().message("Logout success").build();
+        return ApiResponse.success(null, "Logout success");
     }
 
     private void setRefreshTokenCookie(HttpServletResponse response, String token) {

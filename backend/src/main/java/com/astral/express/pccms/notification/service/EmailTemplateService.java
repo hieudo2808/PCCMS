@@ -34,4 +34,30 @@ public class EmailTemplateService {
                 mailProperties.getTeamName()
         );
     }
+
+    public String buildTemporaryPasswordSubject() {
+        return "Mật khẩu tạm thời của bạn - " + mailProperties.getAppName();
+    }
+
+    public String buildTemporaryPasswordContent(String email, String temporaryPassword) {
+        return """
+                Xin chào,
+
+                Mật khẩu tài khoản của bạn trên hệ thống %s đã được đặt lại bởi quản trị viên.
+
+                Thông tin đăng nhập:
+                - Email: %s
+                - Mật khẩu tạm thời: %s
+
+                Vui lòng đăng nhập và đổi mật khẩu sau khi truy cập hệ thống.
+
+                Trân trọng,
+                %s
+                """.formatted(
+                mailProperties.getAppName(),
+                email,
+                temporaryPassword,
+                mailProperties.getTeamName()
+        );
+    }
 }

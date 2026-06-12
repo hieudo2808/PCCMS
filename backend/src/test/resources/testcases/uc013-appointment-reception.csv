@@ -1,0 +1,9 @@
+rule_id,case_id,phone,owner_name,pet_name,symptom,expected_result
+UC013-BR01,TC001,0913123321,Nguyen Minh,Mit,Bo an 2 ngay,VALID
+UC013-BR01,TC002,,Nguyen Minh,Mit,Bo an 2 ngay,INVALID
+UC013-BR01,TC003,abc123,Nguyen Minh,Mit,Bo an 2 ngay,INVALID
+UC013-BR02,TC004,0913.123.321,,Mit,Bo an 2 ngay,INVALID
+UC013-BR02,TC005,0913.123.321,Nguyen Minh,,Bo an 2 ngay,INVALID
+UC013-BR02,TC006,0913.123.321,Nguyen Minh,Mit,,INVALID
+UC013-BR03,TC007,0913-123-321,Nguyen Minh,Mit,Non mua lien tuc,VALID
+UC013-BR03,TC008,091 312 3321,Nguyen Minh,Mit,Lo do can kham ngay,VALID

@@ -1,0 +1,3 @@
+rule_id,case_id,action,mock_state,expected_result,expected_error,note
+BR-BRD-OWN-001,TC_BRD_OWN_001,CREATE_BOOKING,VALID,SUCCESS,,Owner creates boarding booking successfully
+BR-BRD-OWN-002,TC_BRD_OWN_002,CREATE_BOOKING,DUPLICATE_BOOKING,EXCEPTION,ERR_BOARDING_006_DUPLICATE_BOOKING,Owner cannot create overlapping active boarding booking for the same pet

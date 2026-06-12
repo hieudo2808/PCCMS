@@ -1,6 +1,6 @@
 package com.astral.express.pccms.identity.service;
 
-import com.astral.express.pccms.common.exception.AppException;
+import com.astral.express.pccms.common.exception.BusinessException;
 import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.identity.dto.request.LoginRequest;
 import com.astral.express.pccms.identity.dto.request.RegisterRequest;
@@ -10,6 +10,7 @@ import com.astral.express.pccms.identity.repository.RefreshTokenRepository;
 import com.astral.express.pccms.identity.security.JwtUtil;
 import com.astral.express.pccms.user.entity.Roles;
 import com.astral.express.pccms.user.entity.Users;
+import com.astral.express.pccms.user.entity.UserStatus;
 import com.astral.express.pccms.user.mapper.UserMapper;
 import com.astral.express.pccms.user.repository.RoleRepository;
 import com.astral.express.pccms.user.repository.UserRepository;
@@ -41,26 +42,26 @@ public class AuthService {
     private final UserMapper userMapper;
     private final TokenBlacklistService tokenBlacklistService;
 
-    private static final String DEFAULT_ROLE = "STUDENT";
+    private static final String DEFAULT_ROLE = "OWNER";
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         // Check if email already exists
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new AppException(ErrorCode.EMAIL_EXISTED);
+        if (userRepository.existsByEmail(request.email())) {
+            throw new BusinessException(ErrorCode.ERR_ACC_001_EMAIL_EXISTS);
         }
 
         // Get default role
-        Roles role = roleRepository.findByRoleName(DEFAULT_ROLE)
-                .orElseThrow(() -> new AppException(ErrorCode.DEFAULT_ROLE_NOT_FOUND));
+        Roles role = roleRepository.findByCode(DEFAULT_ROLE)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ERR_ACC_005_DEFAULT_ROLE_NOT_FOUND));
 
         // Create new user
         Users user = Users.builder()
-                .fullName(request.getFullName())
-                .email(request.getEmail())
-                .hashPassword(passwordEncoder.encode(request.getHashPassword()))
+                .fullName(request.fullName())
+                .email(request.email())
+                .passwordHash(passwordEncoder.encode(request.password()))
                 .role(role)
-                .isActive(true)
+                .statusCode(UserStatus.ACTIVE)
                 .build();
 
         user = userRepository.save(user);
@@ -72,17 +73,22 @@ public class AuthService {
     public AuthResponse login(LoginRequest request) {
         try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getHashPassword())
+                    new UsernamePasswordAuthenticationToken(request.email(), request.password())
             );
         } catch (BadCredentialsException e) {
-            throw new AppException(ErrorCode.INVALID_CREDENTIALS);
+            throw new BusinessException(ErrorCode.ERR_IAM_001_INVALID_CREDENTIALS);
+        } catch (org.springframework.security.authentication.InternalAuthenticationServiceException e) {
+            if (e.getCause() instanceof BusinessException businessException) {
+                throw businessException;
+            }
+            throw new BusinessException(ErrorCode.ERR_500_INTERNAL_SERVER);
         }
 
-        Users user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        Users user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new BusinessException(ErrorCode.ERR_ACC_002_USER_NOT_FOUND));
 
-        if (!user.isActive()) {
-            throw new AppException(ErrorCode.ACCOUNT_LOCKED);
+        if (user.getStatusCode() != UserStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.ERR_IAM_002_ACCOUNT_LOCKED);
         }
 
         return generateAuthResponse(user);
@@ -92,15 +98,15 @@ public class AuthService {
     public AuthResponse refreshAccessToken(String refreshToken) {
         String tokenHash = hashToken(refreshToken);
 
-        RefreshToken storedToken = refreshTokenRepository.findByHashedToken(tokenHash)
-                .orElseThrow(() -> new AppException(ErrorCode.INVALID_TOKEN));
+        RefreshToken storedToken = refreshTokenRepository.findByTokenHash(tokenHash)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ERR_401_UNAUTHORIZED));
 
-        if (storedToken.isRevoked() || storedToken.getExpiresAt().isBefore(OffsetDateTime.now())) {
-            throw new AppException(ErrorCode.INVALID_TOKEN);
+        if (storedToken.getRevokedAt() != null || storedToken.getExpiresAt().isBefore(OffsetDateTime.now())) {
+            throw new BusinessException(ErrorCode.ERR_401_UNAUTHORIZED);
         }
 
         // Revoke old token
-        storedToken.setRevoked(true);
+        storedToken.setRevokedAt(OffsetDateTime.now());
         refreshTokenRepository.save(storedToken);
 
         // Generate new tokens
@@ -123,9 +129,9 @@ public class AuthService {
         }
 
         String tokenHash = hashToken(refreshToken);
-        refreshTokenRepository.findByHashedToken(tokenHash)
+        refreshTokenRepository.findByTokenHash(tokenHash)
                 .ifPresent(token -> {
-                    token.setRevoked(true);
+                    token.setRevokedAt(OffsetDateTime.now());
                     refreshTokenRepository.save(token);
                 });
     }
@@ -136,10 +142,11 @@ public class AuthService {
 
         // Store refresh token
         RefreshToken tokenEntity = RefreshToken.builder()
-                .hashedToken(hashToken(refreshToken))
+                .tokenHash(hashToken(refreshToken))
                 .user(user)
+                .issuedAt(OffsetDateTime.now())
                 .expiresAt(OffsetDateTime.now().plusSeconds(jwtUtil.getRefreshExpiration() / 1000))
-                .isRevoked(false)
+                .revokedAt(null)
                 .build();
         refreshTokenRepository.save(tokenEntity);
 

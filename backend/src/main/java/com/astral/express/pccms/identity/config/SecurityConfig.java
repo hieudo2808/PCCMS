@@ -44,7 +44,7 @@ public class SecurityConfig {
 
     private final String[] PUBLIC_ENDPOINTS = {
             "/actuator/**",
-            "/api/auth/**",
+            "/api/v1/auth/**",
             "/swagger-ui/**",
             "/v3/api-docs/**"
     };
@@ -77,7 +77,6 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(request -> request
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers("/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/problems/**").hasAuthority("PROBLEM_READ")
 
                         // Testcase

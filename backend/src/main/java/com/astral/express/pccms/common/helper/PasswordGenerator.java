@@ -1,10 +1,10 @@
 package com.astral.express.pccms.common.helper;
 
-import com.astral.express.pccms.common.exception.AppException;
+import com.astral.express.pccms.common.exception.BusinessException;
 
 import java.security.SecureRandom;
 
-import static com.astral.express.pccms.common.exception.ErrorCode.PASSWORD_INVALID;
+import static com.astral.express.pccms.common.exception.ErrorCode.ERR_400_BAD_REQUEST;
 
 public final class PasswordGenerator {
     private static final String LOWER = "abcdefghijklmnopqrstuvwxyz";
@@ -20,7 +20,7 @@ public final class PasswordGenerator {
 
     public static String generate(int length) {
         if (length < 8) {
-            throw new AppException(PASSWORD_INVALID);
+            throw new BusinessException(ERR_400_BAD_REQUEST);
         }
 
         StringBuilder sb = new StringBuilder(length);

@@ -9,21 +9,35 @@ import java.util.Set;
 import java.util.UUID;
 
 @Entity
-@Table(name = "Roles")
+@Table(name = "roles")
 @Getter
 @Setter
-@RequiredArgsConstructor
+@Builder
+@NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Roles {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    UUID roleId;
-    String roleName;
+    UUID id;
+
+    @Column(nullable = false, unique = true, length = 60)
+    String code;
+
+    @Column(nullable = false, length = 120)
+    String name;
+
+    @Column(columnDefinition = "TEXT")
+    String description;
+
+    @Column(name = "is_active", nullable = false)
+    @Builder.Default
+    Boolean isActive = true;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "RolePermissions",
-            joinColumns = @JoinColumn(name = "roleId"),
-            inverseJoinColumns = @JoinColumn(name = "permissionId"))
+    @JoinTable(name = "role_permissions",
+            joinColumns = @JoinColumn(name = "role_id"),
+            inverseJoinColumns = @JoinColumn(name = "permission_id"))
+    @Builder.Default
     Set<Permission> permissions = new HashSet<>();
 }

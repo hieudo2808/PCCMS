@@ -1,6 +1,6 @@
 package com.astral.express.pccms.identity.security;
 
-import com.astral.express.pccms.common.dto.ApiResponse;
+import com.astral.express.pccms.common.exception.ErrorResponse;
 import com.astral.express.pccms.common.exception.ErrorCode;
 import tools.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Component;
@@ -41,21 +42,28 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String bucketKey = RATE_LIMIT_PREFIX + clientIp + (isAuthEndpoint ? ":auth" : ":general");
         int limit = isAuthEndpoint ? AUTH_REQUESTS_PER_MINUTE : GENERAL_REQUESTS_PER_MINUTE;
 
-        Long currentCount = redisTemplate.opsForValue().increment(bucketKey);
+        Long currentCount;
+        try {
+            currentCount = redisTemplate.opsForValue().increment(bucketKey);
 
-        if (currentCount != null && currentCount == 1) {
-            redisTemplate.expire(bucketKey, WINDOW_SECONDS, TimeUnit.SECONDS);
+            if (currentCount != null && currentCount == 1) {
+                redisTemplate.expire(bucketKey, WINDOW_SECONDS, TimeUnit.SECONDS);
+            }
+        } catch (DataAccessException ex) {
+            log.warn("Rate limit backend unavailable; allowing request for IP: {} on path: {}", clientIp, path);
+            filterChain.doFilter(request, response);
+            return;
         }
 
         if (currentCount != null && currentCount > limit) {
             log.warn("Rate limit exceeded for IP: {} on path: {}", clientIp, path);
             response.setStatus(429);
             response.setContentType("application/json");
-            ApiResponse<?> apiResponse = ApiResponse.builder()
-                    .code(ErrorCode.RATE_LIMITED.getCode())
-                    .message(ErrorCode.RATE_LIMITED.getMessage())
+            ErrorResponse errorResponse = ErrorResponse.builder()
+                    .code(ErrorCode.ERR_IAM_003_RATE_LIMITED.getHttpStatus())
+                    .message(ErrorCode.ERR_IAM_003_RATE_LIMITED.getMessage())
                     .build();
-            response.getWriter().write(new ObjectMapper().writeValueAsString(apiResponse));
+            response.getWriter().write(new ObjectMapper().writeValueAsString(errorResponse));
             return;
         }
 

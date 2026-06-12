@@ -1,0 +1,5 @@
+rule_id,case_id,action,vaccination_date,next_due_date,expected_result,expected_error_code,note
+BR-04,TC001,CREATE_VACCINATION,2026-06-01,2027-06-01,SUCCESS,,Next due date is after vaccination date
+BR-04,TC002,CREATE_VACCINATION,2026-06-01,2026-06-01,SUCCESS,,Next due date is equal to vaccination date
+BR-04,TC003,CREATE_VACCINATION,2026-06-01,2026-05-31,EXCEPTION,ERR_VACC_001_INVALID_DUE_DATE,Next due date is before vaccination date
+BR-04,TC004,CREATE_VACCINATION,2026-06-01,,SUCCESS,,Next due date is null

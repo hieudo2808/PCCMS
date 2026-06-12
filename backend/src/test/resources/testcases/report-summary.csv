@@ -1,0 +1,10 @@
+rule_id,case_id,use_case,scenario,precondition,input,expected_result,expected_error_code,expected_message,note
+BR-RPT-01,TC_RPT_001,UC026,Revenue report by date range success,ADMIN has REPORT_VIEW and paid invoices exist,fromDate=2026-04-01; toDate=2026-04-30; reportType=REVENUE,SUCCESS,,,Uses paid revenue data in reporting view.
+BR-RPT-02,TC_RPT_002,UC026,Report filtered by service category success,ADMIN has REPORT_VIEW and matching paid data exists,fromDate=2026-04-01; toDate=2026-04-30; reportType=REVENUE; categoryCode=MEDICAL,SUCCESS,,,Filter aligns with service_category_enum.
+BR-RPT-03,TC_RPT_003,UC026,Report filtered by service success,ADMIN has REPORT_VIEW and matching paid data exists,fromDate=2026-04-01; toDate=2026-04-30; reportType=REVENUE; serviceId=1,SUCCESS,,,Service filter uses service_catalog.id.
+BR-RPT-04,TC_RPT_004,UC026,Missing date range rejected,ADMIN has REPORT_VIEW,fromDate=null; toDate=null; reportType=REVENUE,EXCEPTION,ERR_VALIDATION_FAILED,,SRS requires time range.
+BR-RPT-05,TC_RPT_005,UC026,Missing report type rejected,ADMIN has REPORT_VIEW,fromDate=2026-04-01; toDate=2026-04-30; reportType=null,EXCEPTION,ERR_VALIDATION_FAILED,,SRS requires report type.
+BR-RPT-06,TC_RPT_006,UC026,Invalid date range rejected,ADMIN has REPORT_VIEW,fromDate=2026-04-30; toDate=2026-04-01; reportType=REVENUE,EXCEPTION,ERR_VALIDATION_FAILED,,fromDate must be less than or equal to toDate.
+BR-RPT-07,TC_RPT_007,UC026,No report data returns empty result,ADMIN has REPORT_VIEW and no data in range,fromDate=2030-01-01; toDate=2030-01-31; reportType=REVENUE,SUCCESS,,,SRS alternative flow says notify no statistics data.
+BR-RPT-08,TC_RPT_008,UC026,Only paid and partially paid invoices counted,ADMIN has REPORT_VIEW and invoices with multiple statuses exist,fromDate=2026-04-01; toDate=2026-04-30; reportType=REVENUE,SUCCESS,,,Schema view counts invoice statuses PAID and PARTIALLY_PAID.
+BR-RPT-09,TC_RPT_009,UC026,User without report permission rejected,Authenticated user lacks REPORT_VIEW,fromDate=2026-04-01; toDate=2026-04-30; reportType=REVENUE,EXCEPTION,ERR_403_FORBIDDEN,,UC026 is admin/report permission scoped.

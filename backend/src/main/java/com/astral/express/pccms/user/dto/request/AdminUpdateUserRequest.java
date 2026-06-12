@@ -1,18 +1,25 @@
 package com.astral.express.pccms.user.dto.request;
 
+import com.astral.express.pccms.user.entity.UserStatus;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
-import lombok.AllArgsConstructor;
+import jakarta.validation.constraints.Size;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class AdminUpdateUserRequest {
-    @Pattern(regexp = "STUDENT|INSTRUCTOR|ADMIN")
-    private String roleName;
+public record AdminUpdateUserRequest(
+    @Size(max = 150)
+    String fullName,
 
-    private Boolean isActive;
-}
+    @Email
+    @Size(max = 255)
+    String email,
+
+    @Size(max = 30)
+    String phone,
+
+    @Pattern(regexp = "OWNER|STAFF|VETERINARIAN|ADMIN")
+    String roleCode,
+
+    UserStatus statusCode
+) {}

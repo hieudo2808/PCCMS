@@ -1,0 +1,17 @@
+test_case_id,method,scenario,amount,total_amount,paid_amount,is_owner,current_user_exists,invoice_exists,payment_exists,target_status,expected_result,expected_error_code,expected_invoice_status
+TC-BILL-PAY-001,recordPayment,Successful full payment,1000,1000,0,true,true,true,true,SUCCEEDED,SUCCESS,,PAID
+TC-BILL-PAY-002,recordPayment,Successful partial payment,500,1000,0,true,true,true,true,SUCCEEDED,SUCCESS,,PARTIALLY_PAID
+TC-BILL-PAY-003,recordPayment,Amount zero,0,1000,0,true,true,true,true,SUCCEEDED,ERROR,ERR_BILLING_003_INVALID_PAYMENT_AMOUNT,
+TC-BILL-PAY-004,recordPayment,Amount negative,-100,1000,0,true,true,true,true,SUCCEEDED,ERROR,ERR_BILLING_003_INVALID_PAYMENT_AMOUNT,
+TC-BILL-PAY-005,recordPayment,Invoice not found,1000,1000,0,true,true,false,true,SUCCEEDED,ERROR,ERR_BILLING_002_INVOICE_NOT_FOUND,
+TC-BILL-PAY-006,recordPayment,Amount exceeds remaining balance,1001,1000,0,true,true,true,true,SUCCEEDED,ERROR,ERR_BILLING_003_INVALID_PAYMENT_AMOUNT,
+TC-BILL-PAY-007,recordPayment,Current user not found,1000,1000,0,true,false,true,true,SUCCEEDED,ERROR,ERR_ACC_002_USER_NOT_FOUND,
+TC-BILL-PAY-008,createOwnerPaymentRequest,Owner submits valid payment successfully,1000,1000,0,true,true,true,true,SUCCEEDED,SUCCESS,,PAID
+TC-BILL-PAY-009,createOwnerPaymentRequest,User is not invoice owner,1000,1000,0,false,true,true,true,SUCCEEDED,ERROR,ERR_403_FORBIDDEN,
+TC-BILL-PAY-010,createOwnerPaymentRequest,Amount zero,0,1000,0,true,true,true,true,SUCCEEDED,ERROR,ERR_BILLING_003_INVALID_PAYMENT_AMOUNT,
+TC-BILL-PAY-011,createOwnerPaymentRequest,Amount negative,-100,1000,0,true,true,true,true,SUCCEEDED,ERROR,ERR_BILLING_003_INVALID_PAYMENT_AMOUNT,
+TC-BILL-PAY-012,createOwnerPaymentRequest,Amount exceeds remaining balance,500,1000,600,true,true,true,true,SUCCEEDED,ERROR,ERR_BILLING_003_INVALID_PAYMENT_AMOUNT,
+TC-BILL-PAY-013,createOwnerPaymentRequest,Invoice not found,1000,1000,0,true,true,false,true,SUCCEEDED,ERROR,ERR_BILLING_002_INVOICE_NOT_FOUND,
+TC-BILL-PAY-014,updatePaymentStatus,Status transitions to SUCCEEDED updates invoice,1000,1000,0,true,true,true,true,SUCCEEDED,SUCCESS,,PAID
+TC-BILL-PAY-015,updatePaymentStatus,Status transitions to FAILED does not update invoice,1000,1000,0,true,true,true,true,FAILED,SUCCESS,,
+TC-BILL-PAY-016,updatePaymentStatus,Payment not found,1000,1000,0,true,true,true,false,SUCCEEDED,ERROR,ERR_BILLING_002_INVOICE_NOT_FOUND,

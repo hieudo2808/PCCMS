@@ -1,0 +1,10 @@
+rule_id,case_id,use_case,scenario,precondition,input,expected_result,expected_error_code,expected_message,note
+BR-UC017-01,TC_ACC_SEARCH_001,UC017,SEARCH_BY_KEYWORD_SUCCESS,"User exists with full_name/email/phone matching keyword and deleted_at is null","keyword=admin;role=;status=",SUCCESS,,,"Keyword matches full_name, email, or phone case-insensitively"
+BR-UC017-02,TC_ACC_SEARCH_002,UC017,FILTER_BY_ROLE_SUCCESS,"Users exist with users.role_id referencing role code STAFF and deleted_at is null","keyword=;role=STAFF;status=",SUCCESS,,,"Result contains only users whose roleCode is STAFF"
+BR-UC017-03,TC_ACC_SEARCH_003,UC017,FILTER_BY_STATUS_SUCCESS,"Users exist with status_code ACTIVE and deleted_at is null","keyword=;role=;status=ACTIVE",SUCCESS,,,"Result contains only users whose statusCode is ACTIVE"
+BR-UC017-04,TC_ACC_SEARCH_004,UC017,COMBINED_FILTER_SUCCESS,"Users exist matching keyword, role, and status; deleted_at is null","keyword=admin;role=ADMIN;status=ACTIVE",SUCCESS,,,"All criteria are applied together"
+BR-UC017-05,TC_ACC_SEARCH_005,UC017,NO_CRITERIA_LIST_SUCCESS,"No keyword, role, or status criteria are provided","keyword= ;role= ;status=",SUCCESS,,,"Admin UI may load the first paginated account page without search criteria"
+BR-UC017-06,TC_ACC_SEARCH_006,UC017,NO_RESULT_SUCCESS,"No non-deleted user matches the provided criteria","keyword=no-such-account;role=;status=",SUCCESS,,,"Response is successful with empty page content"
+BR-UC017-07,TC_ACC_SEARCH_007,UC017,SOFT_DELETED_USER_EXCLUDED,"Only matching user has deleted_at not null","keyword=deleted-user;role=;status=",SUCCESS,,,"Soft-deleted users are not returned"
+BR-UC017-08,TC_ACC_SEARCH_008,UC017,PASSWORD_HASH_NOT_RETURNED,"Matching user has password_hash in database","keyword=admin;role=;status=",SUCCESS,,,"Response must not contain password_hash or passwordHash"
+BR-UC017-09,TC_ACC_SEARCH_009,UC017,INVALID_STATUS_REJECTED,"Request status is not part of user_status_enum","keyword=;role=;status=INACTIVE",EXCEPTION,ERR_400_BAD_REQUEST,,"Only UNVERIFIED, ACTIVE, LOCKED, DISABLED are valid"

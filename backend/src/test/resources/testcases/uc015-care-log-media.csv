@@ -1,0 +1,8 @@
+rule_id,case_id,size_bytes,mime_type,expected_result
+UC015-BR06,TC001,1024,image/jpeg,VALID
+UC015-BR06,TC002,2048,image/png,VALID
+UC015-BR06,TC003,4096,video/mp4,VALID
+UC015-BR06,TC004,0,image/jpeg,INVALID
+UC015-BR06,TC005,20971521,image/jpeg,INVALID
+UC015-BR07,TC006,1024,application/pdf,INVALID
+UC015-BR07,TC007,1024,text/plain,INVALID

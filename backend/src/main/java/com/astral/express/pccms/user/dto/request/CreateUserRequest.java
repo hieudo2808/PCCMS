@@ -3,24 +3,22 @@ package com.astral.express.pccms.user.dto.request;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
-import lombok.AllArgsConstructor;
+import jakarta.validation.constraints.Size;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class CreateUserRequest {
+public record CreateUserRequest(
     @NotBlank(message = "Full name is required")
-    private String fullName;
+    String fullName,
 
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")
-    private String email;
+    String email,
 
     @NotBlank(message = "Role is required")
-    @Pattern(regexp = "STUDENT|INSTRUCTOR|ADMIN")
-    private String roleName;
-}
+    @Pattern(regexp = "OWNER|STAFF|VETERINARIAN|ADMIN")
+    String roleCode,
+
+    @Size(max = 30, message = "Phone must not exceed 30 characters")
+    String phone
+) {}

@@ -3,12 +3,13 @@ import type { ReactNode } from "react";
 interface DataTableProps {
     columns: string[];
     rows: ReactNode[][];
+    overflowVisible?: boolean;
 }
 
-export function DataTable({ columns, rows }: DataTableProps) {
+export function DataTable({ columns, rows, overflowVisible = false }: DataTableProps) {
     return (
-        <div className="overflow-hidden rounded-3xl border border-slate-200">
-            <div className="overflow-x-auto">
+        <div className={`rounded-3xl border border-slate-200 ${overflowVisible ? "" : "overflow-hidden"}`}>
+            <div className={`${overflowVisible ? "" : "overflow-x-auto"}`}>
                 <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
                     <thead className="bg-slate-50 text-slate-500">
                         <tr>

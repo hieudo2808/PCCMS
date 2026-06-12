@@ -1,22 +1,102 @@
-import { Users, Scissors, Warehouse, CreditCard } from "lucide-react";
-import { Card, MiniGridStats, Notice } from "~/components/molecules";
+import { useEffect, useMemo, useState } from "react";
+import { CreditCard, Scissors, Users, Warehouse } from "lucide-react";
+import { Card, EmptyState, MiniGridStats, Notice } from "~/components/molecules";
+import {
+    emptyDashboardSummary,
+    formatDashboardRevenue,
+    getDashboardSummary,
+} from "../dashboard/dashboardService";
 
 export function AdminDashboard() {
+    const [summary, setSummary] = useState(emptyDashboardSummary());
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        let mounted = true;
+        setLoading(true);
+        setError("");
+        void getDashboardSummary()
+            .then((data) => {
+                if (mounted) {
+                    setSummary(data);
+                }
+            })
+            .catch(() => {
+                if (mounted) {
+                    setSummary(emptyDashboardSummary());
+                    setError("Chưa có dữ liệu tổng quan để hiển thị");
+                }
+            })
+            .finally(() => {
+                if (mounted) {
+                    setLoading(false);
+                }
+            });
+
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
+    const stats = useMemo(
+        () => [
+            {
+                label: "Tài khoản hoạt động",
+                value: loading ? "—" : String(summary.activeAccounts),
+                hint: "Có thể đăng nhập hệ thống",
+                icon: Users,
+            },
+            {
+                label: "Dịch vụ đang mở",
+                value: loading ? "—" : String(summary.activeServices),
+                hint: "Đang áp dụng cho khách hàng",
+                icon: Scissors,
+            },
+            {
+                label: "Phòng khả dụng",
+                value: loading ? "—" : String(summary.availableRooms),
+                hint: "Sẵn sàng tiếp nhận lưu trú",
+                icon: Warehouse,
+            },
+            {
+                label: "Doanh thu tháng",
+                value: loading ? "—" : formatDashboardRevenue(summary.monthlyRevenueVnd),
+                hint: loading ? "Đang cập nhật dữ liệu" : `${summary.monthlyInvoiceCount} hóa đơn đã ghi nhận`,
+                icon: CreditCard,
+            },
+        ],
+        [loading, summary]
+    );
+
     return (
         <div className="space-y-6">
-            <MiniGridStats
-                items={[
-                    { label: "Tài khoản hoạt động", value: "246", hint: "12 tài khoản mới tháng này", icon: Users },
-                    { label: "Dịch vụ đang mở", value: "18", hint: "3 gói premium", icon: Scissors },
-                    { label: "Chuồng khả dụng", value: "27/40", hint: "Tỷ lệ lấp đầy 32%", icon: Warehouse },
-                    { label: "Doanh thu tháng", value: "84M", hint: "+12% so với tháng trước", icon: CreditCard },
-                ]}
-            />
+            <MiniGridStats items={stats} />
+
+            {error ? (
+                <EmptyState
+                    title="Chưa có dữ liệu tổng quan để hiển thị"
+                    description="Dữ liệu sẽ được cập nhật khi hệ thống ghi nhận phát sinh mới."
+                />
+            ) : null}
+
             <Card title="Cần chú ý">
                 <div className="grid gap-4 lg:grid-cols-3">
-                    <Notice tone="amber" title="3 ca chưa có lịch trực" text="Cần bổ sung nhân sự khung 16:00 - 18:00 cuối tuần." />
-                    <Notice tone="red" title="2 tài khoản bị khóa" text="Kiểm tra nguyên nhân và lịch sử thao tác trước khi mở lại." />
-                    <Notice tone="green" title="Dịch vụ spa mới hoạt động tốt" text="Tỷ lệ đặt lịch tuần đầu đạt 78%." />
+                    <Notice
+                        tone={summary.activeAccounts > 0 ? "green" : "amber"}
+                        title={loading ? "Đang cập nhật tài khoản" : `${summary.activeAccounts} tài khoản hoạt động`}
+                        text="Theo dõi khả năng truy cập của nhân sự và khách hàng."
+                    />
+                    <Notice
+                        tone={summary.availableRooms > 0 ? "green" : "amber"}
+                        title={loading ? "Đang cập nhật phòng" : `${summary.availableRooms} phòng khả dụng`}
+                        text="Sẵn sàng tiếp nhận các nhu cầu lưu trú mới."
+                    />
+                    <Notice
+                        tone={summary.monthlyRevenueVnd > 0 ? "green" : "amber"}
+                        title={loading ? "Đang cập nhật doanh thu" : `Doanh thu tháng ${formatDashboardRevenue(summary.monthlyRevenueVnd)}`}
+                        text={`${summary.monthlyInvoiceCount} hóa đơn đã ghi nhận trong tháng.`}
+                    />
                 </div>
             </Card>
         </div>

@@ -1,0 +1,2 @@
+rule_id,case_id,action,expected_event
+BR-MR-05,TC001,FINALIZE,MedicalRecordFinalizedEvent

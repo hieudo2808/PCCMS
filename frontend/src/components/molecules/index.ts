@@ -12,4 +12,4 @@ export { DataTable } from "./DataTable";
 export { SectionTitle } from "./SectionTitle";
 export { MiniGridStats } from "./MiniGridStats";
 export { EmptyState } from "./EmptyState";
-
+export { Modal } from "./Modal";

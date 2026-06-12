@@ -1,5 +1,6 @@
 package com.astral.express.pccms.identity.security;
 
+import com.astral.express.pccms.identity.service.CustomUserDetails;
 import com.astral.express.pccms.user.entity.Users;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -30,7 +31,7 @@ public class JwtUtil {
     private Long refreshExpiration;
 
     private SecretKey getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secret);
+        byte[] keyBytes = Decoders.BASE64URL.decode(secret);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
@@ -43,7 +44,13 @@ public class JwtUtil {
     }
 
     public String extractUserId(String token) {
-        return extractAllClaims(token).get("userId", String.class);
+        Claims claims = extractAllClaims(token);
+        String userId = claims.get("userId", String.class);
+        return userId != null ? userId : claims.getSubject();
+    }
+
+    public String extractEmail(String token) {
+        return extractAllClaims(token).get("email", String.class);
     }
 
     public Date extractExpiration(String token) {
@@ -61,22 +68,28 @@ public class JwtUtil {
         return Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token).getPayload();
     }
 
-    private Boolean isTokenExpired(String token) {
+    public boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 
     public String generateToken(Users user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("jti", UUID.randomUUID().toString());
-        claims.put("userId", user.getUserId().toString());
-        claims.put("role", user.getRole().getRoleName());
-
-        return createToken(claims, user.getEmail(), expiration);
+        claims.put("userId", user.getId().toString());
+        claims.put("role", user.getRole().getCode());
+        claims.put("email", user.getEmail());
+        return Jwts.builder()
+                .claims(claims)
+                .subject(user.getEmail())
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(getSigningKey(), Jwts.SIG.HS512)
+                .compact();
     }
 
     public String generateRefreshToken(Users user) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("userId", user.getUserId().toString());
+        claims.put("userId", user.getId().toString());
         claims.put("jti", UUID.randomUUID().toString());
         claims.put("tokenType", "REFRESH");
 
@@ -94,7 +107,10 @@ public class JwtUtil {
     }
 
     public Boolean validateToken(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        final String subject = extractUsername(token);
+        boolean matchesUsername = subject.equals(userDetails.getUsername());
+        boolean matchesUserId = userDetails instanceof CustomUserDetails customUserDetails
+                && subject.equals(customUserDetails.getId().toString());
+        return (matchesUsername || matchesUserId) && !isTokenExpired(token);
     }
 }

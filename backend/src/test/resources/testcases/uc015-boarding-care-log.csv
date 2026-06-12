@@ -1,0 +1,9 @@
+rule_id,case_id,log_date_offset_days,period_code,feeding_status,hygiene_status,expected_result
+UC015-BR01,TC001,0,MORNING,An tot,Binh thuong,VALID
+UC015-BR01,TC002,0,NOON,An it,Di ngoai long,VALID
+UC015-BR01,TC003,0,AFTERNOON,Bo an,Can theo doi,VALID
+UC015-BR02,TC004,1,MORNING,An tot,Binh thuong,INVALID
+UC015-BR03,TC005,0,NIGHT,An tot,Binh thuong,INVALID
+UC015-BR04,TC006,0,MORNING,,Binh thuong,INVALID
+UC015-BR04,TC007,0,MORNING,An tot,,INVALID
+UC015-BR05,TC008,-1,NOON,An tot,Binh thuong,VALID

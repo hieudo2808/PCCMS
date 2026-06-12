@@ -4,7 +4,7 @@ import { Stat } from "./Stat";
 interface StatItem {
     label: string;
     value: string;
-    hint: string;
+    hint?: string;
     icon: IconComponent;
 }
 

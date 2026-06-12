@@ -1,5 +1,6 @@
-export { Button } from "./Button";
-export { Input } from "./Input";
-export { Textarea } from "./Textarea";
-export { Select } from "./Select";
-export { Tag } from "./Tag";
+export * from "./Button";
+export * from "./Input";
+export * from "./Select";
+export * from "./Tag";
+export * from "./Textarea";
+export * from "./AutocompleteInput";

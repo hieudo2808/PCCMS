@@ -1,16 +1,23 @@
 package com.astral.express.pccms.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.*;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ApiResponse<T> {
-    @Builder.Default
-    private int code = 1000;
-    private String message;
-    private T result;
+public record ApiResponse<T>(
+        boolean success,
+        int code,
+        String message,
+        T data
+) {
+    public static <T> ApiResponse<T> success(T data) {
+        return new ApiResponse<>(true, 200, "Thao tác thành công", data);
+    }
+
+    public static <T> ApiResponse<T> success(T data, String message) {
+        return new ApiResponse<>(true, 200, message, data);
+    }
+
+    public static <T> ApiResponse<T> created(T data) {
+        return new ApiResponse<>(true, 201, "Thao tác thành công", data);
+    }
 }

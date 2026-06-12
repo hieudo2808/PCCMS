@@ -1,0 +1,10 @@
+rule_id,case_id,use_case,scenario,precondition,input,expected_result,expected_error_code,expected_message,note
+BR-UC018-01,TC_ACC_STATUS_001,UC018,UPDATE_ACTIVE_SUCCESS,"Account exists, deleted_at is null","accountId=existing-user;statusCode=ACTIVE",SUCCESS,,,"Only users.status_code is updated to ACTIVE"
+BR-UC018-02,TC_ACC_STATUS_002,UC018,UPDATE_LOCKED_SUCCESS,"Account exists, deleted_at is null","accountId=existing-user;statusCode=LOCKED",SUCCESS,,,"Status becomes LOCKED and refresh tokens are revoked"
+BR-UC018-03,TC_ACC_STATUS_003,UC018,UPDATE_DISABLED_SUCCESS,"Account exists, deleted_at is null","accountId=existing-user;statusCode=DISABLED",SUCCESS,,,"Status becomes DISABLED and refresh tokens are revoked"
+BR-UC018-04,TC_ACC_STATUS_004,UC018,ACCOUNT_NOT_FOUND,"No account exists with accountId","accountId=missing-user;statusCode=ACTIVE",EXCEPTION,ERR_ACC_002_USER_NOT_FOUND,,"Missing account is rejected"
+BR-UC018-05,TC_ACC_STATUS_005,UC018,SOFT_DELETED_ACCOUNT_REJECTED,"Account exists but deleted_at is not null","accountId=soft-deleted-user;statusCode=LOCKED",EXCEPTION,ERR_ACC_002_USER_NOT_FOUND,,"Soft-deleted account is treated as not found"
+BR-UC018-06,TC_ACC_STATUS_006,UC018,INVALID_STATUS_REJECTED,"Request status is not part of user_status_enum","accountId=existing-user;statusCode=BANNED",EXCEPTION,ERR_400_BAD_REQUEST,,"Only UNVERIFIED, ACTIVE, LOCKED, DISABLED are valid"
+BR-UC018-07,TC_ACC_STATUS_007,UC018,LOCKED_REVOKES_REFRESH_TOKEN,"Account exists with active refresh tokens","accountId=existing-user;statusCode=LOCKED",SUCCESS,,,"revokeAllUserTokens(accountId) is called"
+BR-UC018-08,TC_ACC_STATUS_008,UC018,DISABLED_REVOKES_REFRESH_TOKEN,"Account exists with active refresh tokens","accountId=existing-user;statusCode=DISABLED",SUCCESS,,,"revokeAllUserTokens(accountId) is called"
+BR-UC018-09,TC_ACC_STATUS_009,UC018,DOES_NOT_DELETE_USER,"Account exists, deleted_at is null","accountId=existing-user;statusCode=DISABLED",SUCCESS,,,"Do not delete user; only update users.status_code"

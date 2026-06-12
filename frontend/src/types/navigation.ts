@@ -1,6 +1,6 @@
 import type { ComponentType, SVGProps } from "react";
 
-export type RoleKey = "public" | "owner" | "reception" | "doctor" | "admin";
+export type RoleKey = "public" | "owner" | "staff" | "veterinarian" | "admin";
 
 export type ScreenKey =
     // Auth
@@ -10,7 +10,10 @@ export type ScreenKey =
     // Owner
     | "ownerDashboard"
     | "pets"
+    | "ownerAppointments"
     | "unifiedBooking"
+    | "groomingBooking"
+    | "groomingTracking"
     | "boardingTracking"
     | "payments"
     | "profile"
@@ -19,17 +22,24 @@ export type ScreenKey =
     | "appointmentReception"
     | "groomingBoard"
     | "boardingLog"
+    | "receptionMySchedule"
     // Doctor
     | "doctorDashboard"
     | "doctorQueue"
     | "medicalRecord"
+    | "doctorMySchedule"
     // Admin
     | "adminDashboard"
     | "accounts"
     | "catalog"
     | "rooms"
     | "schedule"
-    | "reports";
+    | "adminShiftRequests"
+    | "reports"
+    | "staffProfile"
+    | "vetProfile"
+    | "adminProfile";
+
 
 export type IconComponent = ComponentType<SVGProps<SVGSVGElement> & { className?: string }>;
 

@@ -4,17 +4,20 @@ import com.astral.express.pccms.notification.dto.AccountCreatedEmailRequest;
 import com.astral.express.pccms.notification.service.EmailService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-@RequestMapping("/api/notifications/emails")
+import com.astral.express.pccms.common.dto.ApiResponse;
+
+@RequestMapping("/v1/notifications/emails")
 @RestController
 @RequiredArgsConstructor
 public class EmailController {
     private final EmailService emailService;
 
     @PostMapping("/account-created")
-    public ResponseEntity<Void> sendAccountCreatedEmail(
+    @PreAuthorize("hasAuthority('ACCOUNT_MANAGE')")
+    public ApiResponse<Void> sendAccountCreatedEmail(
             @Valid @RequestBody AccountCreatedEmailRequest request
     ) {
         emailService.sendAccountCreatedEmail(
@@ -22,6 +25,6 @@ public class EmailController {
                 request.temporaryPassword()
         );
 
-        return ResponseEntity.accepted().build();
+        return ApiResponse.success(null);
     }
 }

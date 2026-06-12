@@ -1,0 +1,12 @@
+rule_id,case_id,use_case,scenario,precondition,input,expected_result,expected_error_code,expected_message,note
+BR-ROOM-01,TC_ROOM_001,UC022,List rooms success,ADMIN has ROOM_MANAGE and rooms exist,page=0; size=20,SUCCESS,,,Returns pageable rooms with room type and status.
+BR-ROOM-02,TC_ROOM_002,UC022,Filter rooms by room type success,ADMIN has ROOM_MANAGE and room type exists,roomTypeId=1,SUCCESS,,,Filter uses rooms.room_type_id.
+BR-ROOM-03,TC_ROOM_003,UC022,Filter rooms by status success,ADMIN has ROOM_MANAGE,statusCode=AVAILABLE,SUCCESS,,,Allowed statuses are AVAILABLE, OCCUPIED, MAINTENANCE, INACTIVE.
+BR-ROOM-04,TC_ROOM_004,UC022,Create room success,ADMIN has ROOM_MANAGE and room type exists,roomCode=ROOM-NEW-001; name=New Room; roomTypeId=1; floor=2; capacity=3; statusCode=AVAILABLE,SUCCESS,,,Creates row in rooms.
+BR-ROOM-05,TC_ROOM_005,UC022,Update room success,ADMIN has ROOM_MANAGE and room exists,roomId=10; name=Updated Room; roomTypeId=1; floor=3; capacity=4; statusCode=MAINTENANCE,SUCCESS,,,Updates existing room.
+BR-ROOM-06,TC_ROOM_006,UC022,Change room status success,ADMIN has ROOM_MANAGE and room exists,roomId=10; statusCode=INACTIVE,SUCCESS,,,Status update uses rooms.status_code.
+BR-ROOM-07,TC_ROOM_007,UC022,Duplicate room code rejected,ADMIN has ROOM_MANAGE and roomCode R001 exists,roomCode=R001; name=Duplicate Room; roomTypeId=1; capacity=2; statusCode=AVAILABLE,EXCEPTION,ERR_VALIDATION_FAILED,,Schema has unique rooms.room_code.
+BR-ROOM-08,TC_ROOM_008,UC022,Room type not found rejected,ADMIN has ROOM_MANAGE,roomCode=ROOM-NO-TYPE; name=No Type; roomTypeId=999999; capacity=2; statusCode=AVAILABLE,EXCEPTION,ERR_404_NOT_FOUND,,Room type must exist.
+BR-ROOM-09,TC_ROOM_009,UC022,Non-positive capacity rejected,ADMIN has ROOM_MANAGE,roomCode=ROOM-BAD-CAP; name=Bad Capacity; roomTypeId=1; capacity=0; statusCode=AVAILABLE,EXCEPTION,ERR_VALIDATION_FAILED,,Schema requires capacity > 0.
+BR-ROOM-10,TC_ROOM_010,UC022,Invalid room status rejected,ADMIN has ROOM_MANAGE,roomCode=ROOM-BAD-STATUS; name=Bad Status; roomTypeId=1; capacity=2; statusCode=BROKEN,EXCEPTION,ERR_VALIDATION_FAILED,,Status must be room_status_enum.
+BR-ROOM-11,TC_ROOM_011,UC022,Delete or deactivate referenced room protected,ADMIN has ROOM_MANAGE and room is referenced by boarding or allocations,roomId=10,EXCEPTION,ERR_VALIDATION_FAILED,,Hard delete should be blocked when referenced; use status INACTIVE when allowed.

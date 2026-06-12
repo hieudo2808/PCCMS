@@ -1,16 +1,23 @@
 package com.astral.express.pccms.identity.security;
 
+import com.astral.express.pccms.common.exception.BusinessException;
+import com.astral.express.pccms.common.exception.ErrorCode;
+import com.astral.express.pccms.identity.service.CustomUserDetails;
+import com.astral.express.pccms.identity.service.CustomUserDetailsService;
 import com.astral.express.pccms.identity.service.TokenBlacklistService;
+import com.astral.express.pccms.user.entity.Users;
+import com.astral.express.pccms.user.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
+import org.springframework.dao.DataAccessException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -20,10 +27,12 @@ import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
-    private final UserDetailsService userDetailsService;
+    private final CustomUserDetailsService userDetailsService;
     private final TokenBlacklistService tokenBlacklistService;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(
@@ -41,27 +50,42 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         final String jwt = authorizationHeader.substring(7);
 
-        String username;
+        String email;
         String userIdStr;
 
         try {
-            username = jwtUtil.extractUsername(jwt);
+            email = jwtUtil.extractUsername(jwt);
             userIdStr = jwtUtil.extractUserId(jwt);
+            if (userIdStr == null && email != null && isUuid(email)) {
+                userIdStr = email;
+                email = userRepository.findById(UUID.fromString(email))
+                        .map(Users::getEmail)
+                        .orElse(null);
+            }
         } catch (Exception e) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        if (username != null
+        if (email != null
                 && userIdStr != null
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
 
+            UUID userId = UUID.fromString(userIdStr);
             UserDetails userDetails =
-                    this.userDetailsService.loadUserByUsername(username);
+                    this.userDetailsService.loadUserByUsername(email);
 
-            if (jwtUtil.validateToken(jwt, userDetails)) {
+            if (isTokenAccepted(jwt, userDetails, userIdStr)) {
                 String jti = jwtUtil.extractJti(jwt);
-                if (tokenBlacklistService.isBlacklisted(jti)) {
+                boolean isBlacklisted = false;
+                try { 
+                    isBlacklisted = tokenBlacklistService.isBlacklisted(jti);
+                } catch (org.springframework.data.redis.RedisConnectionFailureException ex) {
+                    // Log warning, allow request if redis is down
+                    System.err.println("Redis unavailable, proceeding without blacklist check: " + ex.getMessage());
+                }
+                
+                if (isBlacklisted) {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.setContentType("application/json");
                     response.getWriter().write("{\"error\": \"Token revoked\", \"message\": \"This token has been invalidated\"}");
@@ -74,8 +98,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     response.getWriter().write("{\"error\": \"Account is locked\", \"message\": \"Your account has been locked\"}");
                     return;
                 }
-
-                UUID userId = UUID.fromString(userIdStr);
 
                 UsernamePasswordAuthenticationToken authenticationToken =
                         new UsernamePasswordAuthenticationToken(
@@ -95,5 +117,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isTokenAccepted(String jwt, UserDetails userDetails, String userIdStr) {
+        if (jwtUtil.validateToken(jwt, userDetails)) {
+            return true;
+        }
+        if (userDetails instanceof CustomUserDetails custom
+                && userIdStr != null
+                && userIdStr.equals(custom.getId().toString())) {
+            try {
+                return !jwtUtil.isTokenExpired(jwt);
+            } catch (Exception ignored) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isUuid(String value) {
+        try {
+            UUID.fromString(value);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 }

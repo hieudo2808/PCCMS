@@ -1,0 +1,11 @@
+rule_id,case_id,use_case,scenario,precondition,input,expected_result,expected_error_code,expected_message,note
+BR-UC019-01,TC_ACC_ROLE_001,UC019,ASSIGN_ADMIN_SUCCESS,"User exists, deleted_at is null; ADMIN role exists and is_active=true","accountId=existing-user;roleCode=ADMIN",SUCCESS,,,"users.role_id points to ADMIN role"
+BR-UC019-02,TC_ACC_ROLE_002,UC019,ASSIGN_STAFF_SUCCESS,"User exists, deleted_at is null; STAFF role exists and is_active=true","accountId=existing-user;roleCode=STAFF",SUCCESS,,,"users.role_id points to STAFF role"
+BR-UC019-03,TC_ACC_ROLE_003,UC019,ASSIGN_VETERINARIAN_SUCCESS,"User exists, deleted_at is null; VETERINARIAN role exists and is_active=true","accountId=existing-user;roleCode=VETERINARIAN",SUCCESS,,,"users.role_id points to VETERINARIAN role"
+BR-UC019-04,TC_ACC_ROLE_004,UC019,USER_NOT_FOUND,"No user exists with accountId","accountId=missing-user;roleCode=STAFF",EXCEPTION,ERR_ACC_002_USER_NOT_FOUND,,"Missing user is rejected"
+BR-UC019-05,TC_ACC_ROLE_005,UC019,SOFT_DELETED_USER_REJECTED,"User exists but deleted_at is not null","accountId=soft-deleted-user;roleCode=STAFF",EXCEPTION,ERR_ACC_002_USER_NOT_FOUND,,"Soft-deleted user is treated as not found"
+BR-UC019-06,TC_ACC_ROLE_006,UC019,ROLE_NOT_FOUND,"User exists; role code does not exist","accountId=existing-user;roleCode=MANAGER",EXCEPTION,ERR_ACC_006_ROLE_NOT_FOUND,,"Do not create a missing role"
+BR-UC019-07,TC_ACC_ROLE_007,UC019,INACTIVE_ROLE_REJECTED,"User exists; STAFF role exists with is_active=false","accountId=existing-user;roleCode=STAFF",EXCEPTION,ERR_VALIDATION_FAILED,,"Inactive role cannot be assigned"
+BR-UC019-08,TC_ACC_ROLE_008,UC019,RESPONSE_INCLUDES_ROLE_FIELDS,"User exists; STAFF role exists and is_active=true","accountId=existing-user;roleCode=STAFF",SUCCESS,,,"Response includes roleCode=STAFF, roleName, and roles=[STAFF]"
+BR-UC019-09,TC_ACC_ROLE_009,UC019,DOES_NOT_CREATE_ROLE,"User exists; role code does not exist","accountId=existing-user;roleCode=UNKNOWN",EXCEPTION,ERR_ACC_006_ROLE_NOT_FOUND,,"Role assignment must not insert into roles"
+BR-UC019-10,TC_ACC_ROLE_010,UC019,SINGLE_ROLE_ASSIGNMENT,"Schema uses users.role_id and no user_roles table","accountId=existing-user;roleCode=ADMIN",SUCCESS,,,"Test single-role replacement only; do not test multi-role or user_roles"

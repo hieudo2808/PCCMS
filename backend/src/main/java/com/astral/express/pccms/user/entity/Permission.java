@@ -7,7 +7,7 @@ import lombok.experimental.FieldDefaults;
 import java.util.UUID;
 
 @Entity
-@Table(name = "Permission")
+@Table(name = "permissions")
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -16,6 +16,15 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Permission {
     @Id
-    UUID permissionId;
-    String permissionName;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    UUID id;
+
+    @Column(nullable = false, unique = true, length = 120)
+    String code;
+
+    @Column(nullable = false, length = 150)
+    String name;
+
+    @Column(columnDefinition = "TEXT")
+    String description;
 }

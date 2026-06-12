@@ -5,3 +5,12 @@
 /frontend/node_modules
 
 /backend/src/main/resources/application.yml
+
+/.local-run
+/tmp-debug
+
+/.cursor
+/AGENTS.md
+/.github/copilot-instructions.md
+
+docker-compose.yml
