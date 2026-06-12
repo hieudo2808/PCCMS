@@ -6,10 +6,10 @@ import { Tag } from "~/components/atoms";
 import { Modal } from "~/components/molecules/Modal";
 import { Eye } from "lucide-react";
 
-const statusColors: Record<string, string> = {
-    PENDING: "warning",
-    ACCEPTED: "success",
-    REJECTED: "error",
+const statusColors: Record<string, "default" | "green" | "blue" | "amber" | "red"> = {
+    PENDING: "amber",
+    ACCEPTED: "green",
+    REJECTED: "red",
     CANCELLED: "default",
 };
 
@@ -88,7 +88,7 @@ export function ShiftChangeRequestPage() {
                                         </td>
                                         <td className="px-6 py-4">{request.reason}</td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <Tag color={statusColors[request.statusCode] as any}>
+                                            <Tag tone={statusColors[request.statusCode]}>
                                                 {statusLabels[request.statusCode] || request.statusCode}
                                             </Tag>
                                         </td>
@@ -200,7 +200,7 @@ export function ShiftChangeRequestPage() {
                             <div className="col-span-2">
                                 <p className="text-sm text-slate-500">Trạng thái hiện tại</p>
                                 <div className="mt-1">
-                                    <Tag color={statusColors[selectedRequest.statusCode] as any}>
+                                    <Tag tone={statusColors[selectedRequest.statusCode]}>
                                         {statusLabels[selectedRequest.statusCode] || selectedRequest.statusCode}
                                     </Tag>
                                 </div>

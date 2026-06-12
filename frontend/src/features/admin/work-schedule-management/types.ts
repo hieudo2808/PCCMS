@@ -1,4 +1,4 @@
-export type WorkScheduleRole = "Nhân viên trung tâm" | "Bác sĩ thú y";
+export type WorkScheduleRole = "Nhân viên trung tâm" | "Bác sĩ thú y" | "Lễ tân";
 export type WorkScheduleShift = "Ca sáng" | "Ca chiều" | "Ca tối";
 export type WorkScheduleStatus = "Đã phân công" | "Đã hủy" | "Đã hoàn thành";
 export type WorkScheduleSource = "backend";

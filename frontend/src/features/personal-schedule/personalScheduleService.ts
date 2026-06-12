@@ -179,7 +179,7 @@ export const getIncomingShiftChangeRequests = async () => {
     return getPageContent<BackendShiftChangeRequest>(getApiData<unknown>(response)).map(toIncomingShiftChangeRequest);
 };
 
-export const respondToIncomingShiftChangeRequest = async (requestId: string, isAccepted: boolean, reason?: string) => {
+export const respondToIncomingShiftChangeRequest = async (requestId: string, isAccepted: boolean) => {
     const response = await api.patch(`/v1/shift-change-requests/${requestId}/respond`, {
         action: isAccepted ? "ACCEPTED" : "REJECTED",
     });

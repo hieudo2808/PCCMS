@@ -3,7 +3,6 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PersonalSchedulePage } from "~/features/personal-schedule/PersonalSchedulePage";
 import {
-    cancelMyShiftChangeRequest,
     createMyShiftChangeRequest,
     getMyShiftChangeRequests,
     getIncomingShiftChangeRequests,
