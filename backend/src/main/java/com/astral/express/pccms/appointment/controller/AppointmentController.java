@@ -87,7 +87,7 @@ public class AppointmentController {
     }
 
     @GetMapping("/today")
-    @PreAuthorize("hasAuthority('APPOINTMENT_RECEIVE')")
+    @PreAuthorize("hasAuthority('APPOINTMENT_RECEIVE') or hasRole('VETERINARIAN')")
     public ApiResponse<List<AppointmentResponse>> listTodayAppointments(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam(required = false) AppointmentStatus status,
