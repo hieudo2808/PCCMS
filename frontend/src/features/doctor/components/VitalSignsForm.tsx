@@ -6,20 +6,26 @@ import { Button, Input, Textarea } from "~/components/atoms";
 import { Card } from "~/components/molecules";
 
 const optionalNonNegativeNumber = (message: string) =>
-    z.coerce.number().min(0, message).optional().or(z.literal(""));
+    z.preprocess(
+        (val) => (val === "" || val == null ? undefined : Number(val)),
+        z.number().min(0, message).optional()
+    );
 
 export const vitalSignsSchema = z.object({
     temperatureC: optionalNonNegativeNumber("Nhiệt độ không được âm"),
     heartRateBpm: optionalNonNegativeNumber("Nhịp tim không được âm"),
     respiratoryRateBpm: optionalNonNegativeNumber("Nhịp thở không được âm"),
     weightKg: optionalNonNegativeNumber("Cân nặng không được âm"),
-    bloodPressure: z.string().optional(),
-    spo2Percent: z.coerce.number().min(0, "SpO2 >= 0").max(100, "SpO2 <= 100").optional().or(z.literal("")),
-    mucousMembraneColor: z.string().optional(),
+    bloodPressure: z.string().nullish(),
+    spo2Percent: z.preprocess(
+        (val) => (val === "" || val == null ? undefined : Number(val)),
+        z.number().min(0, "SpO2 >= 0").max(100, "SpO2 <= 100").optional()
+    ),
+    mucousMembraneColor: z.string().nullish(),
     capillaryRefillSeconds: optionalNonNegativeNumber("CRT không được âm"),
-    preliminaryDiagnosis: z.string().optional(),
-    finalDiagnosis: z.string().optional(),
-    treatmentNote: z.string().optional(),
+    preliminaryDiagnosis: z.string().nullish(),
+    finalDiagnosis: z.string().nullish(),
+    treatmentNote: z.string().nullish(),
 });
 
 export type VitalSignsFormValues = z.infer<typeof vitalSignsSchema>;

@@ -6,6 +6,7 @@ import com.astral.express.pccms.appointment.dto.response.QueueEntryResponse;
 import com.astral.express.pccms.appointment.dto.response.ServiceCatalogOptionResponse;
 import com.astral.express.pccms.appointment.entity.Appointment;
 import com.astral.express.pccms.appointment.entity.AppointmentStatus;
+import com.astral.express.pccms.appointment.entity.AppointmentType;
 import com.astral.express.pccms.appointment.entity.ServiceCategory;
 import com.astral.express.pccms.appointment.repository.AppointmentRepository;
 import com.astral.express.pccms.appointment.repository.ServiceCatalogRepository;
@@ -64,6 +65,7 @@ public class AppointmentQueryUseCase {
                 : null;
 
         return appointmentRepository.findAppointmentsForDay(dayStart, dayEnd).stream()
+                .filter(a -> a.getAppointmentType() == AppointmentType.MEDICAL)
                 .filter(a -> status == null || a.getStatusCode() == status)
                 .filter(a -> phoneNeedle == null || matchesPhone(a.getServiceOrder().getOwner().getPhone(), phoneNeedle))
                 .filter(a -> nameNeedle == null || containsIgnoreCase(a.getServiceOrder().getOwner().getFullName(), nameNeedle))

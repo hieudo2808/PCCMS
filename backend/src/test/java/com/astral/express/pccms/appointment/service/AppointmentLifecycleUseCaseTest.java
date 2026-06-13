@@ -60,6 +60,7 @@ class AppointmentLifecycleUseCaseTest {
     void checkIn_shouldThrowException_whenCancelled() {
         UUID id = UUID.randomUUID();
         Appointment appointment = new Appointment();
+        appointment.setAppointmentType(AppointmentType.MEDICAL);
         appointment.setStatusCode(AppointmentStatus.CANCELLED);
         given(appointmentRepository.findDetailById(id)).willReturn(Optional.of(appointment));
 
@@ -72,6 +73,7 @@ class AppointmentLifecycleUseCaseTest {
     void checkIn_shouldThrowException_whenAlreadyCheckedIn() {
         UUID id = UUID.randomUUID();
         Appointment appointment = new Appointment();
+        appointment.setAppointmentType(AppointmentType.MEDICAL);
         appointment.setStatusCode(AppointmentStatus.CHECKED_IN);
         given(appointmentRepository.findDetailById(id)).willReturn(Optional.of(appointment));
 
@@ -85,6 +87,7 @@ class AppointmentLifecycleUseCaseTest {
         UUID id = UUID.randomUUID();
         UUID staffId = UUID.randomUUID();
         Appointment appointment = new Appointment();
+        appointment.setAppointmentType(AppointmentType.MEDICAL);
         appointment.setStatusCode(AppointmentStatus.PENDING);
         given(appointmentRepository.findDetailById(id)).willReturn(Optional.of(appointment));
         given(userRepository.findById(staffId)).willReturn(Optional.empty());
@@ -99,6 +102,7 @@ class AppointmentLifecycleUseCaseTest {
         UUID id = UUID.randomUUID();
         UUID staffId = UUID.randomUUID();
         Appointment appointment = new Appointment();
+        appointment.setAppointmentType(AppointmentType.MEDICAL);
         appointment.setStatusCode(AppointmentStatus.PENDING);
         given(appointmentRepository.findDetailById(id)).willReturn(Optional.of(appointment));
         given(userRepository.findById(staffId)).willReturn(Optional.of(new Users()));
@@ -113,6 +117,7 @@ class AppointmentLifecycleUseCaseTest {
         UUID id = UUID.randomUUID();
         UUID staffId = UUID.randomUUID();
         Appointment appointment = new Appointment();
+        appointment.setAppointmentType(AppointmentType.MEDICAL);
         appointment.setStatusCode(AppointmentStatus.PENDING);
         Users vet = new Users();
         vet.setId(UUID.randomUUID());
@@ -305,6 +310,7 @@ class AppointmentLifecycleUseCaseTest {
         UUID id = UUID.randomUUID();
         UUID actorId = UUID.randomUUID();
         Appointment appointment = new Appointment();
+        appointment.setAppointmentType(AppointmentType.MEDICAL);
         ServiceOrder order = new ServiceOrder();
         Users owner = new Users();
         owner.setId(UUID.randomUUID());
@@ -323,6 +329,7 @@ class AppointmentLifecycleUseCaseTest {
         UUID id = UUID.randomUUID();
         UUID actorId = UUID.randomUUID();
         Appointment appointment = new Appointment();
+        appointment.setAppointmentType(AppointmentType.MEDICAL);
         appointment.setStatusCode(AppointmentStatus.CANCELLED);
         ServiceOrder order = new ServiceOrder();
         Users owner = new Users();
@@ -342,6 +349,7 @@ class AppointmentLifecycleUseCaseTest {
         UUID id = UUID.randomUUID();
         UUID actorId = UUID.randomUUID();
         Appointment appointment = new Appointment();
+        appointment.setAppointmentType(AppointmentType.MEDICAL);
         appointment.setStatusCode(AppointmentStatus.CONFIRMED);
         ServiceOrder order = new ServiceOrder();
         Users owner = new Users();
@@ -361,6 +369,7 @@ class AppointmentLifecycleUseCaseTest {
         UUID id = UUID.randomUUID();
         UUID actorId = UUID.randomUUID();
         Appointment appointment = new Appointment();
+        appointment.setAppointmentType(AppointmentType.MEDICAL);
         appointment.setStatusCode(AppointmentStatus.IN_PROGRESS);
 
         given(appointmentRepository.findDetailById(id)).willReturn(Optional.of(appointment));
@@ -371,10 +380,25 @@ class AppointmentLifecycleUseCaseTest {
     }
 
     @Test
+    void startExam_shouldThrowException_whenNotMedical() {
+        UUID appointmentId = UUID.randomUUID();
+        UUID vetId = UUID.randomUUID();
+        Appointment appointment = new Appointment();
+        // Here we DO NOT set to MEDICAL to trigger the error
+        appointment.setId(appointmentId);
+        given(appointmentRepository.findDetailById(appointmentId)).willReturn(Optional.of(appointment));
+
+        assertThatThrownBy(() -> useCase.startExam(appointmentId, vetId))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_APT_011_INVALID_TYPE);
+    }
+
+    @Test
     void cancel_shouldSuccess() {
         UUID id = UUID.randomUUID();
         UUID actorId = UUID.randomUUID();
         Appointment appointment = new Appointment();
+        appointment.setAppointmentType(AppointmentType.MEDICAL);
         appointment.setStatusCode(AppointmentStatus.PENDING);
         ServiceOrder order = new ServiceOrder();
         Users owner = new Users();

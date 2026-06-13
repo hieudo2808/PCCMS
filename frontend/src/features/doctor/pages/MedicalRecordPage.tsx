@@ -108,7 +108,7 @@ export function MedicalRecordPage() {
             await medicalRecordApi.updateMedicalRecord(recordId, data.vitalSigns as any);
             await medicalRecordApi.finalizeMedicalRecord(recordId, {
                 finalDiagnosis: data.vitalSigns.finalDiagnosis || "",
-                treatmentNote: data.vitalSigns.treatmentNote,
+                treatmentNote: data.vitalSigns.treatmentNote || undefined,
             });
         },
         onSuccess: async () => {
@@ -181,6 +181,31 @@ export function MedicalRecordPage() {
                         saveDraftMutation.mutate(methods.getValues());
                     }}
                     onFinalize={(data) => {
+                        const requiredFields: (keyof typeof data)[] = [
+                            "temperatureC",
+                            "heartRateBpm",
+                            "respiratoryRateBpm",
+                            "weightKg",
+                            "bloodPressure",
+                            "spo2Percent",
+                            "mucousMembraneColor",
+                            "capillaryRefillSeconds",
+                            "preliminaryDiagnosis",
+                            "finalDiagnosis",
+                            "treatmentNote",
+                        ];
+
+                        const isAllFilled = requiredFields.every((field) => {
+                            const val = data[field];
+                            if (typeof val === "string") return val.trim().length > 0;
+                            return val !== undefined && val !== null;
+                        });
+
+                        if (!isAllFilled) {
+                            toast.error("Vui lòng nhập đầy đủ tất cả các trường (sinh hiệu, chẩn đoán, ghi chú) trước khi chốt bệnh án");
+                            return;
+                        }
+
                         methods.setValue("vitalSigns", data);
                         finalizeMutation.mutate(methods.getValues());
                     }}

@@ -25,7 +25,7 @@ export const screenMeta: Record<ScreenKey, ScreenMetaItem> = {
     ownerDashboard: { label: "Dashboard", icon: Home, path: "/owner" },
     pets: { label: "Hồ sơ thú cưng", icon: PawPrint, path: "/owner/pets" },
     ownerAppointments: { label: "Lịch hẹn của tôi", icon: CalendarDays, path: "/owner/appointments" },
-    unifiedBooking: { label: "Đặt phòng lưu trú", icon: Warehouse, path: "/owner/book" },
+    unifiedBooking: { label: "Đặt dịch vụ", icon: Warehouse, path: "/owner/book" },
     groomingBooking: { label: "Đăng ký làm đẹp", icon: Sparkles, path: "/owner/grooming/book" },
     groomingTracking: {
         label: "Theo dõi làm đẹp",

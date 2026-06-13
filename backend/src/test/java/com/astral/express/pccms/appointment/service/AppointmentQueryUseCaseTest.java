@@ -6,6 +6,7 @@ import com.astral.express.pccms.appointment.dto.response.QueueEntryResponse;
 import com.astral.express.pccms.appointment.dto.response.ServiceCatalogOptionResponse;
 import com.astral.express.pccms.appointment.entity.Appointment;
 import com.astral.express.pccms.appointment.entity.AppointmentStatus;
+import com.astral.express.pccms.appointment.entity.AppointmentType;
 import com.astral.express.pccms.appointment.entity.ReceptionTicket;
 import com.astral.express.pccms.appointment.entity.ServiceCatalog;
 import com.astral.express.pccms.appointment.entity.ServiceCategory;
@@ -77,6 +78,7 @@ class AppointmentQueryUseCaseTest {
         UUID id = UUID.randomUUID();
         Appointment appointment = new Appointment();
         appointment.setId(id);
+        appointment.setAppointmentType(AppointmentType.MEDICAL);
         given(appointmentRepository.findDetailById(id)).willReturn(Optional.of(appointment));
         given(receptionService.getQueueNumberForAppointment(id)).willReturn(1);
         given(assembler.toResponse(appointment, 1)).willReturn(new AppointmentResponse(id, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null));
@@ -92,6 +94,7 @@ class AppointmentQueryUseCaseTest {
         PageRequest pageable = PageRequest.of(0, 10);
         Appointment appointment = new Appointment();
         appointment.setId(UUID.randomUUID());
+        appointment.setAppointmentType(AppointmentType.MEDICAL);
         given(appointmentRepository.findByOwnerId(ownerId, pageable)).willReturn(new PageImpl<>(List.of(appointment), pageable, 1));
         given(receptionService.getQueueNumberForAppointment(appointment.getId())).willReturn(1);
         given(assembler.toResponse(appointment, 1)).willReturn(new AppointmentResponse(appointment.getId(), null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null));
@@ -106,6 +109,7 @@ class AppointmentQueryUseCaseTest {
         LocalDate date = LocalDate.now();
         Appointment appointment = new Appointment();
         appointment.setId(UUID.randomUUID());
+        appointment.setAppointmentType(AppointmentType.MEDICAL);
         appointment.setStatusCode(AppointmentStatus.PENDING);
         ServiceOrder order = new ServiceOrder();
         Users owner = new Users();
@@ -165,6 +169,7 @@ class AppointmentQueryUseCaseTest {
         ticket.setQueueNumber(1);
         Appointment appointment = new Appointment();
         appointment.setId(UUID.randomUUID());
+        appointment.setAppointmentType(AppointmentType.MEDICAL);
         ServiceOrder order = new ServiceOrder();
         Pets pet = new Pets();
         pet.setId(UUID.randomUUID());
@@ -201,6 +206,7 @@ class AppointmentQueryUseCaseTest {
     void listTodayAppointments_shouldReturnFilteredList_withNullFilters() {
         Appointment appointment = new Appointment();
         appointment.setId(UUID.randomUUID());
+        appointment.setAppointmentType(AppointmentType.MEDICAL);
         appointment.setStatusCode(AppointmentStatus.PENDING);
         ServiceOrder order = new ServiceOrder();
         Users owner = new Users();
@@ -226,6 +232,7 @@ class AppointmentQueryUseCaseTest {
         LocalDate date = LocalDate.now();
         Appointment appointment = new Appointment();
         appointment.setId(UUID.randomUUID());
+        appointment.setAppointmentType(AppointmentType.MEDICAL);
         appointment.setStatusCode(AppointmentStatus.PENDING);
         ServiceOrder order = new ServiceOrder();
         Users owner = new Users();
@@ -256,6 +263,7 @@ class AppointmentQueryUseCaseTest {
         ticket.setQueueNumber(1);
         Appointment appointment = new Appointment();
         appointment.setId(UUID.randomUUID());
+        appointment.setAppointmentType(AppointmentType.MEDICAL);
         ServiceOrder order = new ServiceOrder();
         Pets pet = new Pets();
         pet.setId(UUID.randomUUID());

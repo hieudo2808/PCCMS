@@ -69,7 +69,7 @@ function calculateBillableDays(startValue: string, endValue: string) {
     return Math.max(1, Math.ceil((end - start) / (24 * 60 * 60 * 1000)));
 }
 
-export function UnifiedBookingPage() {
+export function BoardingBookingPage() {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
     const {

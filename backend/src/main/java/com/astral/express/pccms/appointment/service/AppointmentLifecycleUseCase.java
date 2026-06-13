@@ -30,6 +30,7 @@ public class AppointmentLifecycleUseCase {
     @Transactional
     public AppointmentResponse checkIn(UUID appointmentId, UUID staffId) {
         Appointment appointment = findAppointmentOrThrow(appointmentId);
+        ensureMedicalAppointment(appointment);
 
         if (appointment.getStatusCode() == AppointmentStatus.CANCELLED) {
             throw new BusinessException(ErrorCode.ERR_APT_003_ALREADY_CANCELLED);
@@ -147,7 +148,7 @@ public class AppointmentLifecycleUseCase {
 
     private void ensureMedicalAppointment(Appointment appointment) {
         if (appointment.getAppointmentType() != AppointmentType.MEDICAL) {
-            throw new BusinessException(ErrorCode.ERR_VALIDATION_FAILED);
+            throw new BusinessException(ErrorCode.ERR_APT_011_INVALID_TYPE);
         }
     }
 

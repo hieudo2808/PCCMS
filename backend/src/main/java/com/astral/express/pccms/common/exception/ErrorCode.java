@@ -81,6 +81,7 @@ public enum ErrorCode {
     ERR_APT_008_PHONE_REQUIRED("ERR_APT_008_PHONE_REQUIRED", 400, "Phone number is required"),
     ERR_APT_009_SLOT_FULL("ERR_APT_009_SLOT_FULL", 400, "Appointment slot is full"),
     ERR_APT_010_OUT_OF_BUSINESS_HOURS("ERR_APT_010_OUT_OF_BUSINESS_HOURS", 400, "Cannot book appointment outside of business hours"),
+    ERR_APT_011_INVALID_TYPE("ERR_APT_011_INVALID_TYPE", 400, "Invalid appointment type for this operation"),
 
     // 5. Boarding, room, file, billing
     ERR_ROOM_001_ROOM_TYPE_NOT_FOUND("ERR_ROOM_001_ROOM_TYPE_NOT_FOUND", 404, "Room type not found"),
