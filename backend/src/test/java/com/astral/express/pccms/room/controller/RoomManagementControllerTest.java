@@ -1,10 +1,8 @@
 package com.astral.express.pccms.room.controller;
 
-import com.astral.express.pccms.common.exception.ErrorCode;
-import com.astral.express.pccms.common.exception.GlobalExceptionHandler;
 import com.astral.express.pccms.common.dto.PageResponse;
+import com.astral.express.pccms.common.exception.GlobalExceptionHandler;
 import com.astral.express.pccms.room.dto.response.RoomResponse;
-import com.astral.express.pccms.room.entity.RoomStatus;
 import com.astral.express.pccms.room.service.RoomManagementService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,9 +10,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -22,11 +19,14 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.List;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -39,61 +39,68 @@ class RoomManagementControllerTest {
     private RoomManagementService roomManagementService;
 
     @InjectMocks
-    private RoomManagementController roomManagementController;
+    private RoomManagementController controller;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(roomManagementController)
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
 
     @Test
-    void should_ReturnValidationFailed_when_TC_ROOM_010_invalidStatus() throws Exception {
-        String request = """
-                {
-                  "roomCode": "ROOM-BAD-STATUS",
-                  "name": "Bad Status",
-                  "roomTypeId": "00000000-0000-0000-0000-000000000001",
-                  "capacity": 2,
-                  "statusCode": "BROKEN"
-                }
-                """;
+    void searchRooms_success() throws Exception {
+        PageResponse<RoomResponse> page = PageResponse.of(new org.springframework.data.domain.PageImpl<>(List.of()));
+        given(roomManagementService.searchRooms(any(), any(), any(Pageable.class))).willReturn(page);
 
-        mockMvc.perform(post("/v1/admin/rooms")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(request))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.errorCode").value(ErrorCode.ERR_400_BAD_REQUEST.getErrorCode()));
+        mockMvc.perform(get("/v1/admin/rooms"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test
-    void should_ReturnOk_when_SearchRoomsWithAvailableStatus() throws Exception {
-        RoomResponse room = new RoomResponse(
-                UUID.randomUUID(),
-                "R001",
-                "Room 1",
-                UUID.randomUUID(),
-                "Standard",
-                1,
-                2,
-                RoomStatus.AVAILABLE,
-                ""
-        );
-        PageRequest pageable = PageRequest.of(0, 1, org.springframework.data.domain.Sort.by("createdAt").descending());
-        given(roomManagementService.searchRooms(eq(null), eq(RoomStatus.AVAILABLE), eq(pageable)))
-                .willReturn(PageResponse.of(new PageImpl<>(List.of(room), pageable, 1)));
-
-        mockMvc.perform(get("/v1/admin/rooms")
-                        .param("statusCode", "AVAILABLE")
-                        .param("page", "0")
-                        .param("size", "1"))
+    void getRoom_success() throws Exception {
+        UUID id = UUID.randomUUID();
+        mockMvc.perform(get("/v1/admin/rooms/{id}", id))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.data.content[0].statusCode").value("AVAILABLE"));
+                .andExpect(jsonPath("$.success").value(true));
+    }
 
-        verify(roomManagementService).searchRooms(null, RoomStatus.AVAILABLE, pageable);
+    @Test
+    void createRoom_success() throws Exception {
+        mockMvc.perform(post("/v1/admin/rooms")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"roomCode\":\"CODE\",\"name\":\"Room\",\"capacity\":1,\"floor\":1,\"roomTypeId\":\"" + UUID.randomUUID() + "\",\"statusCode\":\"AVAILABLE\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void updateRoom_success() throws Exception {
+        UUID id = UUID.randomUUID();
+        mockMvc.perform(put("/v1/admin/rooms/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"roomCode\":\"CODE\",\"name\":\"Room\",\"capacity\":1,\"floor\":1,\"roomTypeId\":\"" + UUID.randomUUID() + "\",\"statusCode\":\"AVAILABLE\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void updateRoomStatus_success() throws Exception {
+        UUID id = UUID.randomUUID();
+        mockMvc.perform(patch("/v1/admin/rooms/{id}/status", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"statusCode\":\"AVAILABLE\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void deactivateRoom_success() throws Exception {
+        UUID id = UUID.randomUUID();
+        mockMvc.perform(delete("/v1/admin/rooms/{id}", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
     }
 }

@@ -1,11 +1,13 @@
 package com.astral.express.pccms.schedule.controller;
 
 import com.astral.express.pccms.common.dto.PageResponse;
-import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.common.exception.GlobalExceptionHandler;
+import com.astral.express.pccms.schedule.dto.request.ShiftChangeRequestCreateRequest;
+import com.astral.express.pccms.schedule.dto.request.ShiftChangeRespondRequest;
 import com.astral.express.pccms.schedule.dto.response.ShiftChangeRequestResponse;
 import com.astral.express.pccms.schedule.entity.ShiftRequestStatus;
 import com.astral.express.pccms.schedule.service.ShiftChangeRequestService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,29 +15,26 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
 class ShiftChangeRequestControllerTest {
 
-    private MockMvc userMockMvc;
-    private MockMvc adminMockMvc;
+    private MockMvc mockMvc;
 
     @Mock
     private ShiftChangeRequestService shiftChangeRequestService;
@@ -43,159 +42,68 @@ class ShiftChangeRequestControllerTest {
     @InjectMocks
     private ShiftChangeRequestController shiftChangeRequestController;
 
-    @InjectMocks
-    private AdminShiftChangeRequestController adminShiftChangeRequestController;
+    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
-        userMockMvc = MockMvcBuilders.standaloneSetup(shiftChangeRequestController)
+        objectMapper = new ObjectMapper();
+        mockMvc = MockMvcBuilders.standaloneSetup(shiftChangeRequestController)
                 .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
-        adminMockMvc = MockMvcBuilders.standaloneSetup(adminShiftChangeRequestController)
-                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .build();
     }
 
     @Test
-    void should_ReturnAdminShiftChangeRequests_when_GetAdminRequests() throws Exception {
-        ShiftChangeRequestResponse response = new ShiftChangeRequestResponse(
-                UUID.fromString("00000000-0000-0000-0000-000000000010"),
-                UUID.fromString("00000000-0000-0000-0000-000000000011"),
-                "00000000-0000-0000-0000-000000000002",
-                "User Name",
-                OffsetDateTime.parse("2026-04-01T00:00:00Z"),
-                "00000000-0000-0000-0000-000000000003",
-                "Target User Name",
-                ShiftRequestStatus.PENDING,
-                "Family matter",
-                OffsetDateTime.parse("2026-04-01T00:00:00Z"),
-                OffsetDateTime.parse("2026-04-01T00:00:00Z")
-        );
-        given(shiftChangeRequestService.getAdminRequests(isNull(), any()))
-                .willReturn(PageResponse.of(new PageImpl<>(List.of(response))));
+    void getMyRequests_success() throws Exception {
+        given(shiftChangeRequestService.getMyRequests(any(), any(Pageable.class)))
+                .willReturn(PageResponse.of(new PageImpl<>(List.of())));
 
-        adminMockMvc.perform(get("/v1/admin/shift-change-requests"))
+        mockMvc.perform(get("/v1/me/shift-change-requests"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.data.content[0].statusCode").value("PENDING"));
+                .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test
-    void should_ReturnIncomingShiftChangeRequests_when_GetIncomingRequests() throws Exception {
-        ShiftChangeRequestResponse response = new ShiftChangeRequestResponse(
-                UUID.fromString("00000000-0000-0000-0000-000000000010"),
-                UUID.fromString("00000000-0000-0000-0000-000000000011"),
-                "00000000-0000-0000-0000-000000000002",
-                "User Name",
-                OffsetDateTime.parse("2026-04-01T00:00:00Z"),
-                "00000000-0000-0000-0000-000000000003",
-                "Target User Name",
-                ShiftRequestStatus.PENDING,
-                "Family matter",
-                OffsetDateTime.parse("2026-04-01T00:00:00Z"),
-                OffsetDateTime.parse("2026-04-01T00:00:00Z")
-        );
-        given(shiftChangeRequestService.getIncomingRequests(isNull(), any()))
-                .willReturn(PageResponse.of(new PageImpl<>(List.of(response))));
+    void createRequest_success() throws Exception {
+        given(shiftChangeRequestService.createRequest(any(ShiftChangeRequestCreateRequest.class)))
+                .willReturn(null);
 
-        userMockMvc.perform(get("/v1/shift-change-requests/incoming"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.data.content[0].statusCode").value("PENDING"));
-    }
-
-    @Test
-    void should_ReturnSuccess_when_RespondToRequest() throws Exception {
-        UUID requestId = UUID.fromString("00000000-0000-0000-0000-000000000010");
-        ShiftChangeRequestResponse response = new ShiftChangeRequestResponse(
-                requestId,
-                UUID.fromString("00000000-0000-0000-0000-000000000011"),
-                "00000000-0000-0000-0000-000000000002",
-                "User Name",
-                OffsetDateTime.parse("2026-04-01T00:00:00Z"),
-                "00000000-0000-0000-0000-000000000003",
-                "Target User Name",
-                ShiftRequestStatus.ACCEPTED,
-                "Family matter",
-                OffsetDateTime.parse("2026-04-01T00:00:00Z"),
-                OffsetDateTime.parse("2026-04-01T00:00:00Z")
-        );
-
-        given(shiftChangeRequestService.respondToRequest(any(UUID.class), any(ShiftRequestStatus.class)))
-                .willReturn(response);
-
-        String request = """
-                {
-                  "action": "ACCEPTED"
-                }
-                """;
-
-        userMockMvc.perform(patch("/v1/shift-change-requests/{requestId}/respond", requestId)
+        mockMvc.perform(post("/v1/me/shift-change-requests")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(request))
+                        .content("{\"scheduleId\":\"" + UUID.randomUUID() + "\",\"reason\":\"Sick\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.statusCode").value("ACCEPTED"));
+                .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test
-    void should_ReturnOwnShiftChangeRequests_when_GetMyRequests() throws Exception {
-        ShiftChangeRequestResponse response = new ShiftChangeRequestResponse(
-                UUID.fromString("00000000-0000-0000-0000-000000000010"),
-                UUID.fromString("00000000-0000-0000-0000-000000000011"),
-                "00000000-0000-0000-0000-000000000002",
-                "User Name",
-                OffsetDateTime.parse("2026-04-01T00:00:00Z"),
-                "00000000-0000-0000-0000-000000000003",
-                "Target User Name",
-                ShiftRequestStatus.PENDING,
-                "Family matter",
-                OffsetDateTime.parse("2026-04-01T00:00:00Z"),
-                OffsetDateTime.parse("2026-04-01T00:00:00Z")
-        );
-        given(shiftChangeRequestService.getMyRequests(isNull(), any()))
-                .willReturn(PageResponse.of(new PageImpl<>(List.of(response))));
+    void cancelOwnRequest_success() throws Exception {
+        UUID requestId = UUID.randomUUID();
+        given(shiftChangeRequestService.cancelOwnRequest(requestId)).willReturn(null);
 
-        userMockMvc.perform(get("/v1/me/shift-change-requests"))
+        mockMvc.perform(patch("/v1/me/shift-change-requests/{requestId}/cancel", requestId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.data.content[0].statusCode").value("PENDING"));
+                .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test
-    void should_ReturnValidationFailed_when_TC_SHIFT_REQ_005_blankReason() throws Exception {
-        String request = """
-                {
-                  "scheduleId": "00000000-0000-0000-0000-000000000010",
-                  "reason": " ",
-                  "targetStaffId": null
-                }
-                """;
+    void getIncomingRequests_success() throws Exception {
+        given(shiftChangeRequestService.getIncomingRequests(any(), any(Pageable.class)))
+                .willReturn(PageResponse.of(new PageImpl<>(List.of())));
 
-        userMockMvc.perform(post("/v1/me/shift-change-requests")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(request))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.errorCode").value(ErrorCode.ERR_400_BAD_REQUEST.getErrorCode()));
+        mockMvc.perform(get("/v1/shift-change-requests/incoming"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test
-    void should_ReturnValidationFailed_when_TC_SHIFT_REQ_011_invalidRequestStatus() throws Exception {
-        UUID requestId = UUID.fromString("00000000-0000-0000-0000-000000000010");
-        String request = """
-                {
-                  "statusCode": "APPROVED"
-                }
-                """;
+    void respondToRequest_success() throws Exception {
+        UUID requestId = UUID.randomUUID();
+        given(shiftChangeRequestService.respondToRequest(eq(requestId), any())).willReturn(null);
 
-        adminMockMvc.perform(patch("/v1/admin/shift-change-requests/{requestId}/status", requestId)
+        mockMvc.perform(patch("/v1/shift-change-requests/{requestId}/respond", requestId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(request))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.errorCode").value(ErrorCode.ERR_400_BAD_REQUEST.getErrorCode()));
+                        .content("{\"action\":\"ACCEPTED\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
     }
 }

@@ -279,5 +279,108 @@ class ServiceCatalogServiceTest {
             LocalDate effectiveTo
     ) {
     }
-}
 
+    @org.junit.jupiter.api.Test
+    void searchServices_shouldReturnPage_withMultipleFilters() {
+        PageRequest pageable = PageRequest.of(0, 10);
+        ServiceCatalog service = service("S1", "Service Name", ServiceCategory.MEDICAL, true);
+        given(serviceCatalogRepository.findAll(nullable(org.springframework.data.jpa.domain.Specification.class), org.mockito.ArgumentMatchers.eq(pageable)))
+                .willReturn(new PageImpl<>(List.of(service), pageable, 1));
+
+        var response = serviceCatalogService.searchServices("keyword", ServiceCategory.MEDICAL, true, pageable);
+        assertThat(response.data().content()).hasSize(1);
+    }
+
+    @org.junit.jupiter.api.Test
+    void searchServices_shouldReturnPage_withBlankKeyword() {
+        PageRequest pageable = PageRequest.of(0, 10);
+        ServiceCatalog service = service("S1", "Service Name", ServiceCategory.MEDICAL, true);
+        given(serviceCatalogRepository.findAll(nullable(org.springframework.data.jpa.domain.Specification.class), org.mockito.ArgumentMatchers.eq(pageable)))
+                .willReturn(new PageImpl<>(List.of(service), pageable, 1));
+
+        var response = serviceCatalogService.searchServices("   ", null, null, pageable);
+        assertThat(response.data().content()).hasSize(1);
+    }
+
+    @org.junit.jupiter.api.Test
+    void updateService_shouldThrowException_whenServiceCodeExistsForOtherService() {
+        UUID serviceId = UUID.randomUUID();
+        ServiceCatalogRequest request = new ServiceCatalogRequest("S1", "Service", ServiceCategory.MEDICAL, "", 1000L, 30, true, null, null);
+        given(serviceCatalogRepository.findById(serviceId)).willReturn(Optional.of(service("S1", "Service Name", ServiceCategory.MEDICAL, true)));
+        given(serviceCatalogRepository.existsByServiceCodeIgnoreCaseAndIdNot("S1", serviceId)).willReturn(true);
+
+        assertThatThrownBy(() -> serviceCatalogService.updateService(serviceId, request))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_VALIDATION_FAILED);
+    }
+
+    @org.junit.jupiter.api.Test
+    void updateService_shouldThrowException_whenNotFound() {
+        UUID serviceId = UUID.randomUUID();
+        given(serviceCatalogRepository.findById(serviceId)).willReturn(Optional.empty());
+        ServiceCatalogRequest request = new ServiceCatalogRequest("S1", "Service", ServiceCategory.MEDICAL, "", 1000L, 30, true, null, null);
+
+        assertThatThrownBy(() -> serviceCatalogService.updateService(serviceId, request))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_404_NOT_FOUND);
+    }
+
+    @org.junit.jupiter.api.Test
+    void deactivateService_shouldThrowException_whenNotFound() {
+        UUID serviceId = UUID.randomUUID();
+        given(serviceCatalogRepository.findById(serviceId)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> serviceCatalogService.deactivateService(serviceId))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_404_NOT_FOUND);
+    }
+
+    @org.junit.jupiter.api.Test
+    void createService_shouldThrowException_whenBasePriceIsNull() {
+        ServiceCatalogRequest request = new ServiceCatalogRequest("S1", "Service", ServiceCategory.MEDICAL, "", null, 30, true, null, null);
+        assertThatThrownBy(() -> serviceCatalogService.createService(request))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_VALIDATION_FAILED);
+    }
+
+    @org.junit.jupiter.api.Test
+    void createService_shouldThrowException_whenBasePriceIsNegative() {
+        ServiceCatalogRequest request = new ServiceCatalogRequest("S1", "Service", ServiceCategory.MEDICAL, "", -10L, 30, true, null, null);
+        assertThatThrownBy(() -> serviceCatalogService.createService(request))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_VALIDATION_FAILED);
+    }
+
+    @org.junit.jupiter.api.Test
+    void createService_shouldThrowException_whenDurationIsZeroOrNegative() {
+        ServiceCatalogRequest request = new ServiceCatalogRequest("S1", "Service", ServiceCategory.MEDICAL, "", 1000L, 0, true, null, null);
+        assertThatThrownBy(() -> serviceCatalogService.createService(request))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_VALIDATION_FAILED);
+
+        ServiceCatalogRequest request2 = new ServiceCatalogRequest("S1", "Service", ServiceCategory.MEDICAL, "", 1000L, -5, true, null, null);
+        assertThatThrownBy(() -> serviceCatalogService.createService(request2))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_VALIDATION_FAILED);
+    }
+
+    @org.junit.jupiter.api.Test
+    void createService_shouldHandleIsActiveNullAndFalse() {
+        // Null isActive
+        ServiceCatalogRequest req1 = new ServiceCatalogRequest("S1", "Service", ServiceCategory.MEDICAL, "", 1000L, 30, null, null, null);
+        given(serviceCatalogRepository.existsByServiceCodeIgnoreCase("S1")).willReturn(false);
+        ServiceCatalog service1 = service("S1", "Service Name", ServiceCategory.MEDICAL, true);
+        given(serviceCatalogRepository.save(any(ServiceCatalog.class))).willReturn(service1);
+        serviceCatalogService.createService(req1);
+        
+        // False isActive
+        ServiceCatalogRequest req2 = new ServiceCatalogRequest("S2", "Service", ServiceCategory.MEDICAL, "", 1000L, 30, false, null, null);
+        given(serviceCatalogRepository.existsByServiceCodeIgnoreCase("S2")).willReturn(false);
+        ServiceCatalog service2 = service("S1", "Service Name", ServiceCategory.MEDICAL, true);
+        given(serviceCatalogRepository.save(any(ServiceCatalog.class))).willReturn(service2);
+        serviceCatalogService.createService(req2);
+    }
+
+    @org.junit.jupiter.api.Test
+    void createService_shouldThrowException_whenEffectiveRangeInvalid() {
+        LocalDate from = LocalDate.now();
+        LocalDate to = from.minusDays(1);
+        ServiceCatalogRequest request = new ServiceCatalogRequest("S1", "Service", ServiceCategory.MEDICAL, "", 1000L, 30, true, from, to);
+        assertThatThrownBy(() -> serviceCatalogService.createService(request))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_VALIDATION_FAILED);
+    }
+
+}

@@ -15,6 +15,7 @@ import com.astral.express.pccms.user.entity.Users;
 import com.astral.express.pccms.user.mapper.UserMapper;
 import com.astral.express.pccms.user.repository.RoleRepository;
 import com.astral.express.pccms.user.repository.UserRepository;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvFileSource;
@@ -34,6 +35,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -206,4 +209,267 @@ class UserServiceTest {
             }
         }
     }
+
+    @Test
+    void should_CreateAccount_Success() {
+        CreateUserRequest createReq = new CreateUserRequest("Test User", "test@test.com", "CUSTOMER", null);
+        com.astral.express.pccms.user.entity.Roles role = new com.astral.express.pccms.user.entity.Roles();
+        role.setIsActive(true);
+        role.setCode("CUSTOMER");
+        
+        Users mockUser = new Users();
+        mockUser.setId(UUID.randomUUID());
+        mockUser.setEmail("test@test.com");
+        
+        given(userRepository.existsByEmail("test@test.com")).willReturn(false);
+        given(roleRepository.findByCodeIgnoreCase("CUSTOMER")).willReturn(Optional.of(role));
+        given(userRepository.save(any(Users.class))).willReturn(mockUser);
+        given(passwordEncoder.encode(anyString())).willReturn("hash");
+        
+        var result = userService.createAccount(createReq);
+        assertThat(result).isNotNull();
+        verify(emailService).sendAccountCreatedEmail(anyString(), anyString());
+    }
+
+    @Test
+    void should_ThrowException_when_CreateAccount_EmailExists() {
+        CreateUserRequest createReq = new CreateUserRequest("Test User", "test@test.com", "CUSTOMER", null);
+        given(userRepository.existsByEmail("test@test.com")).willReturn(true);
+        
+        assertThatThrownBy(() -> userService.createAccount(createReq))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_ACC_001_EMAIL_EXISTS);
+    }
+
+    @Test
+    void should_ThrowException_when_AdminUpdateUser_EmailExists() {
+        UUID userId = UUID.randomUUID();
+        Users user = new Users();
+        user.setId(userId);
+        user.setEmail("old@test.com");
+        
+        AdminUpdateUserRequest updateReq = new AdminUpdateUserRequest("Name", "new@test.com", "0123456789", null, null);
+        
+        given(userRepository.findByIdWithRoleAndPermissions(userId)).willReturn(Optional.of(user));
+        given(userRepository.existsByEmail("new@test.com")).willReturn(true);
+        
+        assertThatThrownBy(() -> userService.adminUpdateUser(userId, updateReq))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_ACC_001_EMAIL_EXISTS);
+    }
+
+    @Test
+    void should_UpdateUserStatus_AndRevokeTokens_when_Locked() {
+        UUID userId = UUID.randomUUID();
+        Users user = new Users();
+        user.setId(userId);
+        user.setEmail("test@test.com");
+        
+        AdminUpdateUserRequest updateReq = new AdminUpdateUserRequest("Name", null, null, null, UserStatus.LOCKED);
+        
+        given(userRepository.findByIdWithRoleAndPermissions(userId)).willReturn(Optional.of(user));
+        given(userRepository.save(any(Users.class))).willReturn(user);
+        
+        userService.adminUpdateUser(userId, updateReq);
+        
+        verify(refreshTokenRepository).revokeAllUserTokens(userId);
+    }
+
+    @Test
+    void should_ThrowException_when_FindActiveAccount_Deleted() {
+        UUID accountId = UUID.randomUUID();
+        Users user = new Users();
+        user.setId(accountId);
+        user.setDeletedAt(java.time.OffsetDateTime.now());
+        
+        given(userRepository.findByIdWithRoleAndPermissions(accountId)).willReturn(Optional.of(user));
+        
+        assertThatThrownBy(() -> userService.updateAccountStatus(accountId, UserStatus.ACTIVE))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_ACC_002_USER_NOT_FOUND);
+    }
+
+    @Test
+    void should_ThrowException_when_ResolveActiveRole_NotActive() {
+        UUID accountId = UUID.randomUUID();
+        Users user = new Users();
+        user.setId(accountId);
+        
+        com.astral.express.pccms.user.entity.Roles role = new com.astral.express.pccms.user.entity.Roles();
+        role.setIsActive(false);
+        
+        given(userRepository.findByIdWithRoleAndPermissions(accountId)).willReturn(Optional.of(user));
+        given(roleRepository.findByCodeIgnoreCase("CUSTOMER")).willReturn(Optional.of(role));
+        
+        assertThatThrownBy(() -> userService.assignAccountRole(accountId, "CUSTOMER"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_VALIDATION_FAILED);
+    }
+
+    @Test
+    void should_SearchAccounts_WithFilters() {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
+        org.springframework.data.domain.Page<Users> page = new org.springframework.data.domain.PageImpl<>(List.of(new Users()));
+        
+        given(userRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), eq(pageable))).willReturn(page);
+        
+        var result = userService.searchAccounts("keyword", "ROLE", UserStatus.ACTIVE, pageable);
+        
+        assertThat(result).isNotNull();
+    }
+
+    @Test
+    void should_SearchAccounts_WithNoFilters() {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
+        org.springframework.data.domain.Page<Users> page = new org.springframework.data.domain.PageImpl<>(List.of(new Users()));
+        
+        given(userRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), eq(pageable))).willReturn(page);
+        
+        var result = userService.searchAccounts(null, null, null, pageable);
+        
+        assertThat(result).isNotNull();
+    }
+
+    @Test
+    void should_ResetAccountPassword() {
+        UUID accountId = UUID.randomUUID();
+        Users user = new Users();
+        user.setId(accountId);
+        user.setEmail("test@test.com");
+        
+        given(userRepository.findByIdWithRoleAndPermissions(accountId)).willReturn(Optional.of(user));
+        given(passwordEncoder.encode(anyString())).willReturn("hash");
+        given(userRepository.save(any(Users.class))).willReturn(user);
+        
+        var result = userService.resetAccountPassword(accountId);
+        
+        assertThat(result).isNotNull();
+        verify(refreshTokenRepository).revokeAllUserTokens(accountId);
+        verify(emailService).sendTemporaryPasswordEmail(eq("test@test.com"), anyString());
+    }
+
+    @Mock
+    private com.astral.express.pccms.user.repository.StaffProfileRepository staffProfileRepository;
+
+    @Test
+    void should_CreateUser_WithStaffProfile_WhenRoleIsVeterinarian() {
+        CreateUserRequest createReq = new CreateUserRequest("Vet User", "vet@test.com", "VETERINARIAN", null);
+        com.astral.express.pccms.user.entity.Roles role = new com.astral.express.pccms.user.entity.Roles();
+        role.setIsActive(true);
+        role.setCode("VETERINARIAN");
+        role.setName("Veterinarian");
+        
+        Users mockUser = new Users();
+        mockUser.setId(UUID.randomUUID());
+        mockUser.setEmail("vet@test.com");
+        mockUser.setRole(role);
+        
+        given(userRepository.existsByEmail("vet@test.com")).willReturn(false);
+        given(roleRepository.findByCodeIgnoreCase("VETERINARIAN")).willReturn(Optional.of(role));
+        given(userRepository.save(any(Users.class))).willReturn(mockUser);
+        given(passwordEncoder.encode(anyString())).willReturn("hash");
+        
+        userService.createUser(createReq);
+        
+        verify(staffProfileRepository).save(any(com.astral.express.pccms.user.entity.StaffProfile.class));
+    }
+
+    @Test
+    void should_CreateUser_WithStaffProfile_WhenRoleIsStaff() {
+        CreateUserRequest createReq = new CreateUserRequest("Staff User", "staff@test.com", "STAFF", null);
+        com.astral.express.pccms.user.entity.Roles role = new com.astral.express.pccms.user.entity.Roles();
+        role.setIsActive(true);
+        role.setCode("STAFF");
+        role.setName("Staff");
+        
+        Users mockUser = new Users();
+        mockUser.setId(UUID.randomUUID());
+        mockUser.setEmail("staff@test.com");
+        mockUser.setRole(role);
+        
+        given(userRepository.existsByEmail("staff@test.com")).willReturn(false);
+        given(roleRepository.findByCodeIgnoreCase("STAFF")).willReturn(Optional.of(role));
+        given(userRepository.save(any(Users.class))).willReturn(mockUser);
+        given(passwordEncoder.encode(anyString())).willReturn("hash");
+        
+        userService.createUser(createReq);
+        
+        verify(staffProfileRepository).save(any(com.astral.express.pccms.user.entity.StaffProfile.class));
+    }
+
+    @Test
+    void should_AdminUpdateUser_UpdateAllFields_Successfully() {
+        UUID userId = UUID.randomUUID();
+        Users user = new Users();
+        user.setId(userId);
+        user.setEmail("old@test.com");
+        
+        com.astral.express.pccms.user.entity.Roles newRole = new com.astral.express.pccms.user.entity.Roles();
+        newRole.setIsActive(true);
+        newRole.setCode("NEW_ROLE");
+        
+        AdminUpdateUserRequest updateReq = new AdminUpdateUserRequest("New Name", "new@test.com", "0123456789", "NEW_ROLE", UserStatus.DISABLED);
+        
+        given(userRepository.findByIdWithRoleAndPermissions(userId)).willReturn(Optional.of(user));
+        given(userRepository.existsByEmail("new@test.com")).willReturn(false);
+        given(roleRepository.findByCodeIgnoreCase("NEW_ROLE")).willReturn(Optional.of(newRole));
+        given(userRepository.save(any(Users.class))).willAnswer(i -> i.getArgument(0));
+        
+        var result = userService.adminUpdateUser(userId, updateReq);
+        
+        assertThat(result).isNotNull();
+        assertThat(user.getFullName()).isEqualTo("New Name");
+        assertThat(user.getEmail()).isEqualTo("new@test.com");
+        assertThat(user.getPhone()).isEqualTo("0123456789");
+        assertThat(user.getRole()).isEqualTo(newRole);
+        assertThat(user.getStatusCode()).isEqualTo(UserStatus.DISABLED);
+        
+        verify(refreshTokenRepository).revokeAllUserTokens(userId);
+    }
+    
+    @Test
+    void should_AdminUpdateUser_UpdateStatusToActive() {
+        UUID userId = UUID.randomUUID();
+        Users user = new Users();
+        user.setId(userId);
+        user.setEmail("old@test.com");
+        
+        AdminUpdateUserRequest updateReq = new AdminUpdateUserRequest(null, null, null, null, UserStatus.ACTIVE);
+        
+        given(userRepository.findByIdWithRoleAndPermissions(userId)).willReturn(Optional.of(user));
+        given(userRepository.save(any(Users.class))).willAnswer(i -> i.getArgument(0));
+        
+        userService.adminUpdateUser(userId, updateReq);
+        
+        assertThat(user.getStatusCode()).isEqualTo(UserStatus.ACTIVE);
+    }
+
+    @Test
+    void should_UpdateAccountStatus_ToDisabled_AndRevokeTokens() {
+        UUID accountId = UUID.randomUUID();
+        Users user = new Users();
+        user.setId(accountId);
+        
+        given(userRepository.findByIdWithRoleAndPermissions(accountId)).willReturn(Optional.of(user));
+        given(userRepository.save(any(Users.class))).willReturn(user);
+        
+        userService.updateAccountStatus(accountId, UserStatus.DISABLED);
+        
+        verify(refreshTokenRepository).revokeAllUserTokens(accountId);
+    }
+
+    @Test
+    void should_UpdateAccountStatus_ToActive() {
+        UUID accountId = UUID.randomUUID();
+        Users user = new Users();
+        user.setId(accountId);
+        
+        given(userRepository.findByIdWithRoleAndPermissions(accountId)).willReturn(Optional.of(user));
+        given(userRepository.save(any(Users.class))).willReturn(user);
+        
+        userService.updateAccountStatus(accountId, UserStatus.ACTIVE);
+        
+        // No tokens revoked
+    }
+
 }

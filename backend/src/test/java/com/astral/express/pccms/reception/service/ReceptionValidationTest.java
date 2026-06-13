@@ -99,4 +99,53 @@ class ReceptionValidationTest {
                     .isInstanceOf(BusinessException.class);
         }
     }
+
+    @org.junit.jupiter.api.Test
+    void validateQuickAppointment_nulls() {
+        assertThatThrownBy(() -> ReceptionValidation.validateQuickAppointment(null, "A", "B", "C"))
+                .isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> ReceptionValidation.validateQuickAppointment("", "A", "B", "C"))
+                .isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> ReceptionValidation.validateQuickAppointment("012345678", null, "B", "C"))
+                .isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> ReceptionValidation.validateQuickAppointment("012345678", "", "B", "C"))
+                .isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> ReceptionValidation.validateQuickAppointment("012345678", "A", null, "C"))
+                .isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> ReceptionValidation.validateQuickAppointment("012345678", "A", "", "C"))
+                .isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> ReceptionValidation.validateQuickAppointment("012345678", "A", "B", null))
+                .isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> ReceptionValidation.validateQuickAppointment("012345678", "A", "B", ""))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @org.junit.jupiter.api.Test
+    void validateCareLog_nulls() {
+        assertThatThrownBy(() -> ReceptionValidation.validateCareLog(null, "MORNING", "A", "B"))
+                .isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> ReceptionValidation.validateCareLog(LocalDate.now(), null, "A", "B"))
+                .isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> ReceptionValidation.validateCareLog(LocalDate.now(), "MORNING", null, "B"))
+                .isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> ReceptionValidation.validateCareLog(LocalDate.now(), "MORNING", "", "B"))
+                .isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> ReceptionValidation.validateCareLog(LocalDate.now(), "MORNING", "A", null))
+                .isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> ReceptionValidation.validateCareLog(LocalDate.now(), "MORNING", "A", ""))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @org.junit.jupiter.api.Test
+    void validateCareLogMedia_nulls() {
+        assertThatThrownBy(() -> ReceptionValidation.validateCareLogMedia(100, null))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @org.junit.jupiter.api.Test
+    void validateGroomingTransition_nulls() {
+        assertThatThrownBy(() -> ReceptionValidation.validateGroomingTransition("PENDING", null))
+                .isInstanceOf(BusinessException.class);
+    }
+
 }

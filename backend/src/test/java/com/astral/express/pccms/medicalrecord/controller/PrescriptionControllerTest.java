@@ -92,4 +92,14 @@ class PrescriptionControllerTest {
                         .content(requestJson))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void should_Return200_when_ListPrescriptionsSuccessfully() throws Exception {
+        UUID recordId = UUID.randomUUID();
+        given(prescriptionService.listPrescriptions(recordId)).willReturn(List.of());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/v1/medical-records/{id}/prescriptions", recordId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
 }

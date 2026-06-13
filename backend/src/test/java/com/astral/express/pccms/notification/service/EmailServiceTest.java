@@ -126,4 +126,52 @@ class EmailServiceTest {
         assertThatCode(() -> emailService.sendAccountCreatedEmail(toEmail, password))
                 .doesNotThrowAnyException();
     }
+
+    @Test
+    void should_HandleMailException_when_SendTemporaryPasswordEmailFails() {
+        String toEmail = "fail@example.com";
+        String password = "temp";
+        given(emailTemplateService.buildTemporaryPasswordSubject()).willReturn("Subject");
+        given(emailTemplateService.buildTemporaryPasswordContent(toEmail, password)).willReturn("Content");
+        
+        willThrow(new MailSendException("SMTP error")).given(mailSender).send(any(SimpleMailMessage.class));
+
+        assertThatCode(() -> emailService.sendTemporaryPasswordEmail(toEmail, password))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void should_SendTemporaryPasswordEmail_when_FromIsBlank() {
+        String toEmail = "user@example.com";
+        String password = "new_temp";
+        given(emailTemplateService.buildTemporaryPasswordSubject()).willReturn("Subject2");
+        given(emailTemplateService.buildTemporaryPasswordContent(toEmail, password)).willReturn("Content2");
+        given(mailProperties.getFrom()).willReturn("");
+
+        emailService.sendTemporaryPasswordEmail(toEmail, password);
+
+        verify(mailSender).send(messageCaptor.capture());
+        assertThat(messageCaptor.getValue().getFrom()).isNull();
+    }
+
+    @Test
+    void should_HandleMailException_when_SendOtpEmailFails() {
+        String toEmail = "otp@example.com";
+        willThrow(new MailSendException("SMTP error")).given(mailSender).send(any(SimpleMailMessage.class));
+
+        assertThatCode(() -> emailService.sendOtpEmail(toEmail, "Login", "123"))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void should_SendOtpEmail_when_FromIsBlank() {
+        String toEmail = "otp@example.com";
+        given(mailProperties.getFrom()).willReturn(null);
+
+        emailService.sendOtpEmail(toEmail, "Login", "123");
+
+        verify(mailSender).send(messageCaptor.capture());
+        assertThat(messageCaptor.getValue().getFrom()).isNull();
+    }
+
 }

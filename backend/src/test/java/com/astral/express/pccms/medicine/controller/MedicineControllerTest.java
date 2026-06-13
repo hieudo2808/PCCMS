@@ -150,4 +150,46 @@ class MedicineControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
+
+    @Test
+    void should_ReturnCategories_when_ListCategories() throws Exception {
+        given(medicineService.listCategories()).willReturn(List.of());
+
+        mockMvc.perform(get("/v1/medicines/categories"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void should_ReturnPageOfMedicines_when_GetAllWithKeyword() throws Exception {
+        PageResponse<MedicineResponse> pageResponse = PageResponse.of(new org.springframework.data.domain.PageImpl<>(List.of()));
+        given(medicineService.searchMedicines(any(), any(), any(), any())).willReturn(pageResponse);
+
+        mockMvc.perform(get("/v1/medicines")
+                .param("keyword", "A")
+                .param("isActive", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void should_ReturnPageOfMedicines_when_SuggestMedicines() throws Exception {
+        PageResponse<MedicineResponse> pageResponse = PageResponse.of(new org.springframework.data.domain.PageImpl<>(List.of()));
+        given(medicineService.searchMedicines(any(), any(), any(), any())).willReturn(pageResponse);
+
+        mockMvc.perform(get("/v1/medicines/suggestions"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void should_ReturnPageOfMedicines_when_GetAllWithIsActiveOnly() throws Exception {
+        PageResponse<MedicineResponse> pageResponse = PageResponse.of(new org.springframework.data.domain.PageImpl<>(List.of()));
+        given(medicineService.searchMedicines(any(), any(), any(), any())).willReturn(pageResponse);
+
+        mockMvc.perform(get("/v1/medicines")
+                .param("isActive", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
 }

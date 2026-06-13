@@ -2,6 +2,7 @@ package com.astral.express.pccms.medicalrecord.service;
 
 import com.astral.express.pccms.common.exception.BusinessException;
 import com.astral.express.pccms.medicalrecord.dto.request.CreatePrescriptionRequest;
+import com.astral.express.pccms.medicalrecord.dto.response.PrescriptionResponse;
 import com.astral.express.pccms.medicalrecord.dto.request.PrescriptionItemRequest;
 import com.astral.express.pccms.medicalrecord.entity.MedicalRecord;
 import com.astral.express.pccms.medicalrecord.entity.Prescription;
@@ -41,6 +42,8 @@ class PrescriptionServiceTest {
 
     @Mock
     private PrescriptionRepository prescriptionRepository;
+    @Mock
+    private com.astral.express.pccms.identity.security.SecurityContextService SecurityContextService;
 
     @InjectMocks
     private PrescriptionService prescriptionService;
@@ -107,6 +110,87 @@ class PrescriptionServiceTest {
                     .extracting("errorCode.errorCode")
                     .isEqualTo(expectedErrorCode);
         }
+    }
+
+    @org.junit.jupiter.api.Test
+    void should_ResolveVetId_FromSecurityContext() {
+        UUID recordId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+        MedicalRecord record = new MedicalRecord();
+        record.setId(recordId);
+        given(medicalRecordRepository.findById(recordId)).willReturn(Optional.of(record));
+        
+        given(SecurityContextService.getCurrentUserId()).willReturn(currentUserId);
+        
+        CreatePrescriptionRequest request = new CreatePrescriptionRequest(null, "Note", List.of());
+        
+        given(prescriptionRepository.save(any(Prescription.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        PrescriptionResponse response = prescriptionService.createPrescription(recordId, request);
+        assertThat(response.vetId()).isEqualTo(currentUserId);
+    }
+
+    @org.junit.jupiter.api.Test
+    void should_ResolveVetId_FromRecord() {
+        UUID recordId = UUID.randomUUID();
+        UUID vetId = UUID.randomUUID();
+        MedicalRecord record = new MedicalRecord();
+        record.setId(recordId);
+        record.setVetId(vetId);
+        given(medicalRecordRepository.findById(recordId)).willReturn(Optional.of(record));
+        
+        given(SecurityContextService.getCurrentUserId()).willReturn(null);
+        
+        CreatePrescriptionRequest request = new CreatePrescriptionRequest(null, "Note", List.of());
+        
+        given(prescriptionRepository.save(any(Prescription.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        PrescriptionResponse response = prescriptionService.createPrescription(recordId, request);
+        assertThat(response.vetId()).isEqualTo(vetId);
+    }
+
+    @org.junit.jupiter.api.Test
+    void should_ThrowException_when_ResolveVetIdFails() {
+        UUID recordId = UUID.randomUUID();
+        MedicalRecord record = new MedicalRecord();
+        record.setId(recordId);
+        record.setVetId(null);
+        given(medicalRecordRepository.findById(recordId)).willReturn(Optional.of(record));
+        
+        given(SecurityContextService.getCurrentUserId()).willReturn(null);
+        
+        CreatePrescriptionRequest request = new CreatePrescriptionRequest(null, "Note", List.of());
+        
+        assertThatThrownBy(() -> prescriptionService.createPrescription(recordId, request))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", com.astral.express.pccms.common.exception.ErrorCode.ERR_401_UNAUTHORIZED);
+    }
+
+    @org.junit.jupiter.api.Test
+    void should_ThrowException_when_ListPrescriptionsRecordNotFound() {
+        UUID recordId = UUID.randomUUID();
+        given(medicalRecordRepository.existsById(recordId)).willReturn(false);
+        
+        assertThatThrownBy(() -> prescriptionService.listPrescriptions(recordId))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", com.astral.express.pccms.common.exception.ErrorCode.ERR_400_BAD_REQUEST);
+    }
+
+    @org.junit.jupiter.api.Test
+    void should_ListPrescriptions_Success() {
+        UUID recordId = UUID.randomUUID();
+        given(medicalRecordRepository.existsById(recordId)).willReturn(true);
+        
+        Prescription prescription = new Prescription();
+        prescription.setId(UUID.randomUUID());
+        prescription.setMedicalRecordId(recordId);
+        prescription.setItems(List.of());
+        
+        given(prescriptionRepository.findByMedicalRecordIdOrderByIssuedAtDesc(recordId))
+                .willReturn(List.of(prescription));
+                
+        List<com.astral.express.pccms.medicalrecord.dto.response.PrescriptionResponse> responses = prescriptionService.listPrescriptions(recordId);
+        assertThat(responses).hasSize(1);
     }
 }
 

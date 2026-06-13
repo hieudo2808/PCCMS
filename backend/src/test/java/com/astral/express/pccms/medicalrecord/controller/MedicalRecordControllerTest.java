@@ -150,4 +150,33 @@ class MedicalRecordControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false));
     }
+
+    @Test
+    void getMedicalRecordById_success() throws Exception {
+        UUID recordId = UUID.randomUUID();
+        given(medicalRecordService.getMedicalRecordById(recordId)).willReturn(null);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/v1/medical-records/{id}", recordId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void getOrCreateMedicalRecordByAppointmentId_success() throws Exception {
+        UUID appointmentId = UUID.randomUUID();
+        given(medicalRecordService.getOrCreateMedicalRecordByAppointmentId(appointmentId)).willReturn(null);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/v1/medical-records/appointment/{appointmentId}", appointmentId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void getMedicalRecords_success() throws Exception {
+        given(medicalRecordService.getMedicalRecords(any())).willReturn(java.util.List.of());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/v1/medical-records"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
 }

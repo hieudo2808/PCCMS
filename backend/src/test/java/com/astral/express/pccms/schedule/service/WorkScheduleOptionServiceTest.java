@@ -146,6 +146,37 @@ class WorkScheduleOptionServiceTest {
     private UUID id(String value) {
         return UUID.fromString("00000000-0000-0000-0000-" + String.format("%012d", Long.parseLong(value)));
     }
+
+    @org.junit.jupiter.api.Test
+    void should_ProcessStaffOptions_WhenRoleIsNull() {
+        Users user = new Users();
+        user.setId(id("10"));
+        user.setFullName("Staff Two");
+        user.setRole(null);
+
+        given(userRepository.findScheduleStaffOptions(eq(UserStatus.ACTIVE), org.mockito.ArgumentMatchers.<String>anyList()))
+                .willReturn(List.of(user));
+
+        List<StaffOptionResponse> response = workScheduleOptionService.getStaffOptions();
+
+        assertThat(response).hasSize(1);
+        assertThat(response.getFirst().id()).isEqualTo(id("10"));
+        assertThat(response.getFirst().roleCode()).isNull();
+        assertThat(response.getFirst().roleName()).isNull();
+    }
+
+    @org.junit.jupiter.api.Test
+    void should_ProcessRoleOptions_FilterNonSchedulable() {
+        Roles role1 = role("30", "VETERINARIAN", "Bac si");
+        Roles role2 = role("31", "ADMIN", "Quan tri"); // Non-schedulable
+        
+        given(roleRepository.findByIsActiveTrueOrderByCodeAsc()).willReturn(List.of(role1, role2));
+
+        List<RoleOptionResponse> response = workScheduleOptionService.getRoleOptions();
+
+        assertThat(response).hasSize(1);
+        assertThat(response.getFirst().id()).isEqualTo(id("30"));
+    }
 }
 
 

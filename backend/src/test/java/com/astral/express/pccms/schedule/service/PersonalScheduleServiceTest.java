@@ -179,5 +179,21 @@ class PersonalScheduleServiceTest {
 
     private record PersonalScheduleCsvInput(UUID staffId, LocalDate fromDate, LocalDate toDate) {
     }
+
+    @org.junit.jupiter.api.Test
+    void should_GetStaffSchedules_Success() {
+        UUID staffId = CURRENT_USER_ID;
+        LocalDate fromDate = LocalDate.now();
+        LocalDate toDate = LocalDate.now().plusDays(1);
+        PageRequest pageable = PageRequest.of(0, 10);
+        
+        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(workScheduleRepository.findByStaffIdAndWorkDateBetween(staffId, fromDate, toDate, pageable))
+                .willReturn(new PageImpl<>(List.of(schedule()), pageable, 1));
+
+        PageResponse<WorkScheduleResponse> response = personalScheduleService.getStaffSchedules(staffId, fromDate, toDate, pageable);
+        
+        assertThat(response.data().content()).hasSize(1);
+    }
 }
 

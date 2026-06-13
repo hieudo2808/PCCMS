@@ -97,4 +97,59 @@ class BoardingTrackingServiceTest {
             }
         }
     }
+
+    @org.junit.jupiter.api.Test
+    void listActiveStays_shouldHandleNullSpeciesAndBreed() {
+        UUID ownerId = UUID.randomUUID();
+        UUID petId = UUID.randomUUID();
+        Object[] row = new Object[]{petId, "Milu", null, null};
+        given(careLogRepository.findActiveStaysByOwner(ownerId)).willReturn(List.<Object[]>of(row));
+
+        List<BoardingStayResponse> stays = boardingTrackingService.listActiveStays(ownerId);
+
+        assertThat(stays).hasSize(1);
+        assertThat(stays.get(0).speciesName()).isEqualTo("");
+        assertThat(stays.get(0).breedName()).isNull();
+    }
+
+    @org.junit.jupiter.api.Test
+    void listCareLogs_shouldHandlePetNotFound() {
+        UUID ownerId = UUID.randomUUID();
+        UUID petId = UUID.randomUUID();
+        UUID logId = UUID.randomUUID();
+
+        CareLog log = new CareLog();
+        log.setId(logId);
+        
+        Pets pet = new Pets();
+        pet.setId(petId);
+        pet.setName("Milu");
+        log.setPet(pet);
+        
+        com.astral.express.pccms.boarding.entity.BoardingSession session = new com.astral.express.pccms.boarding.entity.BoardingSession();
+        session.setId(UUID.randomUUID());
+        log.setSession(session);
+        
+        Users staff = new Users();
+        staff.setId(UUID.randomUUID());
+        staff.setFullName("StaffName");
+        log.setStaff(staff);
+
+        log.setLogDate(LocalDate.of(2026, 6, 5));
+        log.setPeriodCode(com.astral.express.pccms.boarding.entity.CarePeriod.MORNING);
+        log.setFeedingStatus("Ăn tốt");
+        log.setHygieneStatus("Bình thường");
+        log.setHealthNote(null);
+        log.setStaffNote("Ghi chú nhân viên");
+
+        given(careLogRepository.findActiveStayLogsByOwner(ownerId, petId)).willReturn(List.of(log));
+        // PetRepository returns empty list when finding by ID
+        given(petRepository.findAllById(List.of(petId))).willReturn(List.of());
+
+        List<CareLogResponse> responses = boardingTrackingService.listCareLogs(ownerId, petId);
+
+        assertThat(responses).hasSize(1);
+        assertThat(responses.get(0).feedingStatus()).isEqualTo("Ăn tốt");
+    }
+
 }

@@ -73,6 +73,30 @@ class HealthAlertServiceTest {
             assertThatThrownBy(() -> healthAlertService.resolveHealthAlert(alertId, resolvedBy))
                     .isInstanceOf(BusinessException.class)
                     .hasFieldOrPropertyWithValue("errorCode", ErrorCode.valueOf(expectedError));
+        } else if ("RESOLVE_ALREADY_RESOLVED".equals(action)) {
+            UUID alertId = UUID.randomUUID();
+            UUID resolvedBy = UUID.randomUUID();
+            HealthAlert alert = new HealthAlert();
+            alert.setId(alertId);
+            alert.setResolvedAt(OffsetDateTime.now());
+
+            given(healthAlertRepository.findById(alertId)).willReturn(Optional.of(alert));
+
+            healthAlertService.resolveHealthAlert(alertId, resolvedBy);
+
+            verify(healthAlertRepository, org.mockito.Mockito.never()).save(any());
+        } else if ("GET_UNRESOLVED".equals(action)) {
+            UUID petId = UUID.randomUUID();
+            HealthAlert alert = new HealthAlert();
+            alert.setId(UUID.randomUUID());
+            alert.setPetId(petId);
+            alert.setSeverity(AlertSeverity.HIGH);
+            
+            given(healthAlertRepository.findByPetIdAndResolvedAtIsNull(petId)).willReturn(java.util.List.of(alert));
+            
+            java.util.List<com.astral.express.pccms.medicalrecord.dto.response.HealthAlertResponse> results = healthAlertService.getUnresolvedAlertsByPetId(petId);
+            
+            assertThat(results).hasSize(1);
         }
     }
 }

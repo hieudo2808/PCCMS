@@ -5,3 +5,5 @@ BR-MY-SCH-03,TC_MY_SCH_003,UC024,No personal schedule returns empty result,Authe
 BR-MY-SCH-04,TC_MY_SCH_004,UC024,Invalid date range rejected,Authenticated staff,fromDate=2026-04-18; toDate=2026-04-12,EXCEPTION,ERR_VALIDATION_FAILED,,toDate must be greater than or equal to fromDate.
 BR-MY-SCH-05,TC_MY_SCH_005,UC024,Unauthenticated request rejected,No valid access token,fromDate=2026-04-12; toDate=2026-04-18,EXCEPTION,ERR_UNAUTHORIZED,,Personal schedule requires authenticated user.
 BR-MY-SCH-06,TC_MY_SCH_006,UC024,User cannot view another staff schedule,Authenticated staff tries staffId of another user,staffId=999; fromDate=2026-04-12; toDate=2026-04-18,EXCEPTION,ERR_403_FORBIDDEN,,Endpoint must not expose arbitrary staff schedules to non-admin personal view.
+BR-MY-SCH-07,TC_MY_SCH_007,UC024,Invalid date range rejected,Authenticated staff,fromDate=null; toDate=2026-04-18,EXCEPTION,ERR_VALIDATION_FAILED,,fromDate must not be null.
+BR-MY-SCH-08,TC_MY_SCH_008,UC024,Invalid date range rejected,Authenticated staff,fromDate=2026-04-12; toDate=null,EXCEPTION,ERR_VALIDATION_FAILED,,toDate must not be null.

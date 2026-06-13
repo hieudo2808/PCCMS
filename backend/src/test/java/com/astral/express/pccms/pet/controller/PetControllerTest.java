@@ -3,6 +3,8 @@ package com.astral.express.pccms.pet.controller;
 import com.astral.express.pccms.common.dto.PageResponse;
 import com.astral.express.pccms.common.exception.BusinessException;
 import com.astral.express.pccms.common.exception.ErrorCode;
+import com.astral.express.pccms.common.exception.GlobalExceptionHandler;
+import com.astral.express.pccms.pet.dto.request.CreatePetRequest;
 import com.astral.express.pccms.pet.dto.request.UpdatePetRequest;
 import com.astral.express.pccms.pet.dto.response.PetResponse;
 import com.astral.express.pccms.pet.entity.PetSex;
@@ -22,6 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,18 +33,13 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
 class PetControllerTest {
 
     private MockMvc mockMvc;
-
-    private ObjectMapper objectMapper = new ObjectMapper();
 
     @Mock
     private PetService petService;
@@ -49,12 +47,49 @@ class PetControllerTest {
     @InjectMocks
     private PetController petController;
 
+    private ObjectMapper objectMapper;
+
     @BeforeEach
     void setUp() {
+        objectMapper = new ObjectMapper();
+
         mockMvc = MockMvcBuilders.standaloneSetup(petController)
                 .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
-                .setControllerAdvice(new com.astral.express.pccms.common.exception.GlobalExceptionHandler())
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
+    }
+
+    private PetResponse mockPetResponse() {
+        return new PetResponse(
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                "Rex",
+                UUID.randomUUID(),
+                "Dog",
+                UUID.randomUUID(),
+                "Bulldog",
+                PetSex.MALE,
+                LocalDate.of(2020, 1, 1),
+                36,
+                new BigDecimal("15.50"),
+                "Brown",
+                "None",
+                "None",
+                "None",
+                "None",
+                true
+        );
+    }
+
+    @Test
+    void createPet_success() throws Exception {
+        given(petService.createPet(any(CreatePetRequest.class))).willReturn(mockPetResponse());
+
+        mockMvc.perform(post("/v1/pets")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Rex\",\"speciesId\":\"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\"breedId\":\"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\"sex\":\"MALE\",\"birthDate\":\"2020-01-01\",\"weightKg\":15.50}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.name").value("Rex"));
     }
 
     @Test
@@ -70,54 +105,89 @@ class PetControllerTest {
     }
 
     @Test
-    void should_Return200_when_CustomerUpdatesOwnPet() throws Exception {
-        UUID petId = UUID.randomUUID();
-        UUID speciesId = UUID.randomUUID();
-        UpdatePetRequest request = new UpdatePetRequest(
-                "Milo Updated", speciesId, null, PetSex.MALE, null, 12, BigDecimal.valueOf(5),
-                null, null, null, null, null
-        );
+    void listPets_withOwnerId_success() throws Exception {
+        UUID ownerId = UUID.randomUUID();
+        PageResponse<PetResponse> pageResponse = PageResponse.of(new PageImpl<>(List.of(mockPetResponse())));
+        given(petService.listPets(eq(ownerId), any(), any())).willReturn(pageResponse);
 
-        PetResponse mockResponse = new PetResponse(
-                petId, null, "Milo Updated", speciesId, "ChÃ³", null, null, PetSex.MALE, null, 12,
-                BigDecimal.valueOf(5), null, null, null, null, null, true);
-        given(petService.updatePet(eq(petId), any(UpdatePetRequest.class))).willReturn(mockResponse);
-
-        mockMvc.perform(put("/v1/pets/{petId}", petId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+        mockMvc.perform(get("/v1/pets")
+                        .param("ownerId", ownerId.toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.name").value("Milo Updated"));
+                .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test
-    void should_Return403Forbidden_when_CustomerUpdatesOtherPet() throws Exception {
+    void getPet_success() throws Exception {
         UUID petId = UUID.randomUUID();
-        UUID speciesId = UUID.randomUUID();
-        UpdatePetRequest request = new UpdatePetRequest(
-                "Milo Updated", speciesId, null, PetSex.MALE, null, 12, BigDecimal.valueOf(5),
-                null, null, null, null, null
-        );
+        given(petService.getPet(petId)).willReturn(mockPetResponse());
 
-        given(petService.updatePet(eq(petId), any(UpdatePetRequest.class)))
-                .willThrow(new BusinessException(ErrorCode.ERR_403_FORBIDDEN));
-
-        mockMvc.perform(put("/v1/pets/{petId}", petId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/v1/pets/{petId}", petId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.name").value("Rex"));
     }
 
     @Test
     void should_Return403Forbidden_when_CustomerGetsOtherPet() throws Exception {
         UUID petId = UUID.randomUUID();
 
-        // Giáº£ láº­p Service nÃ©m ra lá»—i IDOR
         given(petService.getPet(eq(petId)))
                 .willThrow(new BusinessException(ErrorCode.ERR_403_FORBIDDEN));
 
         mockMvc.perform(get("/v1/pets/{petId}", petId))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void updatePet_success() throws Exception {
+        UUID petId = UUID.randomUUID();
+        given(petService.updatePet(eq(petId), any(UpdatePetRequest.class))).willReturn(mockPetResponse());
+
+        mockMvc.perform(put("/v1/pets/{petId}", petId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Rex Updated\",\"speciesId\":\"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\"breedId\":\"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\"sex\":\"MALE\",\"birthDate\":\"2020-01-01\",\"weightKg\":16.00}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.name").value("Rex"));
+    }
+
+    @Test
+    void should_Return403Forbidden_when_CustomerUpdatesOtherPet() throws Exception {
+        UUID petId = UUID.randomUUID();
+        UUID speciesId = UUID.randomUUID();
+        given(petService.updatePet(eq(petId), any(UpdatePetRequest.class)))
+                .willThrow(new BusinessException(ErrorCode.ERR_403_FORBIDDEN));
+
+        mockMvc.perform(put("/v1/pets/{petId}", petId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Milo Updated\",\"speciesId\":\"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\"breedId\":\"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\"sex\":\"MALE\",\"birthDate\":\"2020-01-01\",\"weightKg\":16.00}"))
+                .andExpect(status().isForbidden());
+    }
+
+
+
+    @Test
+    void listPets_success() throws Exception {
+        given(petService.listPets(any(), any(), any())).willReturn(PageResponse.of(new PageImpl<>(java.util.List.of(mockPetResponse()))));
+
+        mockMvc.perform(get("/v1/pets?ownerId=" + UUID.randomUUID()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void listPets_noOwner_success() throws Exception {
+        given(petService.listPets(any(), any())).willReturn(PageResponse.of(new PageImpl<>(java.util.List.of(mockPetResponse()))));
+
+        mockMvc.perform(get("/v1/pets"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void deactivatePet_success() throws Exception {
+        UUID petId = UUID.randomUUID();
+
+        mockMvc.perform(delete("/v1/pets/{petId}", petId))
+                .andExpect(status().isOk());
+        verify(petService).deactivatePet(petId);
     }
 }

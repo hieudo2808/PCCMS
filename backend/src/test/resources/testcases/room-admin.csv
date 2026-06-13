@@ -1,0 +1,16 @@
+rule_id,case_id,use_case,scenario,precondition,input,expected_result,expected_error_code,expected_message,note
+BR-ROOM-TYPE-01,TC_ROOM_ADMIN_001,UC021,Create room type success,ADMIN has permission,code=STANDARD; name=Standard; defaultCapacity=2; baseDailyPriceVnd=100000; isActive=true,SUCCESS,,,Creates room type.
+BR-ROOM-TYPE-02,TC_ROOM_ADMIN_002,UC021,Create room type duplicate code,ADMIN has permission and code exists,code=STANDARD; name=Standard; defaultCapacity=2; baseDailyPriceVnd=100000,EXCEPTION,ERR_ROOM_005_TYPE_CODE_EXISTS,,Code must be unique.
+BR-ROOM-TYPE-03,TC_ROOM_ADMIN_003,UC021,Create room type invalid capacity,ADMIN has permission,code=INVALID; name=Invalid; defaultCapacity=0; baseDailyPriceVnd=100000,EXCEPTION,ERR_VALIDATION_FAILED,,Capacity must be >= 1.
+BR-ROOM-TYPE-04,TC_ROOM_ADMIN_004,UC021,Create room type invalid price,ADMIN has permission,code=INVALID; name=Invalid; defaultCapacity=2; baseDailyPriceVnd=-10,EXCEPTION,ERR_VALIDATION_FAILED,,Price must be >= 0.
+BR-ROOM-TYPE-05,TC_ROOM_ADMIN_005,UC021,Update room type success,ADMIN has permission and room type exists,id=1; code=VIP; name=VIP; defaultCapacity=2; baseDailyPriceVnd=200000,SUCCESS,,,Updates room type.
+BR-ROOM-TYPE-06,TC_ROOM_ADMIN_006,UC021,Update room type duplicate code,ADMIN has permission and code exists for other id,id=1; code=STANDARD; name=VIP; defaultCapacity=2; baseDailyPriceVnd=200000,EXCEPTION,ERR_ROOM_005_TYPE_CODE_EXISTS,,Code must be unique.
+BR-ROOM-TYPE-07,TC_ROOM_ADMIN_007,UC021,Update room type active success,ADMIN has permission,id=1; isActive=false,SUCCESS,,,Toggles active flag.
+BR-ROOM-TYPE-08,TC_ROOM_ADMIN_008,UC021,Deactivate room type success,ADMIN has permission and not in use,id=1,SUCCESS,,,Sets isActive to false.
+BR-ROOM-TYPE-09,TC_ROOM_ADMIN_009,UC021,Deactivate room type in use,ADMIN has permission and room type is used by rooms,id=1,EXCEPTION,ERR_ROOM_007_TYPE_IN_USE,,Cannot deactivate used room type.
+BR-ROOM-01,TC_ROOM_ADMIN_010,UC022,Create room success,ADMIN has permission and room type exists,roomTypeId=1; roomCode=R001; name=Room 1; floor=1; capacity=2; statusCode=AVAILABLE,SUCCESS,,,Creates room.
+BR-ROOM-02,TC_ROOM_ADMIN_011,UC022,Create room invalid capacity,ADMIN has permission,roomTypeId=1; roomCode=R001; name=Room 1; floor=1; capacity=0,EXCEPTION,ERR_VALIDATION_FAILED,,Capacity must be >= 1.
+BR-ROOM-03,TC_ROOM_ADMIN_012,UC022,Create room room type not found,ADMIN has permission,roomTypeId=999; roomCode=R001; name=Room 1; floor=1; capacity=2,EXCEPTION,ERR_ROOM_001_ROOM_TYPE_NOT_FOUND,,Room type must exist.
+BR-ROOM-04,TC_ROOM_ADMIN_013,UC022,Update room success,ADMIN has permission and room exists,id=10; roomTypeId=1; roomCode=R001; name=Updated Room; floor=2; capacity=3; statusCode=MAINTENANCE,SUCCESS,,,Updates room.
+BR-ROOM-05,TC_ROOM_ADMIN_014,UC022,Update room not found,ADMIN has permission,id=999; roomTypeId=1; roomCode=R001; name=Updated Room; floor=2; capacity=3,EXCEPTION,ERR_ROOM_002_ROOM_NOT_FOUND,,Room must exist.
+BR-ROOM-06,TC_ROOM_ADMIN_015,UC022,Update room status success,ADMIN has permission and room exists,id=10; statusCode=INACTIVE,SUCCESS,,,Updates room status.

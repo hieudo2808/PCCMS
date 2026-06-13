@@ -192,4 +192,29 @@ class NotificationServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_NOTIFICATION_001_NOT_FOUND);
     }
+
+    @Test
+    void archive_shouldSetReadAt_when_ReadAtIsNull() {
+        UUID currentUserId = UUID.randomUUID();
+        UUID notifId = UUID.randomUUID();
+        Users mockUser = new Users();
+        mockUser.setId(currentUserId);
+        
+        Notification notif = Notification.builder()
+                .id(notifId)
+                .recipient(mockUser)
+                .statusCode(NotificationStatus.UNREAD)
+                .readAt(null)
+                .build();
+                
+        given(securityContextService.getCurrentUserId()).willReturn(currentUserId);
+        given(notificationRepository.findByIdAndRecipientId(notifId, currentUserId)).willReturn(Optional.of(notif));
+        given(notificationRepository.save(any(Notification.class))).willAnswer(inv -> inv.getArgument(0));
+
+        NotificationResponse response = notificationService.archive(notifId);
+
+        assertThat(response.statusCode()).isEqualTo(NotificationStatus.ARCHIVED);
+        assertThat(response.readAt()).isNotNull();
+    }
+
 }

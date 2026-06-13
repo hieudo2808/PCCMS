@@ -41,6 +41,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -242,5 +243,32 @@ class AdminAccountControllerTest {
                 OffsetDateTime.parse("2026-01-01T00:00:00Z"),
                 OffsetDateTime.parse("2026-01-02T00:00:00Z")
         );
+    }
+
+    @Test
+    void updateAccount_returnsUpdatedAccount() throws Exception {
+        UUID accountId = UUID.randomUUID();
+        com.astral.express.pccms.user.dto.request.AdminUpdateUserRequest request = new com.astral.express.pccms.user.dto.request.AdminUpdateUserRequest("New Name", "test@gmail.com", "0901234567", "STAFF", UserStatus.ACTIVE);
+        AccountResponse account = accountResponse(UserStatus.ACTIVE, "STAFF", "Nhan vien trung tam");
+        given(userService.adminUpdateUser(accountId, request)).willReturn(account);
+
+        mockMvc.perform(put("/v1/admin/accounts/{accountId}", accountId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void resetPassword_returnsCredential() throws Exception {
+        UUID accountId = UUID.randomUUID();
+        AccountResponse account = accountResponse(UserStatus.ACTIVE, "STAFF", "Nhan vien trung tam");
+        AccountCredentialResponse response = new AccountCredentialResponse(account, "newpass", true);
+        given(userService.resetAccountPassword(accountId)).willReturn(response);
+
+        mockMvc.perform(post("/v1/admin/accounts/{accountId}/password/reset", accountId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.temporaryPassword").value("newpass"));
     }
 }

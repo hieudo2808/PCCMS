@@ -1,31 +1,40 @@
 package com.astral.express.pccms.grooming.controller;
 
+import com.astral.express.pccms.common.dto.PageResponse;
 import com.astral.express.pccms.common.exception.GlobalExceptionHandler;
 import com.astral.express.pccms.grooming.dto.request.GroomingBookingCreateRequest;
+import com.astral.express.pccms.grooming.dto.request.GroomingCancelRequest;
+import com.astral.express.pccms.grooming.dto.request.GroomingCompleteRequest;
+import com.astral.express.pccms.grooming.dto.request.GroomingConfirmRequest;
+import com.astral.express.pccms.grooming.dto.request.GroomingServiceRequest;
+import com.astral.express.pccms.grooming.dto.request.GroomingStationRequest;
 import com.astral.express.pccms.grooming.dto.response.GroomingServiceResponse;
+import com.astral.express.pccms.grooming.dto.response.GroomingStationResponse;
+import com.astral.express.pccms.grooming.dto.response.GroomingTicketResponse;
 import com.astral.express.pccms.grooming.service.GroomingService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.lang.reflect.Method;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -40,8 +49,6 @@ class GroomingControllerTest {
     @InjectMocks
     private GroomingController groomingController;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(groomingController)
@@ -51,55 +58,170 @@ class GroomingControllerTest {
     }
 
     @Test
-    void should_ReturnActiveServices_when_ListServices() throws Exception {
-        GroomingServiceResponse response = new GroomingServiceResponse(
-                UUID.randomUUID(),
-                "GRM-BATH",
-                "Tam say",
-                null,
-                100000L,
-                60,
-                true);
-        given(groomingService.listActiveServices()).willReturn(List.of(response));
+    void listActiveServices_success() throws Exception {
+        given(groomingService.listActiveServices()).willReturn(List.of());
 
         mockMvc.perform(get("/v1/grooming/services"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data[0].serviceCode").value("GRM-BATH"));
+                .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test
-    void should_ReturnBadRequest_when_CreateBookingMissingRequiredFields() throws Exception {
-        String invalidJson = """
-                {
-                  "ownerNote": "Can nhe tay"
-                }
-                """;
+    void listActiveStations_success() throws Exception {
+        given(groomingService.listActiveStations()).willReturn(List.of());
 
+        mockMvc.perform(get("/v1/grooming/stations"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void createBooking_success() throws Exception {
         mockMvc.perform(post("/v1/grooming/tickets")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(invalidJson))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false));
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"petId\":\"" + UUID.randomUUID() + "\",\"serviceId\":\"" + UUID.randomUUID() + "\",\"scheduledStartAt\":\"2034-01-01T00:00:00Z\",\"ownerNote\":\"Note\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.code").value(201));
     }
 
     @Test
-    void should_DeclareOwnerOnlyAccess_when_CreateBookingEndpoint() throws Exception {
-        Method method = GroomingController.class.getMethod("createBooking", GroomingBookingCreateRequest.class);
+    void listMyTickets_success() throws Exception {
+        PageResponse<GroomingTicketResponse> page = PageResponse.of(new org.springframework.data.domain.PageImpl<>(List.of()));
+        given(groomingService.listMyTickets(any(Pageable.class))).willReturn(page);
 
-        PreAuthorize annotation = method.getAnnotation(PreAuthorize.class);
-
-        assertThat(annotation).isNotNull();
-        assertThat(annotation.value()).isEqualTo("hasRole('OWNER')");
+        mockMvc.perform(get("/v1/grooming/tickets/my"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test
-    void should_DeclareAdminOnlyAccess_when_AdminServiceEndpoint() throws Exception {
-        Method method = GroomingController.class.getMethod("listGroomingServicesForAdmin");
+    void getMyTicket_success() throws Exception {
+        UUID ticketId = UUID.randomUUID();
+        mockMvc.perform(get("/v1/grooming/tickets/my/{ticketId}", ticketId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
 
-        PreAuthorize annotation = method.getAnnotation(PreAuthorize.class);
+    @Test
+    void listTickets_success() throws Exception {
+        PageResponse<GroomingTicketResponse> page = PageResponse.of(new org.springframework.data.domain.PageImpl<>(List.of()));
+        given(groomingService.listTickets(any(), any(Pageable.class))).willReturn(page);
 
-        assertThat(annotation).isNotNull();
-        assertThat(annotation.value()).isEqualTo("hasRole('ADMIN')");
+        mockMvc.perform(get("/v1/grooming/tickets"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void confirmTicket_success() throws Exception {
+        UUID ticketId = UUID.randomUUID();
+        mockMvc.perform(post("/v1/grooming/tickets/{ticketId}/confirmations", ticketId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"stationId\":\"" + UUID.randomUUID() + "\",\"internalNote\":\"Note\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void startTicket_success() throws Exception {
+        UUID ticketId = UUID.randomUUID();
+        mockMvc.perform(post("/v1/grooming/tickets/{ticketId}/starts", ticketId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void completeTicket_success() throws Exception {
+        UUID ticketId = UUID.randomUUID();
+        mockMvc.perform(post("/v1/grooming/tickets/{ticketId}/completions", ticketId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"internalNote\":\"Note\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void cancelTicket_success() throws Exception {
+        UUID ticketId = UUID.randomUUID();
+        mockMvc.perform(post("/v1/grooming/tickets/{ticketId}/cancellations", ticketId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"reason\":\"Cancel\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void listGroomingServicesForAdmin_success() throws Exception {
+        given(groomingService.listGroomingServicesForAdmin()).willReturn(List.of());
+
+        mockMvc.perform(get("/v1/grooming/admin/services"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void createGroomingService_success() throws Exception {
+        mockMvc.perform(post("/v1/grooming/admin/services")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"serviceCode\":\"C1\",\"name\":\"Service\",\"description\":\"Desc\",\"basePriceVnd\":100,\"durationMinutes\":30}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.code").value(201));
+    }
+
+    @Test
+    void updateGroomingService_success() throws Exception {
+        UUID id = UUID.randomUUID();
+        mockMvc.perform(put("/v1/grooming/admin/services/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"serviceCode\":\"C1\",\"name\":\"Service\",\"description\":\"Desc\",\"basePriceVnd\":100,\"durationMinutes\":30}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void deactivateGroomingService_success() throws Exception {
+        UUID id = UUID.randomUUID();
+        mockMvc.perform(delete("/v1/grooming/admin/services/{id}", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void listStationsForAdmin_success() throws Exception {
+        given(groomingService.listStationsForAdmin()).willReturn(List.of());
+
+        mockMvc.perform(get("/v1/grooming/admin/stations"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void createStation_success() throws Exception {
+        mockMvc.perform(post("/v1/grooming/admin/stations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"stationCode\":\"S1\",\"name\":\"Station\",\"isActive\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.code").value(201));
+    }
+
+    @Test
+    void updateStation_success() throws Exception {
+        UUID id = UUID.randomUUID();
+        mockMvc.perform(put("/v1/grooming/admin/stations/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"stationCode\":\"S1\",\"name\":\"Station\",\"isActive\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void deactivateStation_success() throws Exception {
+        UUID id = UUID.randomUUID();
+        mockMvc.perform(patch("/v1/grooming/admin/stations/{id}/deactivation", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
     }
 }

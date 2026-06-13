@@ -15,6 +15,7 @@ import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.identity.security.SecurityContextService;
 import com.astral.express.pccms.user.entity.Users;
 import com.astral.express.pccms.user.repository.UserRepository;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvFileSource;
@@ -183,4 +184,219 @@ class PaymentServiceTest {
             }
         }
     }
+
+    @Test
+    void should_createOwnerPaymentRequest_WithNoteAndProofFile() {
+        UUID invoiceId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+        
+        Users owner = new Users();
+        owner.setId(currentUserId);
+        
+        Invoice invoice = new Invoice();
+        invoice.setId(invoiceId);
+        invoice.setOwner(owner);
+        invoice.setTotalAmountVnd(1000L);
+        invoice.setPaidAmountVnd(0L);
+        
+        given(invoiceRepository.findByIdForUpdate(invoiceId)).willReturn(Optional.of(invoice));
+        given(securityContextService.getCurrentUserId()).willReturn(currentUserId);
+        
+        Payment savedPayment = new Payment();
+        savedPayment.setId(UUID.randomUUID());
+        savedPayment.setInvoice(invoice);
+        given(paymentRepository.save(any(Payment.class))).willReturn(savedPayment);
+        
+        OwnerPaymentRequest request = new OwnerPaymentRequest(1000L, PaymentMethod.BANK_TRANSFER, "REF123", "Some Note", UUID.randomUUID());
+        paymentService.createOwnerPaymentRequest(invoiceId, request);
+        
+        ArgumentCaptor<Payment> paymentCaptor = ArgumentCaptor.forClass(Payment.class);
+        verify(paymentRepository).save(paymentCaptor.capture());
+        
+        String note = paymentCaptor.getValue().getNote();
+        assertThat(note).contains("Reference: REF123");
+        assertThat(note).contains("Proof file: ");
+        assertThat(note).contains("Some Note");
+    }
+
+    @Test
+    void should_recordPayment_WithNullPaidAt() {
+        UUID invoiceId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+        
+        Invoice invoice = new Invoice();
+        invoice.setId(invoiceId);
+        invoice.setTotalAmountVnd(1000L);
+        invoice.setPaidAmountVnd(0L);
+        
+        Users receiver = new Users();
+        receiver.setId(currentUserId);
+        
+        given(invoiceRepository.findByIdForUpdate(invoiceId)).willReturn(Optional.of(invoice));
+        given(securityContextService.getCurrentUserId()).willReturn(currentUserId);
+        given(userRepository.findById(currentUserId)).willReturn(Optional.of(receiver));
+        
+        Payment savedPayment = new Payment();
+        savedPayment.setId(UUID.randomUUID());
+        savedPayment.setInvoice(invoice);
+        given(paymentRepository.save(any(Payment.class))).willReturn(savedPayment);
+        
+        RecordPaymentRequest request = new RecordPaymentRequest(invoiceId, 1000L, PaymentMethod.CASH, null, "Note");
+        paymentService.recordPayment(request);
+        
+        ArgumentCaptor<Payment> paymentCaptor = ArgumentCaptor.forClass(Payment.class);
+        verify(paymentRepository).save(paymentCaptor.capture());
+        assertThat(paymentCaptor.getValue().getPaidAt()).isNotNull();
+    }
+
+    @Test
+    void should_recordPayment_WithNonNullPaidAt() {
+        UUID invoiceId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+        
+        Invoice invoice = new Invoice();
+        invoice.setId(invoiceId);
+        invoice.setTotalAmountVnd(1000L);
+        invoice.setPaidAmountVnd(0L);
+        
+        Users receiver = new Users();
+        receiver.setId(currentUserId);
+        
+        given(invoiceRepository.findByIdForUpdate(invoiceId)).willReturn(Optional.of(invoice));
+        given(securityContextService.getCurrentUserId()).willReturn(currentUserId);
+        given(userRepository.findById(currentUserId)).willReturn(Optional.of(receiver));
+        
+        Payment savedPayment = new Payment();
+        savedPayment.setId(UUID.randomUUID());
+        savedPayment.setInvoice(invoice);
+        given(paymentRepository.save(any(Payment.class))).willReturn(savedPayment);
+        
+        OffsetDateTime paidAt = OffsetDateTime.now().minusDays(1);
+        RecordPaymentRequest request = new RecordPaymentRequest(invoiceId, 1000L, PaymentMethod.CASH, paidAt, "Note");
+        paymentService.recordPayment(request);
+        
+        ArgumentCaptor<Payment> paymentCaptor = ArgumentCaptor.forClass(Payment.class);
+        verify(paymentRepository).save(paymentCaptor.capture());
+        assertThat(paymentCaptor.getValue().getPaidAt()).isEqualTo(paidAt);
+    }
+
+    @Test
+    void should_ThrowException_When_AmountIsNull() {
+        RecordPaymentRequest request = new RecordPaymentRequest(UUID.randomUUID(), null, PaymentMethod.CASH, null, "Note");
+        assertThatThrownBy(() -> paymentService.recordPayment(request))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_BILLING_003_INVALID_PAYMENT_AMOUNT);
+
+        OwnerPaymentRequest ownerReq = new OwnerPaymentRequest(null, PaymentMethod.BANK_TRANSFER, "REF", "Note", null);
+        assertThatThrownBy(() -> paymentService.createOwnerPaymentRequest(UUID.randomUUID(), ownerReq))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_BILLING_003_INVALID_PAYMENT_AMOUNT);
+    }
+
+    @Test
+    void should_updatePaymentStatus_WithBlankNote() {
+        UUID paymentId = UUID.randomUUID();
+        Payment payment = new Payment();
+        payment.setId(paymentId);
+        payment.setStatusCode(PaymentStatus.PENDING);
+        
+        Invoice invoice = new Invoice();
+        invoice.setId(UUID.randomUUID());
+        payment.setInvoice(invoice);
+        
+        given(paymentRepository.findById(paymentId)).willReturn(Optional.of(payment));
+        given(paymentRepository.save(any())).willAnswer(i -> i.getArgument(0));
+
+        PaymentResponse response = paymentService.updatePaymentStatus(paymentId, PaymentStatus.FAILED, "   ");
+        assertThat(response.statusCode()).isEqualTo(PaymentStatus.FAILED);
+        // Note is not updated because it's blank
+    }
+
+    @Test
+    void should_ThrowException_When_UpdatePaymentStatus_ExceedsRemainingAmount() {
+        UUID paymentId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+        
+        Invoice invoice = new Invoice();
+        invoice.setTotalAmountVnd(1000L);
+        invoice.setPaidAmountVnd(500L); // Remaining 500
+        
+        Payment payment = new Payment();
+        payment.setId(paymentId);
+        payment.setStatusCode(PaymentStatus.PENDING);
+        payment.setAmountVnd(1000L); // Greater than remaining 500
+        payment.setInvoice(invoice);
+        
+        Users receiver = new Users();
+        receiver.setId(currentUserId);
+        
+        given(paymentRepository.findById(paymentId)).willReturn(Optional.of(payment));
+        given(securityContextService.getCurrentUserId()).willReturn(currentUserId);
+        given(userRepository.findById(currentUserId)).willReturn(Optional.of(receiver));
+
+        assertThatThrownBy(() -> paymentService.updatePaymentStatus(paymentId, PaymentStatus.SUCCEEDED, null))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_BILLING_003_INVALID_PAYMENT_AMOUNT);
+    }
+
+    @Test
+    void should_updatePaymentStatus_AndApplyPartialPayment() {
+        UUID paymentId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+        
+        Invoice invoice = new Invoice();
+        invoice.setTotalAmountVnd(1000L);
+        invoice.setPaidAmountVnd(0L); 
+        
+        Payment payment = new Payment();
+        payment.setId(paymentId);
+        payment.setStatusCode(PaymentStatus.PENDING);
+        payment.setAmountVnd(400L); // Partial
+        payment.setInvoice(invoice);
+        
+        Users receiver = new Users();
+        receiver.setId(currentUserId);
+        
+        given(paymentRepository.findById(paymentId)).willReturn(Optional.of(payment));
+        given(securityContextService.getCurrentUserId()).willReturn(currentUserId);
+        given(userRepository.findById(currentUserId)).willReturn(Optional.of(receiver));
+        given(paymentRepository.save(any())).willAnswer(i -> i.getArgument(0));
+
+        paymentService.updatePaymentStatus(paymentId, PaymentStatus.SUCCEEDED, null);
+        
+        assertThat(invoice.getPaidAmountVnd()).isEqualTo(400L);
+        assertThat(invoice.getStatusCode()).isEqualTo(InvoiceStatus.PARTIALLY_PAID);
+    }
+
+    @Test
+    void should_createOwnerPaymentRequest_WithEmptyNote() {
+        UUID invoiceId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+        
+        Users owner = new Users();
+        owner.setId(currentUserId);
+        
+        Invoice invoice = new Invoice();
+        invoice.setId(invoiceId);
+        invoice.setOwner(owner);
+        invoice.setTotalAmountVnd(1000L);
+        invoice.setPaidAmountVnd(0L);
+        
+        given(invoiceRepository.findByIdForUpdate(invoiceId)).willReturn(Optional.of(invoice));
+        given(securityContextService.getCurrentUserId()).willReturn(currentUserId);
+        
+        Payment savedPayment = new Payment();
+        savedPayment.setId(UUID.randomUUID());
+        savedPayment.setInvoice(invoice);
+        given(paymentRepository.save(any(Payment.class))).willReturn(savedPayment);
+        
+        OwnerPaymentRequest request = new OwnerPaymentRequest(1000L, PaymentMethod.BANK_TRANSFER, "   ", "   ", null);
+        paymentService.createOwnerPaymentRequest(invoiceId, request);
+        
+        ArgumentCaptor<Payment> paymentCaptor = ArgumentCaptor.forClass(Payment.class);
+        verify(paymentRepository).save(paymentCaptor.capture());
+        
+        assertThat(paymentCaptor.getValue().getNote()).isNull();
+    }
+
 }

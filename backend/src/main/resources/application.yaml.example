@@ -38,7 +38,7 @@ spring:
 
 jwt:
     # Base64URL-encoded key >= 64 bytes (512 bits) for HS512. Generate a new secret for production.
-    secret: dWsQ3MeyblbD2_lAEqf0wSPIeXJIU6Mt8rluXB_nznKmq2Dr3IeSsSoYa9O4UTCxdx-ZXLx6CIS8StkPC2vmaA
+    secret: ZXLx6CIS8StkPC2vmaA
     expiration: 600000
     refresh-expiration: 604800000
 
