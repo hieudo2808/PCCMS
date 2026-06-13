@@ -664,4 +664,66 @@ class WorkScheduleServiceTest {
         assertThat(res.items()).hasSize(7);
     }
 
+    @Test
+    void applyWeeklyPlan_shouldAssignRoomsAndStations_whenGenerated() {
+        LocalDate sourceWeekStart = LocalDate.now();
+        LocalDate targetWeekStart = sourceWeekStart.plusWeeks(1);
+        WeeklySchedulePlanRequest request = new WeeklySchedulePlanRequest(sourceWeekStart, targetWeekStart, List.of(), List.of());
+        
+        when(workScheduleRepository.findByWorkDateBetweenAndStatusCodeOrderByWorkDateAsc(any(), any(), any()))
+                .thenReturn(List.of());
+                
+        Users vet = new Users();
+        vet.setId(UUID.randomUUID());
+        vet.setFullName("Generated Vet");
+        Roles vetRole = new Roles();
+        vetRole.setCode("VETERINARIAN");
+        vetRole.setId(UUID.randomUUID());
+        vet.setRole(vetRole);
+
+        Users staff = new Users();
+        staff.setId(UUID.randomUUID());
+        staff.setFullName("Generated Staff");
+        Roles staffRole = new Roles();
+        staffRole.setCode("STAFF");
+        staffRole.setId(UUID.randomUUID());
+        staff.setRole(staffRole);
+        
+        Shift shift = new Shift();
+        shift.setId(UUID.randomUUID());
+        shift.setCode("MORNING");
+        
+        when(userRepository.findScheduleStaffOptions(any(), any())).thenReturn(List.of(vet, staff));
+        when(shiftRepository.findByIsActiveTrueOrderByStartTimeAsc()).thenReturn(List.of(shift));
+        when(workScheduleRepository.existsByStaffIdAndWorkDateAndShiftId(any(), any(), any())).thenReturn(false);
+        when(workScheduleRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        com.astral.express.pccms.appointment.entity.ExamRoom room = new com.astral.express.pccms.appointment.entity.ExamRoom();
+        room.setId(UUID.randomUUID());
+        room.setRoomCode("R1");
+        
+        com.astral.express.pccms.grooming.entity.GroomingStation station = new com.astral.express.pccms.grooming.entity.GroomingStation();
+        station.setId(UUID.randomUUID());
+        station.setStationCode("S1");
+
+        when(examRoomRepository.findByIsActiveTrueOrderByRoomCodeAsc()).thenReturn(List.of(room));
+        when(groomingStationRepository.findByIsActiveTrueOrderByStationCodeAsc()).thenReturn(List.of(station));
+        
+        WeeklySchedulePlanResponse res = service.applyWeeklyPlan(request);
+        
+        assertThat(res).isNotNull();
+        assertThat(res.createdCount()).isEqualTo(14);
+        
+        org.mockito.ArgumentCaptor<WorkSchedule> captor = org.mockito.ArgumentCaptor.forClass(WorkSchedule.class);
+        verify(workScheduleRepository, org.mockito.Mockito.times(14)).save(captor.capture());
+        
+        List<WorkSchedule> savedSchedules = captor.getAllValues();
+        
+        assertThat(savedSchedules.stream().filter(s -> "VETERINARIAN".equals(s.getRole().getCode())))
+                .allMatch(s -> s.getExamRoom() != null && s.getExamRoom().getRoomCode().equals("R1") && s.getStation() == null);
+                
+        assertThat(savedSchedules.stream().filter(s -> "STAFF".equals(s.getRole().getCode())))
+                .allMatch(s -> s.getStation() != null && s.getStation().getStationCode().equals("S1") && s.getExamRoom() == null);
+    }
+
 }

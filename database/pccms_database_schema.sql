@@ -148,10 +148,10 @@ ON CONFLICT DO NOTHING;
 -- 3. Seed Default Admin Account (admin@pccms.vn / admin123)
 INSERT INTO users (id, email, password_hash, full_name, role_id, status_code)
 VALUES (
-    '00000000-0000-0000-0000-000000000000',
-    'admin@pccms.vn',
-    crypt('admin123', gen_salt('bf')),
-    'System Admin',
+    '7bb1d3a7-7cb3-4f5a-b261-43cfe97a8caf',
+    'hieudo831@gmail.com',
+    "$2a$12$LCIJijcYjdbCkqfXe8hGleGHwWDpn8GhEltCK6mqS9co7jcwvLjSC",
+    'Hieu Do',
     (SELECT id FROM roles WHERE code = 'ADMIN'),
     'ACTIVE'
 ) ON CONFLICT DO NOTHING;
@@ -309,6 +309,7 @@ CREATE TABLE medicine_usage_templates (
     instruction     TEXT NOT NULL,
     is_default      BOOLEAN NOT NULL DEFAULT FALSE,
     sort_order      INT NOT NULL DEFAULT 0,
+    is_active       BOOLEAN NOT NULL DEFAULT TRUE,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -716,22 +717,326 @@ CREATE TABLE notifications (
 -- =========================================================
 -- 13. SEED DATA FOR CATALOG AND SETTINGS
 -- =========================================================
-INSERT INTO pet_species (name) VALUES ('Chó'), ('Mèo'), ('Thỏ'), ('Chim') ON CONFLICT (name) DO NOTHING;
+INSERT INTO pet_species (name)
+VALUES
+    ('Chó'),
+    ('Mèo'),
+    ('Thỏ'),
+    ('Hamster'),
+    ('Chuột lang'),
+    ('Sóc'),
+    ('Sóc bay'),
+    ('Nhím kiểng'),
+    ('Chồn Ferret'),
+    ('Chinchilla'),
+    ('Chuột cảnh'),
+    ('Chuột Gerbil'),
+    ('Thỏ kiểng'),
+    ('Khỉ cảnh'),
+
+    ('Vẹt'),
+    ('Yến phụng'),
+    ('Cockatiel'),
+    ('Lovebird'),
+    ('Chim hoàng yến'),
+    ('Chào mào'),
+    ('Họa mi'),
+    ('Khuyên'),
+    ('Sơn ca'),
+    ('Cu gáy'),
+    ('Bồ câu'),
+    ('Chim cảnh khác'),
+
+    ('Cá Betta'),
+    ('Cá vàng'),
+    ('Cá Koi'),
+    ('Cá Guppy'),
+    ('Cá Molly'),
+    ('Cá Neon'),
+    ('Cá Dĩa'),
+    ('Cá La Hán'),
+    ('Cá Rồng'),
+    ('Cá cảnh khác'),
+
+    ('Rùa nước'),
+    ('Rùa cạn'),
+    ('Rắn cảnh'),
+    ('Trăn cảnh'),
+    ('Tắc kè hoa'),
+    ('Leopard Gecko'),
+    ('Crested Gecko'),
+    ('Iguana'),
+    ('Rồng Nam Mỹ'),
+    ('Kỳ nhông'),
+    ('Bò sát khác'),
+
+    ('Ếch cảnh'),
+    ('Axolotl'),
+
+    ('Nhện cảnh'),
+    ('Bọ cạp cảnh'),
+    ('Côn trùng cảnh')
+ON CONFLICT (name) DO NOTHING;
 
 INSERT INTO pet_breeds (species_id, name)
-SELECT s.id, b.name
+SELECT s.id, b.breed_name
 FROM pet_species s
-JOIN (VALUES
+JOIN (
+    VALUES
+
+    -- Chó
     ('Chó', 'Poodle'),
+    ('Chó', 'Toy Poodle'),
+    ('Chó', 'Mini Poodle'),
     ('Chó', 'Husky'),
+    ('Chó', 'Alaska'),
     ('Chó', 'Corgi'),
+    ('Chó', 'Golden Retriever'),
+    ('Chó', 'Labrador Retriever'),
+    ('Chó', 'Shiba Inu'),
+    ('Chó', 'Samoyed'),
+    ('Chó', 'Pug'),
+    ('Chó', 'Chihuahua'),
+    ('Chó', 'Phốc sóc'),
+    ('Chó', 'Phốc hươu'),
+    ('Chó', 'Beagle'),
+    ('Chó', 'Border Collie'),
+    ('Chó', 'Doberman'),
+    ('Chó', 'Rottweiler'),
+    ('Chó', 'German Shepherd'),
+    ('Chó', 'Maltese'),
+    ('Chó', 'Yorkshire Terrier'),
+    ('Chó', 'Bắc Hà'),
+    ('Chó', 'Phú Quốc'),
+    ('Chó', 'H''Mông cộc đuôi'),
+
+    -- Mèo
     ('Mèo', 'Anh lông ngắn'),
+    ('Mèo', 'Anh lông dài'),
     ('Mèo', 'Ba Tư'),
+    ('Mèo', 'Maine Coon'),
+    ('Mèo', 'Bengal'),
     ('Mèo', 'Munchkin'),
-    ('Thỏ', 'Thỏ mini'),
-    ('Chim', 'Vẹt'),
-    ('Chim', 'Yến phụng')
-) AS b(species_name, name) ON s.name = b.species_name
+    ('Mèo', 'Scottish Fold'),
+    ('Mèo', 'Scottish Straight'),
+    ('Mèo', 'Ragdoll'),
+    ('Mèo', 'Siamese'),
+    ('Mèo', 'Sphynx'),
+    ('Mèo', 'Russian Blue'),
+    ('Mèo', 'American Shorthair'),
+    ('Mèo', 'Exotic Shorthair'),
+    ('Mèo', 'Birman'),
+    ('Mèo', 'Mèo ta'),
+    ('Mèo', 'Mèo mướp'),
+    ('Mèo', 'Mèo tam thể'),
+
+    -- Thỏ
+    ('Thỏ', 'Netherland Dwarf'),
+    ('Thỏ', 'Holland Lop'),
+    ('Thỏ', 'Mini Lop'),
+    ('Thỏ', 'Lionhead'),
+    ('Thỏ', 'Mini Rex'),
+    ('Thỏ', 'Rex'),
+    ('Thỏ', 'English Angora'),
+    ('Thỏ', 'French Angora'),
+    ('Thỏ', 'California'),
+    ('Thỏ', 'New Zealand White'),
+
+    -- Hamster
+    ('Hamster', 'Syrian'),
+    ('Hamster', 'Winter White'),
+    ('Hamster', 'Campbell'),
+    ('Hamster', 'Roborovski'),
+    ('Hamster', 'Chinese'),
+
+    -- Chuột lang
+    ('Chuột lang', 'American'),
+    ('Chuột lang', 'Abyssinian'),
+    ('Chuột lang', 'Peruvian'),
+    ('Chuột lang', 'Silkie'),
+    ('Chuột lang', 'Teddy'),
+
+    -- Sóc
+    ('Sóc', 'Sóc đất'),
+    ('Sóc', 'Sóc đỏ'),
+    ('Sóc', 'Sóc xám'),
+
+    -- Sóc bay
+    ('Sóc bay', 'Sugar Glider'),
+
+    -- Nhím kiểng
+    ('Nhím kiểng', 'African Pygmy Hedgehog'),
+
+    -- Chồn Ferret
+    ('Chồn Ferret', 'Standard Ferret'),
+    ('Chồn Ferret', 'Angora Ferret'),
+
+    -- Chinchilla
+    ('Chinchilla', 'Standard Grey'),
+    ('Chinchilla', 'White Mosaic'),
+    ('Chinchilla', 'Ebony'),
+
+    -- Chuột cảnh
+    ('Chuột cảnh', 'Fancy Rat'),
+    ('Chuột cảnh', 'Dumbo Rat'),
+
+    -- Chuột Gerbil
+    ('Chuột Gerbil', 'Mongolian Gerbil'),
+
+    -- Khỉ cảnh
+    ('Khỉ cảnh', 'Marmoset'),
+    ('Khỉ cảnh', 'Capuchin'),
+
+    -- Vẹt
+    ('Vẹt', 'Macaw'),
+    ('Vẹt', 'African Grey'),
+    ('Vẹt', 'Amazon Parrot'),
+    ('Vẹt', 'Eclectus'),
+    ('Vẹt', 'Cockatoo'),
+
+    -- Yến phụng
+    ('Yến phụng', 'Budgerigar'),
+
+    -- Cockatiel
+    ('Cockatiel', 'Normal Grey'),
+    ('Cockatiel', 'Lutino'),
+    ('Cockatiel', 'Pied'),
+
+    -- Lovebird
+    ('Lovebird', 'Peach-faced'),
+    ('Lovebird', 'Fischer'),
+    ('Lovebird', 'Masked'),
+
+    -- Chim hoàng yến
+    ('Chim hoàng yến', 'Canary'),
+
+    -- Chào mào
+    ('Chào mào', 'Chào mào má trắng'),
+
+    -- Họa mi
+    ('Họa mi', 'Họa mi hót'),
+
+    -- Khuyên
+    ('Khuyên', 'Vành khuyên'),
+
+    -- Sơn ca
+    ('Sơn ca', 'Sơn ca Việt'),
+
+    -- Cu gáy
+    ('Cu gáy', 'Cu gáy ta'),
+
+    -- Bồ câu
+    ('Bồ câu', 'Bồ câu Pháp'),
+    ('Bồ câu', 'Bồ câu trắng'),
+    ('Bồ câu', 'Bồ câu đua'),
+
+    -- Cá Betta
+    ('Cá Betta', 'Halfmoon'),
+    ('Cá Betta', 'Crowntail'),
+    ('Cá Betta', 'Plakat'),
+    ('Cá Betta', 'Double Tail'),
+
+    -- Cá vàng
+    ('Cá vàng', 'Oranda'),
+    ('Cá vàng', 'Ranchu'),
+    ('Cá vàng', 'Ryukin'),
+    ('Cá vàng', 'Black Moor'),
+
+    -- Cá Koi
+    ('Cá Koi', 'Kohaku'),
+    ('Cá Koi', 'Showa'),
+    ('Cá Koi', 'Sanke'),
+    ('Cá Koi', 'Tancho'),
+
+    -- Cá Guppy
+    ('Cá Guppy', 'Full Red'),
+    ('Cá Guppy', 'Mosaic'),
+    ('Cá Guppy', 'Cobra'),
+
+    -- Cá Molly
+    ('Cá Molly', 'Black Molly'),
+    ('Cá Molly', 'Dalmatian Molly'),
+
+    -- Cá Neon
+    ('Cá Neon', 'Neon Tetra'),
+    ('Cá Neon', 'Cardinal Tetra'),
+
+    -- Cá Dĩa
+    ('Cá Dĩa', 'Blue Diamond'),
+    ('Cá Dĩa', 'Pigeon Blood'),
+
+    -- Cá La Hán
+    ('Cá La Hán', 'Kamfa'),
+    ('Cá La Hán', 'King Kamfa'),
+    ('Cá La Hán', 'Zhen Zhu'),
+
+    -- Cá Rồng
+    ('Cá Rồng', 'Kim Long'),
+    ('Cá Rồng', 'Huyết Long'),
+    ('Cá Rồng', 'Thanh Long'),
+
+    -- Rùa nước
+    ('Rùa nước', 'Rùa tai đỏ'),
+    ('Rùa nước', 'Rùa bản đồ'),
+
+    -- Rùa cạn
+    ('Rùa cạn', 'Sulcata'),
+    ('Rùa cạn', 'Aldabra'),
+
+    -- Rắn cảnh
+    ('Rắn cảnh', 'Corn Snake'),
+    ('Rắn cảnh', 'Milk Snake'),
+
+    -- Trăn cảnh
+    ('Trăn cảnh', 'Ball Python'),
+    ('Trăn cảnh', 'Burmese Python'),
+
+    -- Tắc kè hoa
+    ('Tắc kè hoa', 'Panther Chameleon'),
+    ('Tắc kè hoa', 'Veiled Chameleon'),
+
+    -- Leopard Gecko
+    ('Leopard Gecko', 'Normal'),
+    ('Leopard Gecko', 'Albino'),
+    ('Leopard Gecko', 'Mack Snow'),
+
+    -- Crested Gecko
+    ('Crested Gecko', 'Flame'),
+    ('Crested Gecko', 'Harlequin'),
+
+    -- Iguana
+    ('Iguana', 'Green Iguana'),
+
+    -- Rồng Nam Mỹ
+    ('Rồng Nam Mỹ', 'Bearded Dragon'),
+
+    -- Kỳ nhông
+    ('Kỳ nhông', 'Axanthic Salamander'),
+
+    -- Ếch cảnh
+    ('Ếch cảnh', 'Pacman Frog'),
+    ('Ếch cảnh', 'Tree Frog'),
+
+    -- Axolotl
+    ('Axolotl', 'Wild Type'),
+    ('Axolotl', 'Leucistic'),
+    ('Axolotl', 'Golden Albino'),
+
+    -- Nhện cảnh
+    ('Nhện cảnh', 'Mexican Red Knee'),
+    ('Nhện cảnh', 'Brazilian Black'),
+
+    -- Bọ cạp cảnh
+    ('Bọ cạp cảnh', 'Asian Forest Scorpion'),
+    ('Bọ cạp cảnh', 'Emperor Scorpion'),
+
+    -- Côn trùng cảnh
+    ('Côn trùng cảnh', 'Bọ que'),
+    ('Côn trùng cảnh', 'Bọ ngựa'),
+    ('Côn trùng cảnh', 'Bọ cánh cứng Hercules')
+
+) AS b(species_name, breed_name)
+ON s.name = b.species_name
 ON CONFLICT (species_id, name) DO NOTHING;
 
 INSERT INTO shifts (code, name, start_time, end_time) VALUES
@@ -744,58 +1049,6 @@ INSERT INTO exam_rooms (room_code, name, floor) VALUES
 ('PKB-01', 'Phòng khám 1', 1),
 ('PKB-02', 'Phòng khám 2', 1)
 ON CONFLICT DO NOTHING;
-
--- Bác sĩ thú y mặc định (phục vụ đặt lịch / khung giờ khám)
-INSERT INTO users (id, email, phone, password_hash, full_name, role_id, status_code)
-VALUES
-    ('11111111-1111-1111-1111-000000000001', 'vet.an@pccms.vn', '0901000001',
-     crypt('vet123', gen_salt('bf')), 'Trần Văn An',
-     (SELECT id FROM roles WHERE code = 'VETERINARIAN'), 'ACTIVE'),
-    ('11111111-1111-1111-1111-000000000002', 'vet.huong@pccms.vn', '0901000002',
-     crypt('vet123', gen_salt('bf')), 'Lê Thị Hương',
-     (SELECT id FROM roles WHERE code = 'VETERINARIAN'), 'ACTIVE')
-ON CONFLICT (email) DO NOTHING;
-
-INSERT INTO staff_profiles (user_id, staff_code, professional_title, is_service_provider)
-SELECT u.id, v.staff_code, 'Bác sĩ thú y', TRUE
-FROM (VALUES
-    ('11111111-1111-1111-1111-000000000001'::uuid, 'VET-001'),
-    ('11111111-1111-1111-1111-000000000002'::uuid, 'VET-002')
-) AS v(user_id, staff_code)
-JOIN users u ON u.id = v.user_id
-ON CONFLICT (user_id) DO NOTHING;
-
-INSERT INTO work_schedules (staff_id, work_date, shift_id, exam_room_id, capacity, status_code)
-SELECT v.staff_id, d.work_date, sh.id, er.id, 4, 'ASSIGNED'
-FROM (VALUES
-    ('11111111-1111-1111-1111-000000000001'::uuid),
-    ('11111111-1111-1111-1111-000000000002'::uuid)
-) AS v(staff_id)
-CROSS JOIN generate_series(CURRENT_DATE, CURRENT_DATE + 60, INTERVAL '1 day') AS d(work_date)
-CROSS JOIN shifts sh
-CROSS JOIN LATERAL (SELECT id FROM exam_rooms WHERE room_code = 'PKB-01' LIMIT 1) er
-WHERE sh.code IN ('MORNING', 'AFTERNOON')
-ON CONFLICT (staff_id, work_date, shift_id) DO NOTHING;
-
--- Nhân viên lễ tân mặc định (tiếp nhận lịch hẹn UC013)
-INSERT INTO users (id, email, phone, password_hash, full_name, role_id, status_code)
-VALUES (
-    '22222222-2222-2222-2222-000000000001',
-    'staff.le@pccms.vn',
-    '0902000001',
-    crypt('staff123', gen_salt('bf')),
-    'Nguyễn Thị Lệ',
-    (SELECT id FROM roles WHERE code = 'STAFF'),
-    'ACTIVE'
-) ON CONFLICT (email) DO NOTHING;
-
-INSERT INTO staff_profiles (user_id, staff_code, professional_title, is_service_provider)
-VALUES (
-    '22222222-2222-2222-2222-000000000001',
-    'STAFF-001',
-    'Nhân viên tiếp nhận',
-    FALSE
-) ON CONFLICT (user_id) DO NOTHING;
 
 INSERT INTO medicine_categories (id, name, description) VALUES
 ('aaaaaaaa-aaaa-aaaa-aaaa-000000000001', 'Kháng sinh', 'Nhóm thuốc kháng sinh điều trị nhiễm khuẩn'),

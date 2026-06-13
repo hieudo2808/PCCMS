@@ -559,14 +559,19 @@ export function WorkSchedulePage() {
         void loadSchedules(selectedWeek);
     };
 
+    const sourceStartIso = formatISODate(getStartOfWeek(new Date(`${planSourceWeek}T00:00:00`)));
+    const targetStartIso = formatISODate(getStartOfWeek(new Date(`${planTargetWeek}T00:00:00`)));
+    const isSameWeek = sourceStartIso === targetStartIso;
+
     const buildPlanPayload = () => ({
-        sourceWeekStart: formatISODate(getStartOfWeek(new Date(`${planSourceWeek}T00:00:00`))),
-        targetWeekStart: formatISODate(getStartOfWeek(new Date(`${planTargetWeek}T00:00:00`))),
+        sourceWeekStart: sourceStartIso,
+        targetWeekStart: targetStartIso,
         roleIds: planRoleId ? [planRoleId] : [],
         shiftIds: planShiftId ? [planShiftId] : [],
     });
 
     const previewPlan = async () => {
+        if (isSameWeek) return;
         setPlanLoading(true);
         setPlanError("");
         setFeedback("");
@@ -577,15 +582,19 @@ export function WorkSchedulePage() {
             if (result.items.length === 0) {
                 setPlanError("Không có lịch phù hợp trong tuần nguồn.");
             }
-        } catch (error) {
+        } catch (error: any) {
             setPlanPreview(null);
-            setPlanError(error instanceof Error ? error.message : "Không thể preview lịch tuần");
+            const errMsg = error?.response?.data?.errorCode === "ERR_VALIDATION_FAILED" 
+                ? "Dữ liệu tuần nguồn/đích không hợp lệ hoặc bị trùng nhau."
+                : error instanceof Error ? error.message : "Không thể preview lịch tuần";
+            setPlanError(errMsg);
         } finally {
             setPlanLoading(false);
         }
     };
 
     const applyPlan = async () => {
+        if (isSameWeek) return;
         setPlanLoading(true);
         setPlanError("");
 
@@ -598,8 +607,11 @@ export function WorkSchedulePage() {
             const targetWeek = getStartOfWeek(new Date(`${planTargetWeek}T00:00:00`));
             setWeekAnchor(targetWeek);
             await loadSchedules(targetWeek);
-        } catch (error) {
-            setPlanError(error instanceof Error ? error.message : "Không thể áp dụng lịch tuần");
+        } catch (error: any) {
+            const errMsg = error?.response?.data?.errorCode === "ERR_VALIDATION_FAILED" 
+                ? "Dữ liệu tuần nguồn/đích không hợp lệ hoặc bị trùng nhau."
+                : error instanceof Error ? error.message : "Không thể áp dụng lịch tuần";
+            setPlanError(errMsg);
         } finally {
             setPlanLoading(false);
         }
@@ -846,6 +858,11 @@ export function WorkSchedulePage() {
                 </div>
 
                 {planError && <p className="mt-3 text-sm font-medium text-rose-600">{planError}</p>}
+                {isSameWeek && (
+                    <p className="mt-3 text-sm font-medium text-amber-600">
+                        Vui lòng chọn tuần đích khác với tuần nguồn để thực hiện sao chép.
+                    </p>
+                )}
 
                 {planPreview && (
                     <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -908,7 +925,7 @@ export function WorkSchedulePage() {
                 )}
 
                 <div className="mt-5 flex flex-wrap items-center gap-3">
-                    <Button onClick={() => void previewPlan()} disabled={planLoading}>
+                    <Button onClick={() => void previewPlan()} disabled={planLoading || isSameWeek}>
                         {planLoading ? "Đang preview..." : "Preview lịch tuần"}
                     </Button>
                     <Button variant="outline" onClick={openCreate} disabled={planLoading}>

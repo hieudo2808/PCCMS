@@ -69,7 +69,11 @@ export function AppointmentReceptionPage() {
         return { phone: undefined, customerName: undefined };
     }, [search]);
 
-    const { data: appointments = [], isLoading, isError } = useQuery({
+    const {
+        data: appointments = [],
+        isLoading,
+        isError,
+    } = useQuery({
         queryKey: ["appointments", "today", selectedDate, statusFilter, searchParams],
         queryFn: () =>
             appointmentApi.listTodayAppointments({
@@ -215,7 +219,8 @@ export function AppointmentReceptionPage() {
                     </p>
                 ) : appointments.length === 0 ? (
                     <p className="py-8 text-center text-sm text-slate-500">
-                        Không có lịch hẹn trong ngày {selectedDate}. Thử chọn ngày khác hoặc lọc trạng thái.
+                        Không có lịch hẹn trong ngày {selectedDate}. Thử chọn ngày khác hoặc lọc
+                        trạng thái.
                     </p>
                 ) : (
                     <DataTable
@@ -234,13 +239,13 @@ export function AppointmentReceptionPage() {
                 )}
             </Card>
 
-            <Card title="Tạo nhanh tại quầy" subtitle="Dành cho khách walk-in (UC013 — nhân viên lễ tân)">
+            <Card title="Tạo nhanh tại quầy" subtitle="Dành cho khách đăng ký tại quầy">
                 {availability && (
                     <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
                         <p className="font-medium text-slate-900">Ngày {selectedDate}</p>
                         <p className="mt-1">
-                            {availability.vetsOnDuty} bác sĩ trực · {availability.totalExamRooms} phòng khám ·{" "}
-                            {availability.availableSlots} khung giờ còn trống
+                            {availability.vetsOnDuty} bác sĩ trực · {availability.totalExamRooms}{" "}
+                            phòng khám · {availability.availableSlots} khung giờ còn trống
                         </p>
                     </div>
                 )}
@@ -307,12 +312,11 @@ export function AppointmentReceptionPage() {
                         Tiếp nhận ngay
                     </Button>
                     <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-                        Khi tiếp nhận thành công, thú cưng được đưa vào danh sách chờ khám của bác sĩ phụ trách.
+                        Khi tiếp nhận thành công, thú cưng được đưa vào danh sách chờ khám của bác
+                        sĩ phụ trách.
                     </div>
                 </div>
             </Card>
-
-
         </div>
     );
 }

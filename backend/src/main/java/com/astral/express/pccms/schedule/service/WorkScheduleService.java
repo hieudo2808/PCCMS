@@ -17,7 +17,6 @@ import com.astral.express.pccms.appointment.repository.ExamRoomRepository;
 import com.astral.express.pccms.grooming.repository.GroomingStationRepository;
 import com.astral.express.pccms.schedule.repository.ShiftRepository;
 import com.astral.express.pccms.schedule.repository.WorkScheduleRepository;
-import com.astral.express.pccms.schedule.service.WorkScheduleService;
 import com.astral.express.pccms.user.entity.Roles;
 import com.astral.express.pccms.user.entity.UserStatus;
 import com.astral.express.pccms.user.entity.Users;
@@ -32,11 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -177,8 +172,13 @@ public class WorkScheduleService {
             return new PlanCounts(0, 0);
         }
 
+        List<ExamRoom> examRooms = examRoomRepository.findByIsActiveTrueOrderByRoomCodeAsc();
+        List<GroomingStation> stations = groomingStationRepository.findByIsActiveTrueOrderByStationCodeAsc();
+
         int createdCount = 0;
         int skippedCount = 0;
+        int examRoomIndex = 0;
+        int stationIndex = 0;
         for (int dayOffset = 0; dayOffset < DAYS_IN_WEEK; dayOffset++) {
             LocalDate targetDate = request.targetWeekStart().plusDays(dayOffset);
             for (int staffIndex = 0; staffIndex < staffMembers.size(); staffIndex++) {
@@ -193,9 +193,21 @@ public class WorkScheduleService {
                     continue;
                 }
 
+                ExamRoom assignedRoom = null;
+                GroomingStation assignedStation = null;
+                String roleCode = staff.getRole() != null ? staff.getRole().getCode() : "";
+
+                if ("VETERINARIAN".equals(roleCode) && !examRooms.isEmpty()) {
+                    assignedRoom = examRooms.get(examRoomIndex % examRooms.size());
+                    examRoomIndex++;
+                } else if ("STAFF".equals(roleCode) && !stations.isEmpty()) {
+                    assignedStation = stations.get(stationIndex % stations.size());
+                    stationIndex++;
+                }
+
                 WorkSchedule created = null;
                 if (persist) {
-                    created = createGeneratedSchedule(staff, shift, targetDate);
+                    created = createGeneratedSchedule(staff, shift, targetDate, assignedRoom, assignedStation);
                     created = workScheduleRepository.save(created);
                     createdCount++;
                 }
@@ -220,7 +232,7 @@ public class WorkScheduleService {
         if (values == null) {
             return Set.of();
         }
-        return values.stream().collect(Collectors.toSet());
+        return new HashSet<>(values);
     }
 
     private WorkSchedule cloneSchedule(WorkSchedule source, LocalDate targetDate) {
@@ -237,12 +249,14 @@ public class WorkScheduleService {
         return schedule;
     }
 
-    private WorkSchedule createGeneratedSchedule(Users staff, Shift shift, LocalDate targetDate) {
+    private WorkSchedule createGeneratedSchedule(Users staff, Shift shift, LocalDate targetDate, ExamRoom room, GroomingStation station) {
         WorkSchedule schedule = new WorkSchedule();
         schedule.setStaff(staff);
         schedule.setWorkDate(targetDate);
         schedule.setShift(shift);
         schedule.setRole(staff.getRole());
+        schedule.setExamRoom(room);
+        schedule.setStation(station);
         schedule.setCapacity(1);
         schedule.setStatusCode(ScheduleStatus.ASSIGNED);
         schedule.setNote("Tự xếp từ kế hoạch tuần");
