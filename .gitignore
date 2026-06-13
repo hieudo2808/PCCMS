@@ -1,6 +1,3 @@
-/reports
-/analysis_docs
-
 /frontend/.env
 /frontend/node_modules
 
@@ -8,9 +5,3 @@
 
 /.local-run
 /tmp-debug
-
-/.cursor
-/AGENTS.md
-/.github/copilot-instructions.md
-
-docker-compose.yml

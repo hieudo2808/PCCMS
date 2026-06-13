@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres
+    container_name: PostgreSQL
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgre
+      POSTGRES_PASSWORD: PostgrePassword@123
+      POSTGRES_DB: pccms
+    ports:
+      - "17284:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ../database/pccms_database_schema.sql:/docker-entrypoint-initdb.d/init.sql
+volumes:
+  postgres_data:

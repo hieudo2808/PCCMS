@@ -6,8 +6,8 @@ spring:
         name: pccms
     datasource:
         url: jdbc:postgresql://localhost:5432/pccms
-        username: pccms
-        password: pccms
+        username: postgre
+        password: StrongPassword@0318
         driver-class-name: org.postgresql.Driver
     jpa:
         hibernate:
@@ -38,12 +38,12 @@ spring:
 
 jwt:
     # Base64URL-encoded key >= 64 bytes (512 bits) for HS512. Generate a new secret for production.
-    secret: ZXLx6CIS8StkPC2vmaA
+    secret: 4pIU5PCRJ5mhpcfRDxexZsPk8BnZTXA+6E+M9DyZDTdyATvP6V5UDcO66fUCklCGgTRIpXJ0QqUmf7qISrwDgA
     expiration: 600000
     refresh-expiration: 604800000
 
 security:
-    pepper: local-dev-pepper-change-me
+    pepper: ZXLx6CIS8StkPC2vmaAf4w3fdq3d32f23FEF45h6h
 
 app:
     cors:

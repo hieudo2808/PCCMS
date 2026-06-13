@@ -149,9 +149,9 @@ ON CONFLICT DO NOTHING;
 INSERT INTO users (id, email, password_hash, full_name, role_id, status_code)
 VALUES (
     '7bb1d3a7-7cb3-4f5a-b261-43cfe97a8caf',
-    'hieudo831@gmail.com',
-    "$2a$12$LCIJijcYjdbCkqfXe8hGleGHwWDpn8GhEltCK6mqS9co7jcwvLjSC",
-    'Hieu Do',
+    'admin@pccms.com',
+    '$2a$12$ZVRj2xm2JS03XyDg/CNK1O7wqRfejFGHEXNsGZsEdZMzqxdCrVizO',
+    'Admin',
     (SELECT id FROM roles WHERE code = 'ADMIN'),
     'ACTIVE'
 ) ON CONFLICT DO NOTHING;
