@@ -35,7 +35,7 @@ public class PaymentController {
     public ApiResponse<PaymentResponse> createOwnerPaymentRequest(
             @PathVariable UUID invoiceId,
             @Valid @RequestBody OwnerPaymentRequest request) {
-        return ApiResponse.created(paymentService.createOwnerPaymentRequest(invoiceId, request));
+        return ApiResponse.created(paymentService.confirmOwnerPayment(invoiceId, request));
     }
 
     @PatchMapping("/{paymentId}/status")

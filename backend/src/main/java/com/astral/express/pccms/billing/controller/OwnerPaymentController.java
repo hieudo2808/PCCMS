@@ -21,11 +21,11 @@ import java.util.UUID;
 public class OwnerPaymentController {
     private final PaymentService paymentService;
 
-    @PostMapping("/{invoiceId}/payment-requests")
+    @PostMapping({"/{invoiceId}/payments", "/{invoiceId}/payment-requests"})
     @PreAuthorize("hasAuthority('INVOICE_READ')")
     public ApiResponse<PaymentResponse> createOwnerPaymentRequest(
             @PathVariable UUID invoiceId,
             @Valid @RequestBody OwnerPaymentRequest request) {
-        return ApiResponse.created(paymentService.createOwnerPaymentRequest(invoiceId, request));
+        return ApiResponse.created(paymentService.confirmOwnerPayment(invoiceId, request));
     }
 }

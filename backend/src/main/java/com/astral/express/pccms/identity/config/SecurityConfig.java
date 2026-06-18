@@ -10,7 +10,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -62,39 +61,24 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
-        provider.setPasswordEncoder(passwordEncoder());
-        return provider;
-    }
-
-    @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+
         http
                 .authorizeHttpRequests(request -> request
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/problems/**").hasAuthority("PROBLEM_READ")
-
-                        // Testcase
-                        .requestMatchers(HttpMethod.POST, "/testcases/**").hasAuthority("TESTCASE_CREATE")
-                        .requestMatchers(HttpMethod.PUT, "/testcases/**").hasAuthority("TESTCASE_UPDATE")
-                        .requestMatchers(HttpMethod.DELETE, "/testcases/**").hasAuthority("TESTCASE_DELETE")
-                        .requestMatchers(HttpMethod.GET, "/testcases/hidden/**").hasAuthority("TESTCASE_READ_HIDDEN")
-
-                        // Submission
-                        .requestMatchers(HttpMethod.POST, "/submissions").hasAuthority("SUBMISSION_CREATE")
-                        .requestMatchers("/submissions/rejudge/**").hasAuthority("SUBMISSION_REJUDGE")
                         .anyRequest().authenticated())
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authenticationProvider(authenticationProvider())
+                .authenticationProvider(authProvider)
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .headers(header -> header

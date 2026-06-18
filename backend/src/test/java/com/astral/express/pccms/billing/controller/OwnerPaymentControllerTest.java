@@ -37,9 +37,9 @@ class OwnerPaymentControllerTest {
     }
 
     @Test
-    void createOwnerPaymentRequest_success() throws Exception {
+    void confirmOwnerPayment_success() throws Exception {
         UUID id = UUID.randomUUID();
-        mockMvc.perform(post("/v1/me/invoices/{invoiceId}/payment-requests", id)
+        mockMvc.perform(post("/v1/me/invoices/{invoiceId}/payments", id)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"amountVnd\":100,\"methodCode\":\"BANK_TRANSFER\"}"))
                 .andExpect(status().isOk())

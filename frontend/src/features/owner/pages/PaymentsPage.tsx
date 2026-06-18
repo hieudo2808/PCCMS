@@ -51,7 +51,7 @@ export function PaymentsPage() {
     const paymentMutation = useMutation({
         mutationFn: () => {
             if (!selectedInvoice) throw new Error("Chưa chọn hóa đơn");
-            return paymentApi.createOwnerPaymentRequest(selectedInvoice.id, {
+            return paymentApi.confirmOwnerPayment(selectedInvoice.id, {
                 amountVnd: remainingAmount(selectedInvoice),
                 methodCode,
                 referenceCode: referenceCode.trim() || undefined,
@@ -59,13 +59,13 @@ export function PaymentsPage() {
             });
         },
         onSuccess: async () => {
-            toast.success("Đã gửi xác nhận thanh toán, vui lòng chờ nhân viên duyệt");
+            toast.success("Thanh toán thành công");
             setSelectedInvoice(null);
             setReferenceCode("");
             setNote("");
             await queryClient.invalidateQueries({ queryKey: ["my-invoices"] });
         },
-        onError: (error) => toast.error(error instanceof Error ? error.message : "Không thể gửi xác nhận thanh toán"),
+        onError: (error) => toast.error(error instanceof Error ? error.message : "Không thể xác nhận thanh toán"),
     });
 
     const invoices = invoicesQuery.data?.content ?? [];
@@ -78,7 +78,7 @@ export function PaymentsPage() {
             <MiniGridStats
                 items={[
                     { label: "Đã thanh toán", value: String(paidInvoices.length), hint: "Hóa đơn đã hoàn tất", icon: CheckCircle2 },
-                    { label: "Chờ thanh toán", value: String(pendingInvoices.length), hint: "Có thể gửi xác nhận thanh toán", icon: Clock3 },
+                    { label: "Chờ thanh toán", value: String(pendingInvoices.length), hint: "Có thể xác nhận thanh toán ngay", icon: Clock3 },
                     { label: "Tổng chi tiêu", value: formatCurrency(totalSpend), hint: "Theo dữ liệu hóa đơn", icon: CreditCard },
                     { label: "Dịch vụ", value: invoices.length ? "PCCMS" : "-", hint: "Từ các dòng hóa đơn", icon: Scissors },
                 ]}
@@ -137,7 +137,7 @@ export function PaymentsPage() {
                         <div className="flex justify-end gap-3">
                             <Button variant="outline" onClick={() => setSelectedInvoice(null)} disabled={paymentMutation.isPending}>Hủy</Button>
                             <Button onClick={() => paymentMutation.mutate()} disabled={paymentMutation.isPending || remainingAmount(selectedInvoice) <= 0}>
-                                {paymentMutation.isPending ? "Đang xử lý..." : "Thanh toán"}
+                                {paymentMutation.isPending ? "Đang xử lý..." : "Xác nhận thanh toán"}
                             </Button>
                         </div>
                     </div>

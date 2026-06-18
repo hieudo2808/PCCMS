@@ -71,6 +71,11 @@ public class PaymentService {
     }
     @Transactional
     public PaymentResponse createOwnerPaymentRequest(UUID invoiceId, OwnerPaymentRequest request) {
+        return confirmOwnerPayment(invoiceId, request);
+    }
+
+    @Transactional
+    public PaymentResponse confirmOwnerPayment(UUID invoiceId, OwnerPaymentRequest request) {
         if (request.amountVnd() == null || request.amountVnd() <= 0) {
             throw new BusinessException(ErrorCode.ERR_BILLING_003_INVALID_PAYMENT_AMOUNT);
         }
@@ -93,10 +98,12 @@ public class PaymentService {
                 .invoice(invoice)
                 .amountVnd(request.amountVnd())
                 .methodCode(request.methodCode())
-                .statusCode(PaymentStatus.PENDING)
+                .statusCode(PaymentStatus.SUCCEEDED)
+                .paidAt(OffsetDateTime.now())
                 .note(note)
                 .build();
         Payment savedPayment = paymentRepository.save(payment);
+        applySucceededPayment(invoice, request.amountVnd());
 
         return toResponse(savedPayment);
     }

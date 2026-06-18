@@ -6,7 +6,7 @@ TC-BILL-PAY-004,recordPayment,Amount negative,-100,1000,0,true,true,true,true,SU
 TC-BILL-PAY-005,recordPayment,Invoice not found,1000,1000,0,true,true,false,true,SUCCEEDED,ERROR,ERR_BILLING_002_INVOICE_NOT_FOUND,
 TC-BILL-PAY-006,recordPayment,Amount exceeds remaining balance,1001,1000,0,true,true,true,true,SUCCEEDED,ERROR,ERR_BILLING_003_INVALID_PAYMENT_AMOUNT,
 TC-BILL-PAY-007,recordPayment,Current user not found,1000,1000,0,true,false,true,true,SUCCEEDED,ERROR,ERR_ACC_002_USER_NOT_FOUND,
-TC-BILL-PAY-008,createOwnerPaymentRequest,Owner submits valid payment request,1000,1000,0,true,true,true,true,PENDING,SUCCESS,,
+TC-BILL-PAY-008,createOwnerPaymentRequest,Owner confirms a valid payment,1000,1000,0,true,true,true,true,SUCCEEDED,SUCCESS,,PAID
 TC-BILL-PAY-009,createOwnerPaymentRequest,User is not invoice owner,1000,1000,0,false,true,true,true,SUCCEEDED,ERROR,ERR_403_FORBIDDEN,
 TC-BILL-PAY-010,createOwnerPaymentRequest,Amount zero,0,1000,0,true,true,true,true,SUCCEEDED,ERROR,ERR_BILLING_003_INVALID_PAYMENT_AMOUNT,
 TC-BILL-PAY-011,createOwnerPaymentRequest,Amount negative,-100,1000,0,true,true,true,true,SUCCEEDED,ERROR,ERR_BILLING_003_INVALID_PAYMENT_AMOUNT,

@@ -224,7 +224,7 @@ class PaymentServiceTest {
     }
 
     @Test
-    void should_createOwnerPaymentRequest_AsPendingWithoutApplyingInvoice() {
+    void should_confirmOwnerPayment_ImmediatelyAndApplyInvoice() {
         UUID invoiceId = UUID.randomUUID();
         UUID currentUserId = UUID.randomUUID();
 
@@ -259,15 +259,15 @@ class PaymentServiceTest {
         verify(paymentRepository).save(paymentCaptor.capture());
         Payment capturedPayment = paymentCaptor.getValue();
 
-        assertThat(response.statusCode()).isEqualTo(PaymentStatus.PENDING);
-        assertThat(response.paidAt()).isNull();
+        assertThat(response.statusCode()).isEqualTo(PaymentStatus.SUCCEEDED);
+        assertThat(response.paidAt()).isNotNull();
         assertThat(response.receivedBy()).isNull();
-        assertThat(capturedPayment.getStatusCode()).isEqualTo(PaymentStatus.PENDING);
-        assertThat(capturedPayment.getPaidAt()).isNull();
+        assertThat(capturedPayment.getStatusCode()).isEqualTo(PaymentStatus.SUCCEEDED);
+        assertThat(capturedPayment.getPaidAt()).isNotNull();
         assertThat(capturedPayment.getReceivedBy()).isNull();
-        assertThat(invoice.getPaidAmountVnd()).isZero();
-        assertThat(invoice.getStatusCode()).isEqualTo(InvoiceStatus.UNPAID);
-        verify(invoiceRepository, never()).save(any(Invoice.class));
+        assertThat(invoice.getPaidAmountVnd()).isEqualTo(1000L);
+        assertThat(invoice.getStatusCode()).isEqualTo(InvoiceStatus.PAID);
+        verify(invoiceRepository).save(invoice);
     }
 
     @Test

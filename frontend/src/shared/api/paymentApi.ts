@@ -23,6 +23,6 @@ export interface PaymentResponse {
 }
 
 export const paymentApi = {
-    createOwnerPaymentRequest: (invoiceId: string, data: OwnerPaymentRequest): Promise<PaymentResponse> =>
-        axiosClient.post(`/v1/me/invoices/${invoiceId}/payment-requests`, data),
+    confirmOwnerPayment: (invoiceId: string, data: OwnerPaymentRequest): Promise<PaymentResponse> =>
+        axiosClient.post(`/v1/me/invoices/${invoiceId}/payments`, data),
 };
