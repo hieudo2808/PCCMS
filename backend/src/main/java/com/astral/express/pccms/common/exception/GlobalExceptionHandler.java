@@ -20,6 +20,22 @@ import java.util.Map;
 @Slf4j
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(value = BusinessValidationException.class)
+    public ResponseEntity<ErrorResponse> handleBusinessValidationException(BusinessValidationException exception) {
+        ErrorCode errorCode = exception.getErrorCode();
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .code(errorCode.getHttpStatus())
+                .message(errorCode.getMessage())
+                .errorCode(errorCode.getErrorCode())
+                .errors(exception.getFieldErrors())
+                .build();
+
+        return ResponseEntity
+                .status(errorCode.getHttpStatus())
+                .body(errorResponse);
+    }
+
     @ExceptionHandler(value = BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException exception) {
         ErrorCode errorCode = exception.getErrorCode();
@@ -45,9 +61,9 @@ public class GlobalExceptionHandler {
         });
 
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .code(ErrorCode.ERR_400_BAD_REQUEST.getHttpStatus())
-                .message(ErrorCode.ERR_400_BAD_REQUEST.getMessage())
-                .errorCode(ErrorCode.ERR_400_BAD_REQUEST.getErrorCode())
+                .code(ErrorCode.ERR_VALIDATION_FAILED.getHttpStatus())
+                .message(ErrorCode.ERR_VALIDATION_FAILED.getMessage())
+                .errorCode(ErrorCode.ERR_VALIDATION_FAILED.getErrorCode())
                 .errors(errors)
                 .build();
 

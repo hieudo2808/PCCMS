@@ -1,6 +1,7 @@
 package com.astral.express.pccms.schedule.entity;
 
 import com.astral.express.pccms.common.domain.AuditableEntity;
+import com.astral.express.pccms.appointment.entity.ExamRoom;
 import com.astral.express.pccms.grooming.entity.GroomingStation;
 import com.astral.express.pccms.user.entity.Roles;
 import com.astral.express.pccms.user.entity.Users;
@@ -15,6 +16,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -25,7 +27,11 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
-@Table(name = "work_schedules")
+@Table(
+        name = "work_schedules",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_work_schedule_staff_date_shift",
+                columnNames = {"staff_id", "work_date", "shift_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -47,7 +53,7 @@ public class WorkSchedule extends AuditableEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "exam_room_id")
-    private com.astral.express.pccms.appointment.entity.ExamRoom examRoom;
+    private ExamRoom examRoom;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "station_id")

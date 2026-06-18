@@ -8,7 +8,6 @@ import com.astral.express.pccms.notification.dto.response.NotificationResponse;
 import com.astral.express.pccms.notification.entity.Notification;
 import com.astral.express.pccms.notification.entity.NotificationStatus;
 import com.astral.express.pccms.notification.repository.NotificationRepository;
-import com.astral.express.pccms.notification.service.NotificationService;
 import com.astral.express.pccms.user.entity.Users;
 import com.astral.express.pccms.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +24,10 @@ import java.util.UUID;
 public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
-    private final SecurityContextService SecurityContextService;
-@Transactional
+    private final SecurityContextService securityContextService;
+    private final NotificationPublisher notificationPublisher;
+
+    @Transactional
     public NotificationResponse createNotification(
             UUID recipientUserId,
             String sourceType,
@@ -45,21 +46,24 @@ public class NotificationService {
                 .body(body)
                 .statusCode(NotificationStatus.UNREAD)
                 .build();
-        return toResponse(notificationRepository.save(notification));
+        NotificationResponse response = toResponse(notificationRepository.save(notification));
+        notificationPublisher.publish(response);
+        return response;
     }
-public PageResponse<NotificationResponse> listMyNotifications(Pageable pageable) {
+    public PageResponse<NotificationResponse> listMyNotifications(Pageable pageable) {
         UUID currentUserId = requireCurrentUserId();
         return PageResponse.of(notificationRepository.findByRecipientIdOrderByCreatedAtDesc(currentUserId, pageable)
                 .map(this::toResponse));
     }
-@Transactional
+
+    @Transactional
     public NotificationResponse markRead(UUID notificationId) {
         Notification notification = findMine(notificationId);
         notification.setStatusCode(NotificationStatus.READ);
         notification.setReadAt(OffsetDateTime.now());
         return toResponse(notificationRepository.save(notification));
     }
-@Transactional
+    @Transactional
     public NotificationResponse archive(UUID notificationId) {
         Notification notification = findMine(notificationId);
         notification.setStatusCode(NotificationStatus.ARCHIVED);
@@ -75,7 +79,7 @@ public PageResponse<NotificationResponse> listMyNotifications(Pageable pageable)
     }
 
     private UUID requireCurrentUserId() {
-        UUID currentUserId = SecurityContextService.getCurrentUserId();
+        UUID currentUserId = securityContextService.getCurrentUserId();
         if (currentUserId == null) {
             throw new BusinessException(ErrorCode.ERR_401_UNAUTHORIZED);
         }

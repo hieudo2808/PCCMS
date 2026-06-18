@@ -35,7 +35,9 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.given;
+import com.astral.express.pccms.grooming.dto.response.GroomingTicketResponse;
+import org.mockito.Mockito;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -54,7 +56,7 @@ class GroomingBookingUseCaseTest {
     private AppointmentResponseAssembler assembler;
 
     @InjectMocks
-    private GroomingBookingUseCase useCase;
+    private AppointmentGroomingBookingUseCase useCase;
 
     private UUID ownerId;
     private UUID ticketId;
@@ -93,13 +95,13 @@ class GroomingBookingUseCaseTest {
         given(serviceCatalogRepository.findByServiceCodeAndIsActiveTrue("GROOM_FULL"))
                 .willReturn(Optional.of(catalog));
 
-        com.astral.express.pccms.grooming.dto.response.GroomingTicketResponse dedicatedResponse =
-                org.mockito.Mockito.mock(com.astral.express.pccms.grooming.dto.response.GroomingTicketResponse.class);
+        GroomingTicketResponse dedicatedResponse =
+                Mockito.mock(GroomingTicketResponse.class);
         given(dedicatedResponse.id()).willReturn(ticketId);
         given(groomingService.createBooking(any())).willReturn(dedicatedResponse);
         given(groomingTicketRepository.findById(ticketId)).willReturn(Optional.of(ticket));
         
-        AppointmentResponse expectedResponse = org.mockito.Mockito.mock(AppointmentResponse.class);
+        AppointmentResponse expectedResponse = Mockito.mock(AppointmentResponse.class);
         given(expectedResponse.id()).willReturn(appointment.getId());
         given(assembler.toResponse(appointment, null)).willReturn(expectedResponse);
 
@@ -131,7 +133,7 @@ class GroomingBookingUseCaseTest {
         // GIVEN
         given(groomingTicketRepository.findBoardForDate(any(), any(), any())).willReturn(List.of(ticket));
         
-        GroomingBoardCardResponse expected = org.mockito.Mockito.mock(GroomingBoardCardResponse.class);
+        GroomingBoardCardResponse expected = Mockito.mock(GroomingBoardCardResponse.class);
         given(expected.ticketId()).willReturn(ticketId);
         given(assembler.toGroomingBoardCard(ticket)).willReturn(expected);
 
@@ -149,7 +151,7 @@ class GroomingBookingUseCaseTest {
         given(groomingTicketRepository.findDetailById(ticketId)).willReturn(Optional.of(ticket));
         UpdateGroomingStatusRequest request = new UpdateGroomingStatusRequest(GroomingStatus.CONFIRMED);
         
-        GroomingBoardCardResponse expected = org.mockito.Mockito.mock(GroomingBoardCardResponse.class);
+        GroomingBoardCardResponse expected = Mockito.mock(GroomingBoardCardResponse.class);
         given(expected.ticketId()).willReturn(ticketId);
         given(assembler.toGroomingBoardCard(ticket)).willReturn(expected);
 
@@ -235,8 +237,8 @@ class GroomingBookingUseCaseTest {
         given(serviceCatalogRepository.findByServiceCodeAndIsActiveTrue("GROOM_FULL"))
                 .willReturn(Optional.of(catalog));
 
-        com.astral.express.pccms.grooming.dto.response.GroomingTicketResponse dedicatedResponse =
-                org.mockito.Mockito.mock(com.astral.express.pccms.grooming.dto.response.GroomingTicketResponse.class);
+        GroomingTicketResponse dedicatedResponse =
+                Mockito.mock(GroomingTicketResponse.class);
         given(dedicatedResponse.id()).willReturn(ticketId);
         given(groomingService.createBooking(any())).willReturn(dedicatedResponse);
         given(groomingTicketRepository.findById(ticketId)).willReturn(Optional.empty());

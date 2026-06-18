@@ -27,7 +27,7 @@ import java.util.UUID;
 public class BoardingStaffController {
 
     private final BoardingStaffService boardingStaffService;
-    private final SecurityContextService SecurityContextService;
+    private final SecurityContextService securityContextService;
 
     @GetMapping("/stays")
     @PreAuthorize("hasAuthority('BOARDING_READ')")
@@ -46,7 +46,7 @@ public class BoardingStaffController {
     @PostMapping("/care-logs")
     @PreAuthorize("hasAuthority('BOARDING_UPDATE')")
     public ApiResponse<CareLogResponse> upsertCareLog(@Valid @RequestBody UpsertCareLogRequest request) {
-        UUID staffId = SecurityContextService.getCurrentUserId();
+        UUID staffId = securityContextService.getCurrentUserId();
         return ApiResponse.success(boardingStaffService.upsertCareLog(staffId, request));
     }
 }

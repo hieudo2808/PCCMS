@@ -34,6 +34,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import org.mockito.ArgumentMatchers;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 @ExtendWith(MockitoExtension.class)
 class CreateMedicalAppointmentUseCaseTest {
@@ -91,7 +94,7 @@ class CreateMedicalAppointmentUseCaseTest {
         given(serviceCatalogRepository.findByServiceCodeAndIsActiveTrue("MED-GENERAL"))
                 .willReturn(Optional.of(serviceCatalog(30)));
 
-        try (org.mockito.MockedStatic<ClinicDateTime> mockedTime = org.mockito.Mockito.mockStatic(ClinicDateTime.class)) {
+        try (MockedStatic<ClinicDateTime> mockedTime = Mockito.mockStatic(ClinicDateTime.class)) {
             mockedTime.when(ClinicDateTime::now).thenReturn(OffsetDateTime.now());
             mockedTime.when(ClinicDateTime::today).thenReturn(LocalDate.now());
             mockedTime.when(() -> ClinicDateTime.toOffsetDateTime(any(), any())).thenCallRealMethod();
@@ -207,7 +210,7 @@ class CreateMedicalAppointmentUseCaseTest {
 
         assertThat(result.getAppointmentType()).isEqualTo(AppointmentType.MEDICAL);
         // When request vet is null, requestedStaff is null
-        verify(appointmentRepository).save(org.mockito.ArgumentMatchers.argThat(a -> a.getRequestedStaff() == null));
+        verify(appointmentRepository).save(ArgumentMatchers.argThat(a -> a.getRequestedStaff() == null));
     }
     
     @Test

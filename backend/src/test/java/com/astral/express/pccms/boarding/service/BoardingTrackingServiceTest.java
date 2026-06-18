@@ -19,7 +19,12 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.when;
+import com.astral.express.pccms.boarding.entity.BoardingSession;
+import com.astral.express.pccms.boarding.entity.CarePeriod;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvFileSource;
 
 @ExtendWith(MockitoExtension.class)
 class BoardingTrackingServiceTest {
@@ -33,16 +38,16 @@ class BoardingTrackingServiceTest {
     @InjectMocks
     private BoardingTrackingServiceImpl boardingTrackingService;
 
-    @org.junit.jupiter.params.ParameterizedTest
-    @org.junit.jupiter.params.provider.CsvFileSource(resources = "/testcases/boarding-tracking-testcases.csv", numLinesToSkip = 1)
+    @ParameterizedTest
+    @CsvFileSource(resources = "/testcases/boarding-tracking-testcases.csv", numLinesToSkip = 1)
     void should_ProcessBoardingTracking(String ruleId, String caseId, String action, boolean hasData, int expectedSize) {
         UUID ownerId = UUID.randomUUID();
 
         if ("LIST_ACTIVE_STAYS".equals(action)) {
             if (hasData) {
                 UUID petId = UUID.randomUUID();
-                Object[] row = new Object[]{petId, "Milu", "Chó", "Poodle"};
-                given(careLogRepository.findActiveStaysByOwner(ownerId)).willReturn(List.<Object[]>of(row));
+                CareLogRepository.OwnerActiveStayRow row = ownerStayRow(petId, "Milu", "Chó", "Poodle");
+                given(careLogRepository.findActiveStaysByOwner(ownerId)).willReturn(List.of(row));
             } else {
                 given(careLogRepository.findActiveStaysByOwner(ownerId)).willReturn(List.of());
             }
@@ -68,7 +73,7 @@ class BoardingTrackingServiceTest {
                 pet.setName("Milu");
                 log.setPet(pet);
                 
-                com.astral.express.pccms.boarding.entity.BoardingSession session = new com.astral.express.pccms.boarding.entity.BoardingSession();
+                BoardingSession session = new BoardingSession();
                 session.setId(UUID.randomUUID());
                 log.setSession(session);
                 
@@ -78,7 +83,7 @@ class BoardingTrackingServiceTest {
                 log.setStaff(staff);
 
                 log.setLogDate(LocalDate.of(2026, 6, 5));
-                log.setPeriodCode(com.astral.express.pccms.boarding.entity.CarePeriod.MORNING);
+                log.setPeriodCode(CarePeriod.MORNING);
                 log.setFeedingStatus("Ăn tốt");
                 log.setHygieneStatus("Bình thường");
                 log.setHealthNote(null);
@@ -98,12 +103,12 @@ class BoardingTrackingServiceTest {
         }
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void listActiveStays_shouldHandleNullSpeciesAndBreed() {
         UUID ownerId = UUID.randomUUID();
         UUID petId = UUID.randomUUID();
-        Object[] row = new Object[]{petId, "Milu", null, null};
-        given(careLogRepository.findActiveStaysByOwner(ownerId)).willReturn(List.<Object[]>of(row));
+        CareLogRepository.OwnerActiveStayRow row = ownerStayRow(petId, "Milu", null, null);
+        given(careLogRepository.findActiveStaysByOwner(ownerId)).willReturn(List.of(row));
 
         List<BoardingStayResponse> stays = boardingTrackingService.listActiveStays(ownerId);
 
@@ -112,7 +117,7 @@ class BoardingTrackingServiceTest {
         assertThat(stays.get(0).breedName()).isNull();
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void listCareLogs_shouldHandlePetNotFound() {
         UUID ownerId = UUID.randomUUID();
         UUID petId = UUID.randomUUID();
@@ -126,7 +131,7 @@ class BoardingTrackingServiceTest {
         pet.setName("Milu");
         log.setPet(pet);
         
-        com.astral.express.pccms.boarding.entity.BoardingSession session = new com.astral.express.pccms.boarding.entity.BoardingSession();
+        BoardingSession session = new BoardingSession();
         session.setId(UUID.randomUUID());
         log.setSession(session);
         
@@ -136,7 +141,7 @@ class BoardingTrackingServiceTest {
         log.setStaff(staff);
 
         log.setLogDate(LocalDate.of(2026, 6, 5));
-        log.setPeriodCode(com.astral.express.pccms.boarding.entity.CarePeriod.MORNING);
+        log.setPeriodCode(CarePeriod.MORNING);
         log.setFeedingStatus("Ăn tốt");
         log.setHygieneStatus("Bình thường");
         log.setHealthNote(null);
@@ -152,4 +157,13 @@ class BoardingTrackingServiceTest {
         assertThat(responses.get(0).feedingStatus()).isEqualTo("Ăn tốt");
     }
 
+    private CareLogRepository.OwnerActiveStayRow ownerStayRow(
+            UUID petId, String petName, String speciesName, String breedName) {
+        CareLogRepository.OwnerActiveStayRow row = mock(CareLogRepository.OwnerActiveStayRow.class);
+        when(row.getPetId()).thenReturn(petId);
+        when(row.getPetName()).thenReturn(petName);
+        when(row.getSpeciesName()).thenReturn(speciesName);
+        when(row.getBreedName()).thenReturn(breedName);
+        return row;
+    }
 }

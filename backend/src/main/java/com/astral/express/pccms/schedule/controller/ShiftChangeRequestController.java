@@ -3,6 +3,7 @@ package com.astral.express.pccms.schedule.controller;
 import com.astral.express.pccms.common.dto.ApiResponse;
 import com.astral.express.pccms.common.dto.PageResponse;
 import com.astral.express.pccms.schedule.dto.request.ShiftChangeRequestCreateRequest;
+import com.astral.express.pccms.schedule.dto.request.ShiftChangeRespondRequest;
 import com.astral.express.pccms.schedule.dto.response.ShiftChangeRequestResponse;
 import com.astral.express.pccms.schedule.entity.ShiftRequestStatus;
 import com.astral.express.pccms.schedule.service.ShiftChangeRequestService;
@@ -56,7 +57,7 @@ public class ShiftChangeRequestController {
     @PatchMapping("/shift-change-requests/{requestId}/respond")
     public ApiResponse<ShiftChangeRequestResponse> respondToRequest(
             @PathVariable UUID requestId,
-            @Valid @RequestBody com.astral.express.pccms.schedule.dto.request.ShiftChangeRespondRequest request) {
+            @Valid @RequestBody ShiftChangeRespondRequest request) {
         return ApiResponse.success(shiftChangeRequestService.respondToRequest(requestId, request.action()));
     }
 

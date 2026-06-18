@@ -4,6 +4,7 @@ import com.astral.express.pccms.appointment.dto.request.CreateBoardingBookingReq
 import com.astral.express.pccms.appointment.dto.response.BoardingBookingResponse;
 import com.astral.express.pccms.appointment.dto.response.RoomTypeOptionResponse;
 import com.astral.express.pccms.boarding.entity.BoardingBooking;
+import com.astral.express.pccms.boarding.dto.request.BoardingBookingCreateRequest;
 import com.astral.express.pccms.boarding.repository.BoardingBookingRepository;
 import com.astral.express.pccms.boarding.service.BoardingService;
 import com.astral.express.pccms.common.exception.BusinessException;
@@ -19,7 +20,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class BoardingBookingUseCase {
+public class AppointmentBoardingBookingUseCase {
 
     private final BoardingService boardingService;
     private final BoardingBookingRepository boardingBookingRepository;
@@ -28,7 +29,7 @@ public class BoardingBookingUseCase {
 
     @Transactional
     public BoardingBookingResponse createBoardingBooking(CreateBoardingBookingRequest request, UUID ownerId) {
-        var createRequest = new com.astral.express.pccms.boarding.dto.request.BoardingBookingCreateRequest(
+        var createRequest = new BoardingBookingCreateRequest(
                 request.petId(),
                 request.roomTypeId(),
                 ClinicDateTime.toOffsetDateTime(request.checkinDate(), LocalTime.of(14, 0)),

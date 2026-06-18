@@ -4,7 +4,6 @@ import com.astral.express.pccms.filemedia.dto.UploadedFileResponse;
 import com.astral.express.pccms.filemedia.entity.FileAsset;
 import com.astral.express.pccms.filemedia.entity.FileVisibility;
 import com.astral.express.pccms.filemedia.repository.FileAssetRepository;
-import com.astral.express.pccms.filemedia.service.CloudMediaStorageService;
 import com.astral.express.pccms.user.entity.Users;
 import com.astral.express.pccms.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,10 +19,14 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import com.astral.express.pccms.common.exception.BusinessException;
+import com.astral.express.pccms.common.exception.ErrorCode;
+import java.io.IOException;
+import org.mockito.Mockito;
 
 @ExtendWith(MockitoExtension.class)
 class FileMediaServiceTest {
@@ -60,7 +63,7 @@ class FileMediaServiceTest {
                 3L
         );
         given(userRepository.findById(userId)).willReturn(Optional.of(uploader));
-        given(cloudMediaStorageService.uploadImage(any(), eq("care-logs"))).willReturn(storedMedia);
+        given(cloudMediaStorageService.store(any(StoreMediaCommand.class))).willReturn(storedMedia);
         given(fileAssetRepository.save(any(FileAsset.class))).willAnswer(invocation -> {
             FileAsset asset = invocation.getArgument(0);
             asset.setId(fileId);
@@ -71,7 +74,14 @@ class FileMediaServiceTest {
 
         ArgumentCaptor<FileAsset> assetCaptor = ArgumentCaptor.forClass(FileAsset.class);
         verify(fileAssetRepository).save(assetCaptor.capture());
+        ArgumentCaptor<StoreMediaCommand> commandCaptor = ArgumentCaptor.forClass(StoreMediaCommand.class);
+        verify(cloudMediaStorageService).store(commandCaptor.capture());
+        StoreMediaCommand command = commandCaptor.getValue();
         FileAsset savedAsset = assetCaptor.getValue();
+        assertThat(command.folder()).isEqualTo("care-logs");
+        assertThat(command.originalFilename()).isEqualTo("pet.jpg");
+        assertThat(command.contentType()).isEqualTo("image/jpeg");
+        assertThat(command.bytes()).containsExactly(1, 2, 3);
         assertThat(savedAsset.getStoredKey()).isEqualTo(storedMedia.secureUrl());
         assertThat(savedAsset.getMimeType()).isEqualTo("image/jpeg");
         assertThat(savedAsset.getSizeBytes()).isEqualTo(3L);
@@ -100,7 +110,7 @@ class FileMediaServiceTest {
                 3L
         );
         given(userRepository.findById(userId)).willReturn(Optional.of(uploader));
-        given(cloudMediaStorageService.uploadImage(any(), eq("care-logs"))).willReturn(storedMedia);
+        given(cloudMediaStorageService.store(any(StoreMediaCommand.class))).willReturn(storedMedia);
         given(fileAssetRepository.save(any(FileAsset.class))).willAnswer(invocation -> {
             FileAsset asset = invocation.getArgument(0);
             asset.setId(fileId);
@@ -120,22 +130,23 @@ class FileMediaServiceTest {
         MockMultipartFile file = new MockMultipartFile("file", "pet.jpg", "image/jpeg", new byte[]{1, 2, 3});
         given(userRepository.findById(userId)).willReturn(Optional.empty());
 
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> fileMediaService.uploadOwnerVisibleImage(file, userId))
-                .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", com.astral.express.pccms.common.exception.ErrorCode.ERR_ACC_002_USER_NOT_FOUND);
+        assertThatThrownBy(() -> fileMediaService.uploadOwnerVisibleImage(file, userId))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_ACC_002_USER_NOT_FOUND);
     }
 
     @Test
-    void uploadOwnerVisibleImage_shouldHandleNullOriginalFilename() throws java.io.IOException {
+    void uploadOwnerVisibleImage_shouldHandleNullOriginalFilename() throws IOException {
         UUID userId = UUID.randomUUID();
         UUID fileId = UUID.randomUUID();
         Users uploader = Users.builder().id(userId).build();
         
-        MultipartFile file = org.mockito.Mockito.mock(MultipartFile.class);
+        MultipartFile file = Mockito.mock(MultipartFile.class);
         given(file.getOriginalFilename()).willReturn(null);
         given(file.getSize()).willReturn(3L);
         given(file.getContentType()).willReturn("image/jpeg");
         given(file.isEmpty()).willReturn(false);
+        given(file.getBytes()).willReturn(new byte[] {1, 2, 3});
         
         CloudMediaStorageService.StoredMedia storedMedia = new CloudMediaStorageService.StoredMedia(
                 "pccms/care-logs/2026/06/10/object.jpg",
@@ -144,7 +155,7 @@ class FileMediaServiceTest {
                 3L
         );
         given(userRepository.findById(userId)).willReturn(Optional.of(uploader));
-        given(cloudMediaStorageService.uploadImage(any(), eq("care-logs"))).willReturn(storedMedia);
+        given(cloudMediaStorageService.store(any(StoreMediaCommand.class))).willReturn(storedMedia);
         given(fileAssetRepository.save(any(FileAsset.class))).willAnswer(inv -> {
             FileAsset a = inv.getArgument(0);
             a.setId(fileId);
@@ -160,82 +171,84 @@ class FileMediaServiceTest {
 
     @Test
     void uploadOwnerVisibleImage_shouldThrowException_whenFileIsNull() {
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> fileMediaService.uploadOwnerVisibleImage(null, UUID.randomUUID()))
-                .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", com.astral.express.pccms.common.exception.ErrorCode.ERR_FILE_001_INVALID_IMAGE);
+        assertThatThrownBy(() -> fileMediaService.uploadOwnerVisibleImage(
+                (MultipartFile) null,
+                UUID.randomUUID()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_FILE_001_INVALID_IMAGE);
     }
 
     @Test
     void uploadOwnerVisibleImage_shouldThrowException_whenFileIsEmpty() {
         MockMultipartFile file = new MockMultipartFile("file", "pet.jpg", "image/jpeg", new byte[0]);
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> fileMediaService.uploadOwnerVisibleImage(file, UUID.randomUUID()))
-                .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", com.astral.express.pccms.common.exception.ErrorCode.ERR_FILE_001_INVALID_IMAGE);
+        assertThatThrownBy(() -> fileMediaService.uploadOwnerVisibleImage(file, UUID.randomUUID()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_FILE_001_INVALID_IMAGE);
     }
 
     @Test
     void uploadOwnerVisibleImage_shouldThrowException_whenFileTooLarge() {
         byte[] largeContent = new byte[5 * 1024 * 1024 + 1];
         MockMultipartFile file = new MockMultipartFile("file", "pet.jpg", "image/jpeg", largeContent);
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> fileMediaService.uploadOwnerVisibleImage(file, UUID.randomUUID()))
-                .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", com.astral.express.pccms.common.exception.ErrorCode.ERR_FILE_001_INVALID_IMAGE);
+        assertThatThrownBy(() -> fileMediaService.uploadOwnerVisibleImage(file, UUID.randomUUID()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_FILE_001_INVALID_IMAGE);
     }
 
     @Test
     void uploadOwnerVisibleImage_shouldThrowException_whenContentTypeIsNull() {
         MockMultipartFile file = new MockMultipartFile("file", "pet.jpg", null, new byte[]{1,2});
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> fileMediaService.uploadOwnerVisibleImage(file, UUID.randomUUID()))
-                .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", com.astral.express.pccms.common.exception.ErrorCode.ERR_FILE_001_INVALID_IMAGE);
+        assertThatThrownBy(() -> fileMediaService.uploadOwnerVisibleImage(file, UUID.randomUUID()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_FILE_001_INVALID_IMAGE);
     }
 
     @Test
     void uploadOwnerVisibleImage_shouldThrowException_whenContentTypeIsInvalid() {
         MockMultipartFile file = new MockMultipartFile("file", "pet.txt", "text/plain", new byte[]{1,2});
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> fileMediaService.uploadOwnerVisibleImage(file, UUID.randomUUID()))
-                .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", com.astral.express.pccms.common.exception.ErrorCode.ERR_FILE_001_INVALID_IMAGE);
+        assertThatThrownBy(() -> fileMediaService.uploadOwnerVisibleImage(file, UUID.randomUUID()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_FILE_001_INVALID_IMAGE);
     }
 
     @Test
     void uploadOwnerVisibleMedia_shouldThrowException_whenFileIsNull() {
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> fileMediaService.uploadOwnerVisibleMedia(null, UUID.randomUUID()))
-                .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", com.astral.express.pccms.common.exception.ErrorCode.ERR_FILE_001_INVALID_IMAGE);
+        assertThatThrownBy(() -> fileMediaService.uploadOwnerVisibleMedia((MultipartFile) null, UUID.randomUUID()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_FILE_001_INVALID_IMAGE);
     }
 
     @Test
     void uploadOwnerVisibleMedia_shouldThrowException_whenFileIsEmpty() {
         MockMultipartFile file = new MockMultipartFile("file", "care.mp4", "video/mp4", new byte[0]);
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> fileMediaService.uploadOwnerVisibleMedia(file, UUID.randomUUID()))
-                .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", com.astral.express.pccms.common.exception.ErrorCode.ERR_FILE_001_INVALID_IMAGE);
+        assertThatThrownBy(() -> fileMediaService.uploadOwnerVisibleMedia(file, UUID.randomUUID()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_FILE_001_INVALID_IMAGE);
     }
 
     @Test
     void uploadOwnerVisibleMedia_shouldThrowException_whenFileTooLarge() {
         byte[] largeContent = new byte[20 * 1024 * 1024 + 1];
         MockMultipartFile file = new MockMultipartFile("file", "care.mp4", "video/mp4", largeContent);
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> fileMediaService.uploadOwnerVisibleMedia(file, UUID.randomUUID()))
-                .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", com.astral.express.pccms.common.exception.ErrorCode.ERR_FILE_001_INVALID_IMAGE);
+        assertThatThrownBy(() -> fileMediaService.uploadOwnerVisibleMedia(file, UUID.randomUUID()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_FILE_001_INVALID_IMAGE);
     }
 
     @Test
     void uploadOwnerVisibleMedia_shouldThrowException_whenContentTypeIsNull() {
         MockMultipartFile file = new MockMultipartFile("file", "care.mp4", null, new byte[]{1,2});
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> fileMediaService.uploadOwnerVisibleMedia(file, UUID.randomUUID()))
-                .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", com.astral.express.pccms.common.exception.ErrorCode.ERR_FILE_001_INVALID_IMAGE);
+        assertThatThrownBy(() -> fileMediaService.uploadOwnerVisibleMedia(file, UUID.randomUUID()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_FILE_001_INVALID_IMAGE);
     }
 
     @Test
     void uploadOwnerVisibleMedia_shouldThrowException_whenContentTypeIsInvalid() {
         MockMultipartFile file = new MockMultipartFile("file", "care.txt", "text/plain", new byte[]{1,2});
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> fileMediaService.uploadOwnerVisibleMedia(file, UUID.randomUUID()))
-                .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", com.astral.express.pccms.common.exception.ErrorCode.ERR_FILE_001_INVALID_IMAGE);
+        assertThatThrownBy(() -> fileMediaService.uploadOwnerVisibleMedia(file, UUID.randomUUID()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_FILE_001_INVALID_IMAGE);
     }
 
 }

@@ -28,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationServiceTest {
@@ -40,6 +41,9 @@ class NotificationServiceTest {
 
     @Mock
     private SecurityContextService securityContextService;
+
+    @Mock
+    private NotificationPublisher notificationPublisher;
 
     @InjectMocks
     private NotificationService notificationService;
@@ -73,6 +77,7 @@ class NotificationServiceTest {
         assertThat(response.recipientUserId()).isEqualTo(recipientId);
         assertThat(response.statusCode()).isEqualTo(NotificationStatus.UNREAD);
         assertThat(response.title()).isEqualTo("Title");
+        verify(notificationPublisher).publish(any(NotificationResponse.class));
     }
 
     @Test

@@ -28,7 +28,8 @@ import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.data.domain.PageImpl;
 
 @ExtendWith(MockitoExtension.class)
 class BoardingControllerTest {
@@ -72,7 +73,7 @@ class BoardingControllerTest {
 
     @Test
     void listMyBookings_success() throws Exception {
-        PageResponse<BoardingBookingResponse> page = PageResponse.of(new org.springframework.data.domain.PageImpl<>(List.of()));
+        PageResponse<BoardingBookingResponse> page = PageResponse.of(new PageImpl<>(List.of()));
         given(boardingService.listMyBookings(any(Pageable.class))).willReturn(page);
 
         mockMvc.perform(get("/v1/boarding/bookings/my"))
@@ -82,7 +83,7 @@ class BoardingControllerTest {
 
     @Test
     void listBookings_success() throws Exception {
-        PageResponse<BoardingBookingResponse> page = PageResponse.of(new org.springframework.data.domain.PageImpl<>(List.of()));
+        PageResponse<BoardingBookingResponse> page = PageResponse.of(new PageImpl<>(List.of()));
         given(boardingService.listBookings(any(), any(Pageable.class))).willReturn(page);
 
         mockMvc.perform(get("/v1/boarding/bookings"))

@@ -36,7 +36,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verify;
+import org.mockito.ArgumentMatchers;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -65,8 +67,9 @@ class AuthServiceTest {
     @Test
     void should_Register_when_DataIsValid() {
         // GIVEN
-        RegisterRequest request = new RegisterRequest("test@gmail.com", "password", "Test User");
+        RegisterRequest request = new RegisterRequest("Test User", "test@gmail.com", "0901234567", "Password123!");
         given(userRepository.existsByEmail(request.email())).willReturn(false);
+        given(userRepository.findByNormalizedPhone("0901234567")).willReturn(Optional.empty());
 
         Roles role = Roles.builder().id(UUID.randomUUID()).code("OWNER").build();
         given(roleRepository.findByCode("OWNER")).willReturn(Optional.of(role));
@@ -95,13 +98,26 @@ class AuthServiceTest {
     @Test
     void should_ThrowException_when_RegisterWithExistingEmail() {
         // GIVEN
-        RegisterRequest request = new RegisterRequest("test@gmail.com", "password", "Test User");
+        RegisterRequest request = new RegisterRequest("Test User", "test@gmail.com", "0901234567", "Password123!");
         given(userRepository.existsByEmail(request.email())).willReturn(true);
 
         // WHEN & THEN
         assertThatThrownBy(() -> authService.register(request))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_ACC_001_EMAIL_EXISTS);
+    }
+
+    @Test
+    void should_ThrowException_when_RegisterWithExistingPhone() {
+        RegisterRequest request = new RegisterRequest("Test User", "test@gmail.com", "0901234567", "Password123!");
+        Users existingUser = Users.builder().id(UUID.randomUUID()).phone("0901234567").build();
+
+        given(userRepository.existsByEmail(request.email())).willReturn(false);
+        given(userRepository.findByNormalizedPhone("0901234567")).willReturn(Optional.of(existingUser));
+
+        assertThatThrownBy(() -> authService.register(request))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_ACC_008_PHONE_EXISTS);
     }
 
     @Test
@@ -214,7 +230,7 @@ class AuthServiceTest {
         authService.logout(accessToken, refreshToken);
 
         // THEN
-        verify(tokenBlacklistService).blacklist(any(), org.mockito.ArgumentMatchers.anyLong());
+        verify(tokenBlacklistService).blacklist(any(), ArgumentMatchers.anyLong());
         verify(refreshTokenRepository).save(storedToken);
         assertThat(storedToken.getRevokedAt()).isNotNull();
     }
@@ -224,7 +240,7 @@ class AuthServiceTest {
         LoginRequest request = new LoginRequest("test@gmail.com", "password");
         BusinessException cause = new BusinessException(ErrorCode.ERR_ACC_002_USER_NOT_FOUND);
         given(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .willThrow(new org.springframework.security.authentication.InternalAuthenticationServiceException("error", cause));
+                .willThrow(new InternalAuthenticationServiceException("error", cause));
 
         assertThatThrownBy(() -> authService.login(request))
                 .isInstanceOf(BusinessException.class)
@@ -235,7 +251,7 @@ class AuthServiceTest {
     void should_ThrowException_when_InternalAuthenticationServiceException_withoutBusinessException() {
         LoginRequest request = new LoginRequest("test@gmail.com", "password");
         given(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .willThrow(new org.springframework.security.authentication.InternalAuthenticationServiceException("error"));
+                .willThrow(new InternalAuthenticationServiceException("error"));
 
         assertThatThrownBy(() -> authService.login(request))
                 .isInstanceOf(BusinessException.class)

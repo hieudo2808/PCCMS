@@ -25,7 +25,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 @ExtendWith(MockitoExtension.class)
 class PrescriptionControllerTest {
@@ -98,7 +99,7 @@ class PrescriptionControllerTest {
         UUID recordId = UUID.randomUUID();
         given(prescriptionService.listPrescriptions(recordId)).willReturn(List.of());
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/v1/medical-records/{id}/prescriptions", recordId))
+        mockMvc.perform(MockMvcRequestBuilders.get("/v1/medical-records/{id}/prescriptions", recordId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }

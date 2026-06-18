@@ -30,10 +30,10 @@ public class BoardingTrackingServiceImpl implements BoardingTrackingService {
     public List<BoardingStayResponse> listActiveStays(UUID ownerId) {
         return careLogRepository.findActiveStaysByOwner(ownerId).stream()
                 .map(row -> new BoardingStayResponse(
-                        (UUID) row[0],
-                        (String) row[1],
-                        row[2] != null ? (String) row[2] : "",
-                        row[3] != null ? (String) row[3] : null
+                        row.getPetId(),
+                        row.getPetName(),
+                        row.getSpeciesName() != null ? row.getSpeciesName() : "",
+                        row.getBreedName()
                 ))
                 .toList();
     }
@@ -66,7 +66,11 @@ public class BoardingTrackingServiceImpl implements BoardingTrackingService {
                             log.getStaff().getId(),
                             log.getStaff().getFullName(),
                             log.getCreatedAt(),
-                            Collections.emptyList()
+                            Collections.emptyList(),
+                            false,
+                            false,
+                            null,
+                            "View only"
                     );
                 })
                 .toList();

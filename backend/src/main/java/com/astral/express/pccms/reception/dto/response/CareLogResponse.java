@@ -14,5 +14,9 @@ public record CareLogResponse(
         String hygieneStatus,
         String healthNote,
         String staffNote,
-        Object createdAt
+        Object createdAt,
+        Boolean canEdit,
+        Boolean canDelete,
+        Object lockedAt,
+        String lockedReason
 ) {}

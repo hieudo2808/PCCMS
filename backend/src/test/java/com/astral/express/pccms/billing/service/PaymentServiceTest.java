@@ -22,6 +22,7 @@ import org.junit.jupiter.params.provider.CsvFileSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.OffsetDateTime;
@@ -49,6 +50,9 @@ class PaymentServiceTest {
 
     @Mock
     private SecurityContextService securityContextService;
+
+    @Spy
+    private PaymentTransitionPolicy paymentTransitionPolicy;
 
     @InjectMocks
     private PaymentService paymentService;
@@ -112,7 +116,7 @@ class PaymentServiceTest {
                 }
             }
         } else if ("updatePaymentStatus".equals(method)) {
-            given(paymentRepository.findById(paymentId))
+            given(paymentRepository.findByIdForUpdate(paymentId))
                     .willReturn(paymentExists ? Optional.of(mockPayment) : Optional.empty());
             
             if (paymentExists && targetStatus == PaymentStatus.SUCCEEDED && mockPayment.getStatusCode() != PaymentStatus.SUCCEEDED) {
@@ -220,6 +224,53 @@ class PaymentServiceTest {
     }
 
     @Test
+    void should_createOwnerPaymentRequest_AsPendingWithoutApplyingInvoice() {
+        UUID invoiceId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+
+        Users owner = new Users();
+        owner.setId(currentUserId);
+
+        Invoice invoice = new Invoice();
+        invoice.setId(invoiceId);
+        invoice.setOwner(owner);
+        invoice.setTotalAmountVnd(1000L);
+        invoice.setPaidAmountVnd(0L);
+        invoice.setStatusCode(InvoiceStatus.UNPAID);
+
+        given(invoiceRepository.findByIdForUpdate(invoiceId)).willReturn(Optional.of(invoice));
+        given(securityContextService.getCurrentUserId()).willReturn(currentUserId);
+        given(paymentRepository.save(any(Payment.class))).willAnswer(invocation -> {
+            Payment payment = invocation.getArgument(0);
+            payment.setId(UUID.randomUUID());
+            return payment;
+        });
+
+        OwnerPaymentRequest request = new OwnerPaymentRequest(
+                1000L,
+                PaymentMethod.BANK_TRANSFER,
+                "REF123",
+                "Owner transfer note",
+                UUID.randomUUID());
+
+        PaymentResponse response = paymentService.createOwnerPaymentRequest(invoiceId, request);
+
+        ArgumentCaptor<Payment> paymentCaptor = ArgumentCaptor.forClass(Payment.class);
+        verify(paymentRepository).save(paymentCaptor.capture());
+        Payment capturedPayment = paymentCaptor.getValue();
+
+        assertThat(response.statusCode()).isEqualTo(PaymentStatus.PENDING);
+        assertThat(response.paidAt()).isNull();
+        assertThat(response.receivedBy()).isNull();
+        assertThat(capturedPayment.getStatusCode()).isEqualTo(PaymentStatus.PENDING);
+        assertThat(capturedPayment.getPaidAt()).isNull();
+        assertThat(capturedPayment.getReceivedBy()).isNull();
+        assertThat(invoice.getPaidAmountVnd()).isZero();
+        assertThat(invoice.getStatusCode()).isEqualTo(InvoiceStatus.UNPAID);
+        verify(invoiceRepository, never()).save(any(Invoice.class));
+    }
+
+    @Test
     void should_recordPayment_WithNullPaidAt() {
         UUID invoiceId = UUID.randomUUID();
         UUID currentUserId = UUID.randomUUID();
@@ -304,7 +355,7 @@ class PaymentServiceTest {
         invoice.setId(UUID.randomUUID());
         payment.setInvoice(invoice);
         
-        given(paymentRepository.findById(paymentId)).willReturn(Optional.of(payment));
+        given(paymentRepository.findByIdForUpdate(paymentId)).willReturn(Optional.of(payment));
         given(paymentRepository.save(any())).willAnswer(i -> i.getArgument(0));
 
         PaymentResponse response = paymentService.updatePaymentStatus(paymentId, PaymentStatus.FAILED, "   ");
@@ -330,7 +381,7 @@ class PaymentServiceTest {
         Users receiver = new Users();
         receiver.setId(currentUserId);
         
-        given(paymentRepository.findById(paymentId)).willReturn(Optional.of(payment));
+        given(paymentRepository.findByIdForUpdate(paymentId)).willReturn(Optional.of(payment));
         given(securityContextService.getCurrentUserId()).willReturn(currentUserId);
         given(userRepository.findById(currentUserId)).willReturn(Optional.of(receiver));
 
@@ -357,7 +408,7 @@ class PaymentServiceTest {
         Users receiver = new Users();
         receiver.setId(currentUserId);
         
-        given(paymentRepository.findById(paymentId)).willReturn(Optional.of(payment));
+        given(paymentRepository.findByIdForUpdate(paymentId)).willReturn(Optional.of(payment));
         given(securityContextService.getCurrentUserId()).willReturn(currentUserId);
         given(userRepository.findById(currentUserId)).willReturn(Optional.of(receiver));
         given(paymentRepository.save(any())).willAnswer(i -> i.getArgument(0));
@@ -366,6 +417,50 @@ class PaymentServiceTest {
         
         assertThat(invoice.getPaidAmountVnd()).isEqualTo(400L);
         assertThat(invoice.getStatusCode()).isEqualTo(InvoiceStatus.PARTIALLY_PAID);
+    }
+
+    @Test
+    void should_NotApplyInvoiceAgain_WhenSucceededStatusIsRepeated() {
+        UUID paymentId = UUID.randomUUID();
+        Invoice invoice = new Invoice();
+        invoice.setTotalAmountVnd(1000L);
+        invoice.setPaidAmountVnd(400L);
+        invoice.setStatusCode(InvoiceStatus.PARTIALLY_PAID);
+
+        Payment payment = new Payment();
+        payment.setId(paymentId);
+        payment.setStatusCode(PaymentStatus.SUCCEEDED);
+        payment.setAmountVnd(400L);
+        payment.setInvoice(invoice);
+
+        given(paymentRepository.findByIdForUpdate(paymentId)).willReturn(Optional.of(payment));
+        given(paymentRepository.save(any())).willAnswer(invocation -> invocation.getArgument(0));
+
+        paymentService.updatePaymentStatus(paymentId, PaymentStatus.SUCCEEDED, null);
+
+        assertThat(invoice.getPaidAmountVnd()).isEqualTo(400L);
+        verify(invoiceRepository, never()).save(any());
+    }
+
+    @Test
+    void should_RejectReopeningTerminalPayment() {
+        UUID paymentId = UUID.randomUUID();
+        Payment payment = new Payment();
+        payment.setId(paymentId);
+        payment.setStatusCode(PaymentStatus.FAILED);
+        payment.setInvoice(new Invoice());
+
+        given(paymentRepository.findByIdForUpdate(paymentId)).willReturn(Optional.of(payment));
+
+        assertThatThrownBy(() -> paymentService.updatePaymentStatus(
+                paymentId,
+                PaymentStatus.SUCCEEDED,
+                null))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_VALIDATION_FAILED);
+
+        verify(paymentRepository, never()).save(any());
+        verify(invoiceRepository, never()).save(any());
     }
 
     @Test

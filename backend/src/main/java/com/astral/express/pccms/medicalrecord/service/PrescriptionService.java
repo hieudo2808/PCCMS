@@ -13,7 +13,6 @@ import com.astral.express.pccms.medicalrecord.entity.PrescriptionItem;
 import com.astral.express.pccms.medicalrecord.entity.RecordStatus;
 import com.astral.express.pccms.medicalrecord.repository.MedicalRecordRepository;
 import com.astral.express.pccms.medicalrecord.repository.PrescriptionRepository;
-import com.astral.express.pccms.medicalrecord.service.PrescriptionService;
 import com.astral.express.pccms.medicine.entity.Medicine;
 import com.astral.express.pccms.medicine.repository.MedicineRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,8 +21,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Service
 @RequiredArgsConstructor
@@ -34,8 +38,9 @@ public class PrescriptionService {
     private final PrescriptionRepository prescriptionRepository;
     private final MedicalRecordRepository medicalRecordRepository;
     private final MedicineRepository medicineRepository;
-    private final SecurityContextService SecurityContextService;
-@Transactional
+    private final SecurityContextService securityContextService;
+
+    @Transactional
     public PrescriptionResponse createPrescription(UUID medicalRecordId, CreatePrescriptionRequest request) {
         // Validate medical record
         MedicalRecord record = medicalRecordRepository.findById(medicalRecordId)
@@ -77,19 +82,20 @@ public class PrescriptionService {
         Prescription saved = prescriptionRepository.save(prescription);
         return toResponse(saved);
     }
-public List<PrescriptionResponse> listPrescriptions(UUID medicalRecordId) {
+    public List<PrescriptionResponse> listPrescriptions(UUID medicalRecordId) {
         if (!medicalRecordRepository.existsById(medicalRecordId)) {
             throw new BusinessException(ErrorCode.ERR_400_BAD_REQUEST);
         }
 
-        return prescriptionRepository.findByMedicalRecordIdOrderByIssuedAtDesc(medicalRecordId)
-                .stream()
-                .map(this::toResponse)
+        List<Prescription> prescriptions = prescriptionRepository.findByMedicalRecordIdOrderByIssuedAtDesc(medicalRecordId);
+        Map<UUID, Medicine> medicinesById = loadMedicinesById(prescriptions);
+        return prescriptions.stream()
+                .map(prescription -> toResponse(prescription, medicinesById))
                 .toList();
     }
 
     private UUID resolveVetId(CreatePrescriptionRequest request, MedicalRecord record) {
-        UUID currentUserId = SecurityContextService == null ? null : SecurityContextService.getCurrentUserId();
+        UUID currentUserId = securityContextService == null ? null : securityContextService.getCurrentUserId();
         if (currentUserId != null) {
             return currentUserId;
         }
@@ -103,6 +109,11 @@ public List<PrescriptionResponse> listPrescriptions(UUID medicalRecordId) {
     }
 
     private PrescriptionResponse toResponse(Prescription prescription) {
+        Map<UUID, Medicine> medicinesById = loadMedicinesById(List.of(prescription));
+        return toResponse(prescription, medicinesById);
+    }
+
+    private PrescriptionResponse toResponse(Prescription prescription, Map<UUID, Medicine> medicinesById) {
         return new PrescriptionResponse(
                 prescription.getId(),
                 prescription.getPrescriptionCode(),
@@ -111,13 +122,29 @@ public List<PrescriptionResponse> listPrescriptions(UUID medicalRecordId) {
                 prescription.getNote(),
                 prescription.getIssuedAt(),
                 prescription.getItems().stream()
-                        .map(this::toItemResponse)
+                        .map(item -> toItemResponse(item, medicinesById.get(item.getMedicineId())))
                         .toList()
         );
     }
 
-    private PrescriptionItemResponse toItemResponse(PrescriptionItem item) {
-        Medicine medicine = medicineRepository.findById(item.getMedicineId()).orElse(null);
+    private Map<UUID, Medicine> loadMedicinesById(List<Prescription> prescriptions) {
+        List<UUID> medicineIds = prescriptions.stream()
+                .flatMap(prescription -> prescription.getItems().stream())
+                .map(PrescriptionItem::getMedicineId)
+                .distinct()
+                .toList();
+        if (medicineIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Iterable<Medicine> medicines = medicineRepository.findAllById(medicineIds);
+        if (medicines == null) {
+            return Collections.emptyMap();
+        }
+        return StreamSupport.stream(medicines.spliterator(), false)
+                .collect(Collectors.toMap(Medicine::getId, Function.identity()));
+    }
+
+    private PrescriptionItemResponse toItemResponse(PrescriptionItem item, Medicine medicine) {
         return new PrescriptionItemResponse(
                 item.getId(),
                 item.getMedicineId(),

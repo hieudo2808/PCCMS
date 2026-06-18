@@ -18,7 +18,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @SpringBootTest
 @Testcontainers
@@ -42,7 +43,7 @@ class MedicineRepositoryIT {
     private MedicineRepository medicineRepository;
 
     @Autowired
-    private org.springframework.transaction.support.TransactionTemplate transactionTemplate;
+    private TransactionTemplate transactionTemplate;
 
     @Test
     void should_FindMedicine_And_UpdateStock() {

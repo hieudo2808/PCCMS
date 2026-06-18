@@ -4,11 +4,14 @@ import com.astral.express.pccms.common.exception.BusinessException;
 import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.filemedia.dto.UploadedFileResponse;
 import com.astral.express.pccms.filemedia.service.FileMediaService;
+import com.astral.express.pccms.filemedia.service.MediaUploadCommand;
 import com.astral.express.pccms.identity.security.SecurityContextService;
 import com.astral.express.pccms.reception.dto.request.CareLogRequest;
 import com.astral.express.pccms.reception.dto.response.BoardingBookingResponse;
 import com.astral.express.pccms.reception.dto.response.CareLogMediaResponse;
 import com.astral.express.pccms.reception.dto.response.CareLogResponse;
+import com.astral.express.pccms.reception.repository.BoardingCareLogCommandRepository;
+import com.astral.express.pccms.reception.repository.BoardingCareLogQueryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,14 +20,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,8 +38,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
-
+import org.mockito.quality.Strictness;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class BoardingCareLogServiceTest {
@@ -48,12 +49,20 @@ class BoardingCareLogServiceTest {
     private FileMediaService fileMediaService;
     @Mock
     private JdbcTemplate jdbcTemplate;
+    @Mock
+    private BoardingCareLogQueryRepository boardingCareLogQueryRepository;
+    @Mock
+    private BoardingCareLogCommandRepository boardingCareLogCommandRepository;
 
     private BoardingCareLogService boardingCareLogService;
 
     @BeforeEach
     void setUp() {
-        boardingCareLogService = new BoardingCareLogService(jdbcTemplate, securityContextService, fileMediaService);
+        boardingCareLogService = new BoardingCareLogService(
+                securityContextService,
+                fileMediaService,
+                boardingCareLogQueryRepository,
+                boardingCareLogCommandRepository);
     }
 
     @Test
@@ -61,7 +70,7 @@ class BoardingCareLogServiceTest {
         UUID careLogId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
         UUID fileId = UUID.randomUUID();
-        MockMultipartFile file = new MockMultipartFile("file", "care.png", "image/png", new byte[]{1, 2, 3});
+        MediaUploadCommand media = new MediaUploadCommand("care.png", "image/png", new byte[]{1, 2, 3});
         UploadedFileResponse uploaded = new UploadedFileResponse(
                 fileId,
                 "https://media.example.com/pccms/care-logs/2026/06/10/object.png",
@@ -70,17 +79,13 @@ class BoardingCareLogServiceTest {
                 3L
         );
         given(securityContextService.getCurrentUserId()).willReturn(userId);
-        given(fileMediaService.uploadOwnerVisibleMedia(file, userId)).willReturn(uploaded);
+        given(boardingCareLogCommandRepository.canEditCareLog(careLogId, userId)).willReturn(Optional.of(true));
+        given(fileMediaService.uploadOwnerVisibleMedia(media, userId)).willReturn(uploaded);
 
-        CareLogMediaResponse response = boardingCareLogService.uploadMedia(careLogId, file);
+        CareLogMediaResponse response = boardingCareLogService.uploadMedia(careLogId, media);
 
-        verify(fileMediaService).uploadOwnerVisibleMedia(file, userId);
-        verify(jdbcTemplate).update(
-                eq("INSERT INTO care_log_media(care_log_id, file_id, caption) VALUES (?, ?, ?)"),
-                eq(careLogId),
-                eq(fileId),
-                any()
-        );
+        verify(fileMediaService).uploadOwnerVisibleMedia(media, userId);
+        verify(boardingCareLogCommandRepository).insertCareLogMedia(eq(careLogId), eq(fileId), any());
         assertThat(response.id()).isEqualTo(fileId);
         assertThat(response.originalName()).isEqualTo("care.png");
         assertThat(response.storedKey()).isEqualTo(uploaded.url());
@@ -93,12 +98,10 @@ class BoardingCareLogServiceTest {
     @Test
     void listBookings_shouldReturnList() {
         UUID id = UUID.randomUUID();
-        Map<String, Object> row = Map.of(
-                "id", id,
-                "booking_code", "B001",
-                "status_code", "RESERVED"
-        );
-        given(jdbcTemplate.queryForList(anyString(), org.mockito.ArgumentMatchers.any(Object[].class))).willReturn(List.of(row));
+        BoardingBookingResponse row = new BoardingBookingResponse(
+                id, "B001", null, null, "RESERVED", null, null,
+                null, null, null, null, null, null);
+        given(boardingCareLogQueryRepository.listBookings(" Milu ", "")).willReturn(List.of(row));
 
         List<BoardingBookingResponse> result = boardingCareLogService.listBookings(" Milu ", "");
 
@@ -107,7 +110,7 @@ class BoardingCareLogServiceTest {
         assertThat(result.get(0).bookingCode()).isEqualTo("B001");
         
         // Null status and keyword
-        given(jdbcTemplate.queryForList(anyString(), org.mockito.ArgumentMatchers.any(Object[].class))).willReturn(List.of(row));
+        given(boardingCareLogQueryRepository.listBookings(null, null)).willReturn(List.of(row));
         List<BoardingBookingResponse> resultNull = boardingCareLogService.listBookings(null, null);
         assertThat(resultNull).hasSize(1);
     }
@@ -115,13 +118,14 @@ class BoardingCareLogServiceTest {
     @Test
     void listCareLogs_shouldReturnList() {
         UUID clId = UUID.randomUUID();
-        Map<String, Object> row = Map.of(
-                "id", clId,
-                "pet_name", "Milu"
-        );
-        given(jdbcTemplate.queryForList(anyString(), org.mockito.ArgumentMatchers.any(Object[].class))).willReturn(List.of(row));
+        UUID userId = UUID.randomUUID();
+        UUID sessionId = UUID.randomUUID();
+        UUID petId = UUID.randomUUID();
+        CareLogResponse row = new CareLogResponse(clId, sessionId, petId, "Milu", null, null, null, null, null, null, null, null, false, false, null, null);
+        given(securityContextService.getCurrentUserId()).willReturn(userId);
+        given(boardingCareLogQueryRepository.listCareLogs(userId, sessionId, petId)).willReturn(List.of(row));
 
-        List<CareLogResponse> result = boardingCareLogService.listCareLogs(UUID.randomUUID(), UUID.randomUUID());
+        List<CareLogResponse> result = boardingCareLogService.listCareLogs(sessionId, petId);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).id()).isEqualTo(clId);
@@ -145,22 +149,18 @@ class BoardingCareLogServiceTest {
 
         CareLogRequest req = new CareLogRequest(null, petId, LocalDate.now().toString(), "MORNING", "NORMAL", "CLEAN", "Fine", "");
 
-        given(jdbcTemplate.queryForMap(ArgumentMatchers.contains("SELECT bs.id"), eq(petId)))
-                .willReturn(Map.of("id", sessionId));
+        given(boardingCareLogCommandRepository.findLatestActiveSessionIdByPet(petId)).willReturn(Optional.of(sessionId));
         given(securityContextService.getCurrentUserId()).willReturn(staffId);
+        given(boardingCareLogCommandRepository.findExistingCareLogId(eq(sessionId), any(LocalDate.class), eq("MORNING")))
+                .willReturn(Optional.empty());
+        given(boardingCareLogCommandRepository.findActiveWorkScheduleId(eq(staffId), any(LocalDate.class)))
+                .willReturn(Optional.of(UUID.randomUUID()));
 
-        Map<String, Object> insertResult = Map.of("id", careLogId);
-        given(jdbcTemplate.queryForMap(ArgumentMatchers.contains("INSERT INTO care_logs"), eq(sessionId), eq(petId), eq(staffId), any(), eq("MORNING"), eq("NORMAL"), eq("CLEAN"), eq("Fine"), eq(""))).willReturn(insertResult);
+        given(boardingCareLogCommandRepository.createCareLog(eq(sessionId), eq(petId), eq(staffId), any(UUID.class), any(), eq("MORNING"), eq("NORMAL"), eq("CLEAN"), eq("Fine"), eq(""))).willReturn(careLogId);
 
-        Map<String, Object> selectResult = Map.of(
-                "id", careLogId,
-                "session_id", sessionId,
-                "pet_id", petId,
-                "pet_name", "Milu",
-                "staff_name", "Staff A",
-                "period_code", "MORNING"
-        );
-        given(jdbcTemplate.queryForMap(ArgumentMatchers.contains("WHERE cl.id = ?"), eq(careLogId))).willReturn(selectResult);
+        given(boardingCareLogQueryRepository.findCareLog(staffId, careLogId)).willReturn(Optional.of(new CareLogResponse(
+                careLogId, sessionId, petId, "Milu", "Staff A", null, "MORNING",
+                null, null, null, null, null, false, false, null, null)));
 
         CareLogResponse res = boardingCareLogService.saveCareLog(req);
         assertThat(res.id()).isEqualTo(careLogId);
@@ -168,8 +168,8 @@ class BoardingCareLogServiceTest {
 
     @Test
     void uploadMedia_shouldThrowException_whenEmpty() {
-        MockMultipartFile file = new MockMultipartFile("f", new byte[0]);
-        assertThatThrownBy(() -> boardingCareLogService.uploadMedia(UUID.randomUUID(), file))
+        MediaUploadCommand media = new MediaUploadCommand("empty.png", "image/png", new byte[0]);
+        assertThatThrownBy(() -> boardingCareLogService.uploadMedia(UUID.randomUUID(), media))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_REC_005_INVALID_CARE_LOG);
     }
@@ -185,16 +185,13 @@ class BoardingCareLogServiceTest {
         UUID careLogId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
         UUID fileId = UUID.randomUUID();
-        MultipartFile file = org.mockito.Mockito.mock(MultipartFile.class);
-        org.mockito.Mockito.when(file.getOriginalFilename()).thenReturn(null);
-        org.mockito.Mockito.when(file.isEmpty()).thenReturn(false);
-        org.mockito.Mockito.when(file.getSize()).thenReturn(100L);
-        org.mockito.Mockito.when(file.getContentType()).thenReturn("image/png");
+        MediaUploadCommand media = new MediaUploadCommand(null, "image/png", new byte[100]);
         UploadedFileResponse uploaded = new UploadedFileResponse(fileId, "url", "key", "image/png", 100L);
         given(securityContextService.getCurrentUserId()).willReturn(userId);
-        given(fileMediaService.uploadOwnerVisibleMedia(file, userId)).willReturn(uploaded);
+        given(boardingCareLogCommandRepository.canEditCareLog(careLogId, userId)).willReturn(Optional.of(true));
+        given(fileMediaService.uploadOwnerVisibleMedia(media, userId)).willReturn(uploaded);
 
-        CareLogMediaResponse response = boardingCareLogService.uploadMedia(careLogId, file);
+        CareLogMediaResponse response = boardingCareLogService.uploadMedia(careLogId, media);
         assertThat(response.originalName()).isEqualTo("care-log-image");
     }
 
@@ -206,15 +203,17 @@ class BoardingCareLogServiceTest {
         
         CareLogRequest req = new CareLogRequest(sessionId, null, "", "MORNING", "NORMAL", "CLEAN", "Fine", "");
         
-        given(jdbcTemplate.queryForMap(ArgumentMatchers.contains("SELECT b.pet_id"), eq(sessionId)))
-                .willReturn(Map.of("pet_id", petId));
-        given(securityContextService.getCurrentUserId()).willReturn(UUID.randomUUID());
+        given(boardingCareLogCommandRepository.findPetIdBySession(sessionId)).willReturn(petId);
+        UUID staffId = UUID.randomUUID();
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
+        given(boardingCareLogCommandRepository.findExistingCareLogId(eq(sessionId), any(LocalDate.class), eq("MORNING")))
+                .willReturn(Optional.empty());
+        given(boardingCareLogCommandRepository.findActiveWorkScheduleId(eq(staffId), any(LocalDate.class)))
+                .willReturn(Optional.of(UUID.randomUUID()));
         
-        Map<String, Object> insertResult = Map.of("id", careLogId);
-        given(jdbcTemplate.queryForMap(ArgumentMatchers.contains("INSERT INTO care_logs"), eq(sessionId), eq(petId), any(), any(), eq("MORNING"), eq("NORMAL"), eq("CLEAN"), eq("Fine"), eq(""))).willReturn(insertResult);
+        given(boardingCareLogCommandRepository.createCareLog(eq(sessionId), eq(petId), any(), any(), any(), eq("MORNING"), eq("NORMAL"), eq("CLEAN"), eq("Fine"), eq(""))).willReturn(careLogId);
         
-        given(jdbcTemplate.queryForMap(ArgumentMatchers.contains("WHERE cl.id = ?"), eq(careLogId)))
-                .willThrow(new EmptyResultDataAccessException(1));
+        given(boardingCareLogQueryRepository.findCareLog(staffId, careLogId)).willReturn(Optional.empty());
                 
         assertThatThrownBy(() -> boardingCareLogService.saveCareLog(req))
                 .isInstanceOf(BusinessException.class);

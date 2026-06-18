@@ -19,6 +19,10 @@ public record CareLogResponse(
         UUID staffId,
         String staffName,
         OffsetDateTime createdAt,
-        List<CareLogMediaResponse> media
+        List<CareLogMediaResponse> media,
+        Boolean canEdit,
+        Boolean canDelete,
+        OffsetDateTime lockedAt,
+        String lockedReason
 ) {
 }

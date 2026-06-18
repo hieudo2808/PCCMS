@@ -12,6 +12,7 @@
     },
     "dependencies": {
         "@hookform/resolvers": "^5.4.0",
+        "@stomp/stompjs": "^7.3.0",
         "@tanstack/react-query": "^5.100.14",
         "axios": "^1.15.1",
         "date-fns": "^4.4.0",

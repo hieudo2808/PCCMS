@@ -33,7 +33,10 @@ describe("authApi", () => {
 
     it("register successfully", async () => {
         server.use(
-            http.post("*/auth/register", () => {
+            http.post("*/auth/register", async ({ request }) => {
+                const body = await request.json() as Record<string, unknown>;
+                expect(body.phone).toBe("0901234567");
+                expect(body.confirmPassword).toBeUndefined();
                 return HttpResponse.json({
                     success: true,
                     code: 201,
@@ -48,9 +51,11 @@ describe("authApi", () => {
         );
 
         const payload: RegisterRequest = {
-            email: "new@test.com",
-            password: "password",
             fullName: "Test",
+            email: "new@test.com",
+            phone: "0901234567",
+            password: "password",
+            confirmPassword: "password",
         };
         const res = await authApi.register(payload);
         expect(res.token).toBe("test-token-reg");

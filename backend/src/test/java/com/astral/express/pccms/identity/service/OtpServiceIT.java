@@ -111,6 +111,7 @@ class OtpServiceIT extends AbstractIntegrationTest {
         Users otherUser = Users.builder()
                 .email("other@pccms.vn")
                 .passwordHash("hash")
+                .fullName("Other User")
                 .phone("0123456789")
                 .role(testUser.getRole())
                 .statusCode(UserStatus.ACTIVE)

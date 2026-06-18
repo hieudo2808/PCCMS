@@ -7,7 +7,8 @@ import org.junit.jupiter.params.provider.CsvFileSource;
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.junit.jupiter.api.Test;
 
 class ReceptionValidationTest {
 
@@ -100,7 +101,7 @@ class ReceptionValidationTest {
         }
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void validateQuickAppointment_nulls() {
         assertThatThrownBy(() -> ReceptionValidation.validateQuickAppointment(null, "A", "B", "C"))
                 .isInstanceOf(BusinessException.class);
@@ -120,7 +121,7 @@ class ReceptionValidationTest {
                 .isInstanceOf(BusinessException.class);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void validateCareLog_nulls() {
         assertThatThrownBy(() -> ReceptionValidation.validateCareLog(null, "MORNING", "A", "B"))
                 .isInstanceOf(BusinessException.class);
@@ -136,13 +137,13 @@ class ReceptionValidationTest {
                 .isInstanceOf(BusinessException.class);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void validateCareLogMedia_nulls() {
         assertThatThrownBy(() -> ReceptionValidation.validateCareLogMedia(100, null))
                 .isInstanceOf(BusinessException.class);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void validateGroomingTransition_nulls() {
         assertThatThrownBy(() -> ReceptionValidation.validateGroomingTransition("PENDING", null))
                 .isInstanceOf(BusinessException.class);

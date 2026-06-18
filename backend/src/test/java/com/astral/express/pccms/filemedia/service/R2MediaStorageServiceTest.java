@@ -13,10 +13,14 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.given;
+import com.astral.express.pccms.common.exception.BusinessException;
+import java.io.IOException;
+import org.mockito.Mockito;
 
 class R2MediaStorageServiceTest {
 
@@ -36,7 +40,7 @@ class R2MediaStorageServiceTest {
         );
         MockMultipartFile file = new MockMultipartFile("file", "pet.png", "image/png", new byte[]{1, 2, 3});
 
-        CloudMediaStorageService.StoredMedia storedMedia = storageService.uploadImage(file, "pccms/care-logs");
+        CloudMediaStorageService.StoredMedia storedMedia = storageService.store(command(file, "pccms/care-logs"));
 
         ArgumentCaptor<PutObjectRequest> requestCaptor = ArgumentCaptor.forClass(PutObjectRequest.class);
         verify(s3Client).putObject(requestCaptor.capture(), any(RequestBody.class));
@@ -60,21 +64,21 @@ class R2MediaStorageServiceTest {
                 "account-id", "access-key", "secret-key", "pccms-media", "https://media.example.com/", null, s3Client, null
         );
         MockMultipartFile file = new MockMultipartFile("file", "pet.png", null, new byte[]{1});
-        CloudMediaStorageService.StoredMedia storedMedia = storageService.uploadImage(file, null);
+        CloudMediaStorageService.StoredMedia storedMedia = storageService.store(command(file, null));
         assertThat(storedMedia.mimeType()).isEqualTo("image/jpeg");
     }
 
     @Test
     void uploadImage_shouldThrowBusinessException_whenS3ClientThrowsException() {
         S3Client s3Client = mock(S3Client.class);
-        org.mockito.Mockito.doThrow(new RuntimeException("S3 Error")).when(s3Client).putObject(any(PutObjectRequest.class), any(RequestBody.class));
+        Mockito.doThrow(new RuntimeException("S3 Error")).when(s3Client).putObject(any(PutObjectRequest.class), any(RequestBody.class));
         R2MediaStorageService storageService = new R2MediaStorageService(
                 "account-id", "access-key", "secret-key", "pccms-media", "https://media.example.com/", null, s3Client, null
         );
         MockMultipartFile file = new MockMultipartFile("file", "pet.png", "image/png", new byte[]{1});
         
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> storageService.uploadImage(file, ""))
-                .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class);
+        assertThatThrownBy(() -> storageService.store(command(file, "")))
+                .isInstanceOf(BusinessException.class);
     }
 
     @Test
@@ -87,7 +91,7 @@ class R2MediaStorageServiceTest {
 
     @Test
     void constructor_shouldThrowException_whenRequiredConfigMissing() {
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> new R2MediaStorageService(
+        assertThatThrownBy(() -> new R2MediaStorageService(
                 "account-id", "access-key", "secret-key", "", "https://media.example.com/", null, null, null
         )).isInstanceOf(IllegalStateException.class);
     }
@@ -99,7 +103,7 @@ class R2MediaStorageServiceTest {
                 "account-id", "access-key", "secret-key", "pccms-media", "https://media.example.com/", null, s3Client, null
         );
         MockMultipartFile file = new MockMultipartFile("file", "pet.png", "image/png", new byte[]{1});
-        CloudMediaStorageService.StoredMedia media = storageService.uploadImage(file, "//pccms/care-logs//");
+        CloudMediaStorageService.StoredMedia media = storageService.store(command(file, "//pccms/care-logs//"));
         assertThat(media.publicId()).startsWith("pccms/care-logs/");
     }
 
@@ -110,7 +114,7 @@ class R2MediaStorageServiceTest {
                 "account-id", "access-key", "secret-key", "pccms-media", "https://media.example.com/", null, s3Client, null
         );
         MockMultipartFile file = new MockMultipartFile("file", "pet.JPEG", "image/jpeg", new byte[]{1});
-        CloudMediaStorageService.StoredMedia media = storageService.uploadImage(file, "");
+        CloudMediaStorageService.StoredMedia media = storageService.store(command(file, ""));
         assertThat(media.publicId()).endsWith(".jpeg");
     }
 
@@ -121,7 +125,7 @@ class R2MediaStorageServiceTest {
                 "account-id", "access-key", "secret-key", "pccms-media", "https://media.example.com/", null, s3Client, null
         );
         MockMultipartFile file = new MockMultipartFile("file", "pet", "image/webp", new byte[]{1});
-        CloudMediaStorageService.StoredMedia media = storageService.uploadImage(file, "");
+        CloudMediaStorageService.StoredMedia media = storageService.store(command(file, ""));
         assertThat(media.publicId()).endsWith(".webp");
     }
 
@@ -132,7 +136,7 @@ class R2MediaStorageServiceTest {
                 "account-id", "access-key", "secret-key", "pccms-media", "https://media.example.com/", null, s3Client, null
         );
         MockMultipartFile file = new MockMultipartFile("file", "pet", "application/pdf", new byte[]{1});
-        CloudMediaStorageService.StoredMedia media = storageService.uploadImage(file, "");
+        CloudMediaStorageService.StoredMedia media = storageService.store(command(file, ""));
         assertThat(media.publicId()).endsWith(".bin");
     }
 
@@ -142,14 +146,9 @@ class R2MediaStorageServiceTest {
         R2MediaStorageService storageService = new R2MediaStorageService(
                 "account-id", "access-key", "secret-key", "pccms-media", "https://media.example.com/", null, s3Client, null
         );
-        org.springframework.web.multipart.MultipartFile mockFile = mock(org.springframework.web.multipart.MultipartFile.class);
-        try {
-            given(mockFile.getBytes()).willReturn(new byte[]{1});
-        } catch(Exception e) {}
-        given(mockFile.getContentType()).willReturn("image/jpeg");
-        given(mockFile.getOriginalFilename()).willReturn(null);
+        StoreMediaCommand command = new StoreMediaCommand("", null, "image/jpeg", new byte[]{1});
 
-        CloudMediaStorageService.StoredMedia media = storageService.uploadImage(mockFile, "");
+        CloudMediaStorageService.StoredMedia media = storageService.store(command);
         assertThat(media.publicId()).endsWith(".jpg");
     }
 
@@ -161,7 +160,7 @@ class R2MediaStorageServiceTest {
                 "account-id", "access-key", "secret-key", "pccms-media", "https://media.example.com/", null, s3Client, null
         );
         MockMultipartFile file = new MockMultipartFile("file", "pet.png", "image/png", new byte[]{1});
-        CloudMediaStorageService.StoredMedia media = storageService.uploadImage(file, "pccms");
+        CloudMediaStorageService.StoredMedia media = storageService.store(command(file, "pccms"));
         // Normalized is "", prefix is "pccms"
         assertThat(media.publicId()).startsWith("pccms/");
     }
@@ -173,7 +172,7 @@ class R2MediaStorageServiceTest {
                 "account-id", "access-key", "secret-key", "pccms-media", "https://media.example.com/", null, s3Client, null
         );
         MockMultipartFile file = new MockMultipartFile("file", "pet.png", "image/png", new byte[]{1});
-        CloudMediaStorageService.StoredMedia media = storageService.uploadImage(file, "some-folder");
+        CloudMediaStorageService.StoredMedia media = storageService.store(command(file, "some-folder"));
         assertThat(media.publicId()).startsWith("pccms/some-folder/");
     }
 
@@ -184,7 +183,7 @@ class R2MediaStorageServiceTest {
                 "account-id", "access-key", "secret-key", "pccms-media", "https://media.example.com/", null, s3Client, null
         );
         MockMultipartFile file = new MockMultipartFile("file", "pet.", "image/png", new byte[]{1});
-        CloudMediaStorageService.StoredMedia media = storageService.uploadImage(file, "");
+        CloudMediaStorageService.StoredMedia media = storageService.store(command(file, ""));
         assertThat(media.publicId()).endsWith(".png");
     }
 
@@ -195,7 +194,7 @@ class R2MediaStorageServiceTest {
                 "account-id", "access-key", "secret-key", "pccms-media", "https://media.example.com/", null, s3Client, null
         );
         MockMultipartFile file = new MockMultipartFile("file", "pet.thisisaverylongextension", "image/jpeg", new byte[]{1});
-        CloudMediaStorageService.StoredMedia media = storageService.uploadImage(file, "");
+        CloudMediaStorageService.StoredMedia media = storageService.store(command(file, ""));
         assertThat(media.publicId()).endsWith(".jpg");
     }
 
@@ -206,11 +205,19 @@ class R2MediaStorageServiceTest {
                 "account-id", "access-key", "secret-key", "pccms-media", "https://media.example.com/", "public,max-age=123", s3Client, null
         );
         MockMultipartFile file = new MockMultipartFile("file", "pet.png", "image/png", new byte[]{1});
-        storageService.uploadImage(file, "");
+        storageService.store(command(file, ""));
         
         ArgumentCaptor<PutObjectRequest> requestCaptor = ArgumentCaptor.forClass(PutObjectRequest.class);
         verify(s3Client).putObject(requestCaptor.capture(), any(RequestBody.class));
         assertThat(requestCaptor.getValue().cacheControl()).isEqualTo("public,max-age=123");
+    }
+
+    private static StoreMediaCommand command(MockMultipartFile file, String folder) {
+        try {
+            return new StoreMediaCommand(folder, file.getOriginalFilename(), file.getContentType(), file.getBytes());
+        } catch (IOException exception) {
+            throw new AssertionError(exception);
+        }
     }
 
 }

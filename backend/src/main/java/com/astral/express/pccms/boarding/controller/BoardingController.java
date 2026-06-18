@@ -12,6 +12,9 @@ import com.astral.express.pccms.boarding.entity.CarePeriod;
 import com.astral.express.pccms.boarding.service.BoardingService;
 import com.astral.express.pccms.common.dto.ApiResponse;
 import com.astral.express.pccms.common.dto.PageResponse;
+import com.astral.express.pccms.common.exception.BusinessException;
+import com.astral.express.pccms.common.exception.ErrorCode;
+import com.astral.express.pccms.filemedia.service.MediaUploadCommand;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -29,8 +32,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -124,12 +129,27 @@ public class BoardingController {
                 healthNote,
                 staffNote,
                 caption);
-        return ApiResponse.created(boardingService.createCareLog(sessionId, request, images));
+        return ApiResponse.created(boardingService.createCareLog(sessionId, request, toMediaCommands(images)));
     }
 
     @PreAuthorize("hasRole('OWNER') or hasRole('STAFF') or hasRole('ADMIN')")
     @GetMapping("/bookings/{bookingId}/care-logs")
     public ApiResponse<List<CareLogResponse>> listCareLogs(@PathVariable UUID bookingId) {
         return ApiResponse.success(boardingService.listCareLogs(bookingId));
+    }
+
+    private List<MediaUploadCommand> toMediaCommands(List<MultipartFile> images) {
+        if (images == null) {
+            return Collections.emptyList();
+        }
+        return images.stream().map(this::toMediaCommand).toList();
+    }
+
+    private MediaUploadCommand toMediaCommand(MultipartFile file) {
+        try {
+            return new MediaUploadCommand(file.getOriginalFilename(), file.getContentType(), file.getBytes());
+        } catch (IOException exception) {
+            throw new BusinessException(ErrorCode.ERR_FILE_001_INVALID_IMAGE);
+        }
     }
 }

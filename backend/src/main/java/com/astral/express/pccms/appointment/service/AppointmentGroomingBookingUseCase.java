@@ -8,11 +8,14 @@ import com.astral.express.pccms.appointment.entity.AppointmentStatus;
 import com.astral.express.pccms.appointment.entity.GroomingStatus;
 import com.astral.express.pccms.appointment.entity.GroomingTicket;
 import com.astral.express.pccms.appointment.entity.ServiceCatalog;
+import com.astral.express.pccms.appointment.entity.ServiceOrder;
+import com.astral.express.pccms.appointment.entity.ServiceOrderStatus;
 import com.astral.express.pccms.appointment.repository.GroomingTicketRepository;
 import com.astral.express.pccms.appointment.repository.ServiceCatalogRepository;
 import com.astral.express.pccms.common.exception.BusinessException;
 import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.grooming.service.GroomingService;
+import com.astral.express.pccms.grooming.dto.request.GroomingBookingCreateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +27,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class GroomingBookingUseCase {
+public class AppointmentGroomingBookingUseCase {
 
     private final GroomingService groomingService;
     private final GroomingTicketRepository groomingTicketRepository;
@@ -33,7 +36,7 @@ public class GroomingBookingUseCase {
 
     @Transactional
     public AppointmentResponse createGroomingAppointment(CreateGroomingAppointmentRequest request, UUID ownerId) {
-        var createRequest = new com.astral.express.pccms.grooming.dto.request.GroomingBookingCreateRequest(
+        var createRequest = new GroomingBookingCreateRequest(
                 request.petId(),
                 serviceCatalogRepository.findByServiceCodeAndIsActiveTrue(request.serviceCode())
                         .map(ServiceCatalog::getId)
@@ -78,14 +81,14 @@ public class GroomingBookingUseCase {
         if (newStatus == GroomingStatus.COMPLETED) {
             ticket.setCompletedAt(now);
             ticket.getAppointment().setStatusCode(AppointmentStatus.COMPLETED);
-            com.astral.express.pccms.appointment.entity.ServiceOrder order = ticket.getAppointment().getServiceOrder();
-            order.setStatusCode(com.astral.express.pccms.appointment.entity.ServiceOrderStatus.COMPLETED);
+            ServiceOrder order = ticket.getAppointment().getServiceOrder();
+            order.setStatusCode(ServiceOrderStatus.COMPLETED);
             order.setCompletedAt(now);
         }
         if (newStatus == GroomingStatus.CANCELLED) {
             ticket.getAppointment().setStatusCode(AppointmentStatus.CANCELLED);
-            com.astral.express.pccms.appointment.entity.ServiceOrder order = ticket.getAppointment().getServiceOrder();
-            order.setStatusCode(com.astral.express.pccms.appointment.entity.ServiceOrderStatus.CANCELLED);
+            ServiceOrder order = ticket.getAppointment().getServiceOrder();
+            order.setStatusCode(ServiceOrderStatus.CANCELLED);
             order.setCancelledAt(now);
         }
 

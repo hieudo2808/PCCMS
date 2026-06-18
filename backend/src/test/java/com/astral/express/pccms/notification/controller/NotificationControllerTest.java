@@ -23,7 +23,8 @@ import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.data.domain.PageImpl;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationControllerTest {
@@ -46,7 +47,7 @@ class NotificationControllerTest {
 
     @Test
     void listMyNotifications_success() throws Exception {
-        PageResponse<NotificationResponse> page = PageResponse.of(new org.springframework.data.domain.PageImpl<>(List.of()));
+        PageResponse<NotificationResponse> page = PageResponse.of(new PageImpl<>(List.of()));
         given(notificationService.listMyNotifications(any(Pageable.class))).willReturn(page);
 
         mockMvc.perform(get("/v1/notifications/my"))

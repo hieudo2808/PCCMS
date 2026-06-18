@@ -2,13 +2,13 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import { Button, Input } from "~/components/atoms";
-import { registerSchema, type RegisterFormData } from "../schema/authSchema";
+import { ROUTES } from "~/constants/routes";
+import { parseApiError } from "~/shared/utils/errorHandlers";
 import { authApi } from "../api/authApi";
 import { useAuth } from "../context/AuthContext";
-import toast from "react-hot-toast";
-import { parseApiError } from "~/shared/utils/errorHandlers";
-import { ROUTES } from "~/constants/routes";
+import { registerSchema, type RegisterFormData } from "../schema/authSchema";
 
 export function RegisterPage() {
     const navigate = useNavigate();
@@ -26,7 +26,7 @@ export function RegisterPage() {
         mutationFn: authApi.register,
         onSuccess: (data) => {
             login(data.token, data.user);
-            toast.success("Đăng ký tài khoản thành công!");
+            toast.success("Đăng ký tài khoản thành công");
 
             const role = data.user.roleCode.toLowerCase();
             const targetPath = ROUTES[role.toUpperCase() as keyof typeof ROUTES] || "/";
@@ -52,7 +52,7 @@ export function RegisterPage() {
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-slate-900">Tạo tài khoản chủ nuôi</h1>
                 <p className="mt-2 text-sm text-slate-500">
-                    Bắt đầu quản lý hồ sơ thú cưng và đặt dịch vụ trực tuyến
+                    Quản lý hồ sơ thú cưng và đặt dịch vụ trực tuyến
                 </p>
             </div>
 
@@ -64,22 +64,32 @@ export function RegisterPage() {
                         placeholder="Nguyễn Văn A"
                         {...register("fullName")}
                     />
-                    {errors.fullName && (
-                        <p className="mt-1 text-sm text-red-500">{errors.fullName.message}</p>
-                    )}
+                    {errors.fullName && <p className="mt-1 text-sm text-red-500">{errors.fullName.message}</p>}
                 </div>
                 <div>
                     <Input
-                        id="email"
-                        label="Email"
-                        placeholder="owner@email.com"
-                        {...register("email")}
+                        id="phone"
+                        label="Số điện thoại"
+                        placeholder="0901234567"
+                        inputMode="tel"
+                        autoComplete="tel"
+                        {...register("phone")}
                     />
-                    {errors.email && (
-                        <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>
-                    )}
+                    {errors.phone && <p className="mt-1 text-sm text-red-500">{errors.phone.message}</p>}
                 </div>
             </div>
+
+            <div>
+                <Input
+                    id="email"
+                    label="Email"
+                    placeholder="owner@email.com"
+                    autoComplete="email"
+                    {...register("email")}
+                />
+                {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>}
+            </div>
+
             <div className="grid gap-4 md:grid-cols-2">
                 <div>
                     <Input
@@ -87,11 +97,10 @@ export function RegisterPage() {
                         label="Mật khẩu"
                         type="password"
                         placeholder="••••••••"
+                        autoComplete="new-password"
                         {...register("password")}
                     />
-                    {errors.password && (
-                        <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>
-                    )}
+                    {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>}
                 </div>
                 <div>
                     <Input
@@ -99,22 +108,16 @@ export function RegisterPage() {
                         label="Xác nhận mật khẩu"
                         type="password"
                         placeholder="••••••••"
+                        autoComplete="new-password"
                         {...register("confirmPassword")}
                     />
                     {errors.confirmPassword && (
-                        <p className="mt-1 text-sm text-red-500">
-                            {errors.confirmPassword.message}
-                        </p>
+                        <p className="mt-1 text-sm text-red-500">{errors.confirmPassword.message}</p>
                     )}
                 </div>
             </div>
 
-            <Button
-                type="submit"
-                className="w-full py-3"
-                variant="primary"
-                disabled={mutation.isPending}
-            >
+            <Button type="submit" className="w-full py-3" variant="primary" disabled={mutation.isPending}>
                 {mutation.isPending ? "Đang xử lý..." : "Tạo tài khoản"}
             </Button>
 

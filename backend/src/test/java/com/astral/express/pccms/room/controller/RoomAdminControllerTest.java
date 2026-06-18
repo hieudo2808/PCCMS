@@ -29,7 +29,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.data.domain.PageImpl;
 
 @ExtendWith(MockitoExtension.class)
 class RoomAdminControllerTest {
@@ -89,7 +90,7 @@ class RoomAdminControllerTest {
 
     @Test
     void listRooms_success() throws Exception {
-        PageResponse<RoomResponse> page = PageResponse.of(new org.springframework.data.domain.PageImpl<>(List.of()));
+        PageResponse<RoomResponse> page = PageResponse.of(new PageImpl<>(List.of()));
         given(roomAdminService.listRooms(any(Pageable.class))).willReturn(page);
 
         mockMvc.perform(get("/v1/rooms"))

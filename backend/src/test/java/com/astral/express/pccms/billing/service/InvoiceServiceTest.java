@@ -30,7 +30,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.given;
+import com.astral.express.pccms.appointment.entity.ServiceOrder;
+import com.astral.express.pccms.medicine.entity.Medicine;
+import com.astral.express.pccms.pet.entity.Pets;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -232,7 +235,7 @@ class InvoiceServiceTest {
         owner.setId(UUID.randomUUID());
         invoice.setOwner(owner);
         
-        com.astral.express.pccms.pet.entity.Pets pet = new com.astral.express.pccms.pet.entity.Pets();
+        Pets pet = new Pets();
         pet.setId(UUID.randomUUID());
         invoice.setPet(pet);
         
@@ -240,15 +243,15 @@ class InvoiceServiceTest {
         line.setId(UUID.randomUUID());
         line.setInvoice(invoice);
         
-        com.astral.express.pccms.appointment.entity.ServiceOrder serviceOrder = new com.astral.express.pccms.appointment.entity.ServiceOrder();
+        ServiceOrder serviceOrder = new ServiceOrder();
         serviceOrder.setId(UUID.randomUUID());
         line.setServiceOrder(serviceOrder);
         
-        com.astral.express.pccms.medicine.entity.Medicine medicine = new com.astral.express.pccms.medicine.entity.Medicine();
+        Medicine medicine = new Medicine();
         medicine.setId(UUID.randomUUID());
         line.setMedicine(medicine);
         
-        line.setQuantity(new java.math.BigDecimal("2.5"));
+        line.setQuantity(new BigDecimal("2.5"));
         
         given(invoiceRepository.findById(invoiceId)).willReturn(Optional.of(invoice));
         given(securityContextService.hasAnyRole("ADMIN", "STAFF")).willReturn(true);

@@ -1,6 +1,7 @@
 package com.astral.express.pccms.identity.service;
 
 import com.astral.express.pccms.user.entity.Users;
+import com.astral.express.pccms.user.entity.UserStatus;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.FieldDefaults;
@@ -27,7 +28,7 @@ public class CustomUserDetails implements UserDetails {
         this.id = user.getId();
         this.email = user.getEmail();
         this.password = user.getPasswordHash();
-        this.active = user.getStatusCode() == com.astral.express.pccms.user.entity.UserStatus.ACTIVE;
+        this.active = user.getStatusCode() == UserStatus.ACTIVE;
         Set<GrantedAuthority> grantedAuthorities = user.getRole().getPermissions()
                 .stream()
                 .map(p -> new SimpleGrantedAuthority(p.getCode()))

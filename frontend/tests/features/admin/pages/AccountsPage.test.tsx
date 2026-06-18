@@ -1,7 +1,7 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AccountsPage } from "~/features/admin/pages/AccountsPage";
 import * as accountService from "~/features/admin/account-management/accountService";
 import type { Account } from "~/features/admin/account-management/types";
@@ -13,7 +13,16 @@ vi.mock("~/features/admin/pages/AccountModal", async () => {
             if (!isOpen) return null;
             return React.createElement("div", { role: "dialog" },
                 React.createElement("span", null, mode === "edit" ? "Sửa tài khoản" : "Thêm tài khoản mới"),
-                React.createElement("button", { "data-testid": "modal-submit", onClick: () => onSubmit({ fullName: "New User", email: "new@pccms.com", phone: "0111222333", roleCode: "STAFF", statusCode: "DISABLED" }) }, "Lưu"),
+                React.createElement("button", {
+                    "data-testid": "modal-submit",
+                    onClick: () => onSubmit({
+                        fullName: "New User",
+                        email: "new@pccms.com",
+                        phone: "0111222333",
+                        roleCode: "STAFF",
+                        statusCode: "DISABLED",
+                    }),
+                }, "Lưu"),
                 React.createElement("button", { onClick: onClose }, "Hủy"),
             );
         },
@@ -60,14 +69,14 @@ describe("AccountsPage", () => {
             defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
         });
         vi.mocked(accountService.searchAccounts).mockResolvedValue(mockAccounts);
-        vi.mocked(accountService.updateAccount).mockResolvedValue(mockAccounts[0]);
+        vi.mocked(accountService.updateAccount).mockResolvedValue(mockAccounts[1]);
         vi.mocked(accountService.resetAccountPassword).mockResolvedValue({
-            account: mockAccounts[0],
+            account: mockAccounts[1],
             temporaryPassword: "Tmp12345!",
             emailSent: true,
         });
         vi.mocked(accountService.createAccount).mockResolvedValue({
-            account: mockAccounts[0],
+            account: mockAccounts[1],
             temporaryPassword: "Tmp12345!",
             emailSent: true,
         });
@@ -81,7 +90,7 @@ describe("AccountsPage", () => {
         );
     };
 
-    it("renders users and action buttons", async () => {
+    it("renders users and disables admin row actions", async () => {
         renderComponent();
 
         await waitFor(() => {
@@ -90,11 +99,10 @@ describe("AccountsPage", () => {
 
         expect(screen.getByRole("button", { name: /Thêm tài khoản/i })).toBeInTheDocument();
         expect(screen.getByPlaceholderText(/Tìm kiếm tài khoản/i)).toBeInTheDocument();
-
-        await waitFor(() => {
-            expect(screen.getByText("Admin User")).toBeInTheDocument();
-            expect(screen.getByText("Customer User")).toBeInTheDocument();
-        });
+        expect(screen.getByText("Admin User")).toBeInTheDocument();
+        expect(screen.getByText("Customer User")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /Admin User/ })).toBeDisabled();
+        expect(screen.getByRole("button", { name: /Customer User/ })).toBeEnabled();
     });
 
     it("filters by search text", async () => {
@@ -110,21 +118,17 @@ describe("AccountsPage", () => {
         }, { timeout: 1000 });
     });
 
-    it("updates account status through the edit modal", async () => {
+    it("updates non-admin account status through the edit modal", async () => {
         renderComponent();
 
-        await waitFor(() => {
-            expect(screen.getByText("Admin User")).toBeInTheDocument();
-        });
+        await screen.findByText("Customer User");
 
-        const actionMenus = screen.getAllByRole("button", { name: /Thao tác/i });
-        await userEvent.click(actionMenus[0]);
-
+        await userEvent.click(screen.getByRole("button", { name: /Customer User/ }));
         await userEvent.click(await screen.findByRole("menuitem", { name: "Sửa" }));
         await userEvent.click(await screen.findByTestId("modal-submit"));
 
         await waitFor(() => {
-            expect(vi.mocked(accountService.updateAccount)).toHaveBeenCalledWith("u1", {
+            expect(vi.mocked(accountService.updateAccount)).toHaveBeenCalledWith("u2", {
                 fullName: "New User",
                 email: "new@pccms.com",
                 phone: "0111222333",
@@ -134,14 +138,12 @@ describe("AccountsPage", () => {
         });
     });
 
-    it("opens edit modal and reset password support from action menu", async () => {
+    it("opens edit modal from non-admin action menu", async () => {
         renderComponent();
 
-        await waitFor(() => {
-            expect(screen.getByText("Admin User")).toBeInTheDocument();
-        });
+        await screen.findByText("Customer User");
 
-        await userEvent.click(screen.getAllByRole("button", { name: /Thao tác/i })[0]);
+        await userEvent.click(screen.getByRole("button", { name: /Customer User/ }));
         await userEvent.click(await screen.findByRole("menuitem", { name: "Sửa" }));
         expect(await screen.findByRole("dialog")).toHaveTextContent("Sửa tài khoản");
     });
@@ -149,10 +151,7 @@ describe("AccountsPage", () => {
     it("shows modal dialog when add button is clicked", async () => {
         renderComponent();
 
-        await waitFor(() => {
-            expect(screen.getByText("Admin User")).toBeInTheDocument();
-        });
-
+        await screen.findByText("Admin User");
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
         await userEvent.click(screen.getByRole("button", { name: /Thêm tài khoản/i }));

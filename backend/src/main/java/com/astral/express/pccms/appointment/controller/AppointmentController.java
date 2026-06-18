@@ -22,9 +22,9 @@ import com.astral.express.pccms.appointment.service.AppointmentAvailabilityUseCa
 import com.astral.express.pccms.appointment.service.AppointmentLifecycleUseCase;
 import com.astral.express.pccms.appointment.service.AppointmentQueryUseCase;
 import com.astral.express.pccms.appointment.service.AppointmentResponseAssembler;
-import com.astral.express.pccms.appointment.service.BoardingBookingUseCase;
+import com.astral.express.pccms.appointment.service.AppointmentBoardingBookingUseCase;
 import com.astral.express.pccms.appointment.service.CreateMedicalAppointmentUseCase;
-import com.astral.express.pccms.appointment.service.GroomingBookingUseCase;
+import com.astral.express.pccms.appointment.service.AppointmentGroomingBookingUseCase;
 import com.astral.express.pccms.appointment.service.QuickCheckInUseCase;
 import com.astral.express.pccms.common.dto.ApiResponse;
 import com.astral.express.pccms.common.dto.PageResponse;
@@ -60,18 +60,18 @@ public class AppointmentController {
     private final AppointmentAvailabilityUseCase availabilityUseCase;
     private final AppointmentLifecycleUseCase lifecycleUseCase;
     private final AppointmentQueryUseCase queryUseCase;
-    private final BoardingBookingUseCase boardingBookingUseCase;
-    private final GroomingBookingUseCase groomingBookingUseCase;
+    private final AppointmentBoardingBookingUseCase boardingBookingUseCase;
+    private final AppointmentGroomingBookingUseCase groomingBookingUseCase;
     private final CreateMedicalAppointmentUseCase createMedicalAppointmentUseCase;
     private final QuickCheckInUseCase quickCheckInUseCase;
     private final AppointmentResponseAssembler appointmentResponseAssembler;
-    private final SecurityContextService SecurityContextService;
+    private final SecurityContextService securityContextService;
 
     @PostMapping
     @PreAuthorize("hasAuthority('APPOINTMENT_CREATE')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> createMedicalAppointment(
             @Valid @RequestBody CreateMedicalAppointmentRequest request) {
-        UUID ownerId = SecurityContextService.getCurrentUserId();
+        UUID ownerId = securityContextService.getCurrentUserId();
         Appointment appointment = createMedicalAppointmentUseCase.createMedicalAppointment(request, ownerId);
         AppointmentResponse response = appointmentResponseAssembler.toResponse(appointment, null);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -82,7 +82,7 @@ public class AppointmentController {
     @PreAuthorize("hasAuthority('APPOINTMENT_CREATE')")
     public ApiResponse<PageResponse<AppointmentResponse>> listOwnerAppointments(
             @PageableDefault(size = 20, sort = "scheduledStartAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        UUID ownerId = SecurityContextService.getCurrentUserId();
+        UUID ownerId = securityContextService.getCurrentUserId();
         return ApiResponse.success(queryUseCase.listOwnerAppointments(ownerId, pageable));
     }
 
@@ -130,29 +130,29 @@ public class AppointmentController {
     @PostMapping("/{appointmentId}/check-in")
     @PreAuthorize("hasAuthority('APPOINTMENT_RECEIVE')")
     public ApiResponse<AppointmentResponse> checkIn(@PathVariable UUID appointmentId) {
-        UUID staffId = SecurityContextService.getCurrentUserId();
+        UUID staffId = securityContextService.getCurrentUserId();
         return ApiResponse.success(lifecycleUseCase.checkIn(appointmentId, staffId), "Tiếp nhận thành công");
     }
 
     @PostMapping("/{appointmentId}/start-exam")
     @PreAuthorize("hasRole('VETERINARIAN')")
     public ApiResponse<AppointmentResponse> startExam(@PathVariable UUID appointmentId) {
-        UUID vetId = SecurityContextService.getCurrentUserId();
+        UUID vetId = securityContextService.getCurrentUserId();
         return ApiResponse.success(lifecycleUseCase.startExam(appointmentId, vetId), "Bắt đầu khám thành công");
     }
 
     @PostMapping("/{appointmentId}/cancel")
     @PreAuthorize("hasAuthority('APPOINTMENT_CREATE') or hasAuthority('APPOINTMENT_RECEIVE')")
     public ApiResponse<AppointmentResponse> cancel(@PathVariable UUID appointmentId) {
-        UUID actorId = SecurityContextService.getCurrentUserId();
-        boolean isStaff = SecurityContextService.isAdminOrStaff();
+        UUID actorId = securityContextService.getCurrentUserId();
+        boolean isStaff = securityContextService.isAdminOrStaff();
         return ApiResponse.success(lifecycleUseCase.cancel(appointmentId, actorId, isStaff), "Hủy lịch thành công");
     }
 
     @PostMapping("/quick-check-in")
     @PreAuthorize("hasAuthority('APPOINTMENT_RECEIVE')")
     public ApiResponse<AppointmentResponse> quickCheckIn(@Valid @RequestBody QuickCheckInRequest request) {
-        UUID staffId = SecurityContextService.getCurrentUserId();
+        UUID staffId = securityContextService.getCurrentUserId();
         QuickCheckInUseCase.Result result = quickCheckInUseCase.execute(request, staffId);
         return ApiResponse.success(appointmentResponseAssembler.toResponse(result.appointment(), result.queueNumber()), "Tiếp nhận thành công");
     }
@@ -161,7 +161,7 @@ public class AppointmentController {
     @PreAuthorize("hasRole('VETERINARIAN')")
     public ApiResponse<List<QueueEntryResponse>> getVetQueue(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        UUID vetId = SecurityContextService.getCurrentUserId();
+        UUID vetId = securityContextService.getCurrentUserId();
         return ApiResponse.success(queryUseCase.getVetQueue(vetId, date));
     }
 
@@ -175,7 +175,7 @@ public class AppointmentController {
     @PreAuthorize("hasAuthority('GROOMING_CREATE')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> createGroomingAppointment(
             @Valid @RequestBody CreateGroomingAppointmentRequest request) {
-        UUID ownerId = SecurityContextService.getCurrentUserId();
+        UUID ownerId = securityContextService.getCurrentUserId();
         AppointmentResponse response = groomingBookingUseCase.createGroomingAppointment(request, ownerId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ApiResponse<>(true, 201, "Đặt lịch spa thành công", response));
@@ -200,7 +200,7 @@ public class AppointmentController {
     @PreAuthorize("hasAuthority('BOARDING_CREATE')")
     public ResponseEntity<ApiResponse<BoardingBookingResponse>> createBoardingBooking(
             @Valid @RequestBody CreateBoardingBookingRequest request) {
-        UUID ownerId = SecurityContextService.getCurrentUserId();
+        UUID ownerId = securityContextService.getCurrentUserId();
         BoardingBookingResponse response = boardingBookingUseCase.createBoardingBooking(request, ownerId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ApiResponse<>(true, 201, "Đặt phòng lưu trú thành công", response));
@@ -209,7 +209,7 @@ public class AppointmentController {
     @GetMapping("/boarding")
     @PreAuthorize("hasAuthority('BOARDING_READ')")
     public ApiResponse<List<BoardingBookingResponse>> listOwnerBoardingBookings() {
-        UUID ownerId = SecurityContextService.getCurrentUserId();
+        UUID ownerId = securityContextService.getCurrentUserId();
         return ApiResponse.success(boardingBookingUseCase.listOwnerBoardingBookings(ownerId));
     }
 

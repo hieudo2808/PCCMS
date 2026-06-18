@@ -33,7 +33,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import java.util.List;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Test;
+import com.astral.express.pccms.medicalrecord.repository.PrescriptionItemRepository;
 
 @ExtendWith(MockitoExtension.class)
 class MedicineServiceTest {
@@ -48,7 +49,7 @@ class MedicineServiceTest {
     private MedicineMapper medicineMapper;
 
     @Mock
-    private com.astral.express.pccms.medicalrecord.repository.PrescriptionItemRepository prescriptionItemRepository;
+    private PrescriptionItemRepository prescriptionItemRepository;
 
     @InjectMocks
     private MedicineService medicineService;

@@ -6,7 +6,7 @@ export const authApi = {
         return axiosClient.post("/v1/auth/login", data);
     },
 
-    register: (data: RegisterRequest): Promise<AuthResponse> => {
+    register: ({ confirmPassword: _confirmPassword, ...data }: RegisterRequest): Promise<AuthResponse> => {
         return axiosClient.post("/v1/auth/register", data);
     },
 

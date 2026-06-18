@@ -1,6 +1,8 @@
 package com.astral.express.pccms.medicalrecord.entity;
 
 import com.astral.express.pccms.common.domain.AuditableEntity;
+import com.astral.express.pccms.common.exception.BusinessException;
+import com.astral.express.pccms.common.exception.ErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -93,23 +95,23 @@ public class MedicalRecord extends AuditableEntity {
                              String mucousMembraneColor, BigDecimal capillaryRefillSeconds,
                              String preliminaryDiagnosis, String treatmentNote) {
         if (this.recordStatus != RecordStatus.DRAFT) {
-            throw new com.astral.express.pccms.common.exception.BusinessException(com.astral.express.pccms.common.exception.ErrorCode.ERR_MR_006_RECORD_NOT_DRAFT);
+            throw new BusinessException(ErrorCode.ERR_MR_006_RECORD_NOT_DRAFT);
         }
         
         if (temperatureC != null && temperatureC.compareTo(BigDecimal.ZERO) < 0) {
-            throw new com.astral.express.pccms.common.exception.BusinessException(com.astral.express.pccms.common.exception.ErrorCode.ERR_MR_001_INVALID_TEMPERATURE);
+            throw new BusinessException(ErrorCode.ERR_MR_001_INVALID_TEMPERATURE);
         }
         if (heartRateBpm != null && heartRateBpm < 0) {
-            throw new com.astral.express.pccms.common.exception.BusinessException(com.astral.express.pccms.common.exception.ErrorCode.ERR_MR_002_INVALID_HEART_RATE);
+            throw new BusinessException(ErrorCode.ERR_MR_002_INVALID_HEART_RATE);
         }
         if (respiratoryRateBpm != null && respiratoryRateBpm < 0) {
-            throw new com.astral.express.pccms.common.exception.BusinessException(com.astral.express.pccms.common.exception.ErrorCode.ERR_MR_003_INVALID_RESPIRATORY_RATE);
+            throw new BusinessException(ErrorCode.ERR_MR_003_INVALID_RESPIRATORY_RATE);
         }
         if (spo2Percent != null && (spo2Percent < 0 || spo2Percent > 100)) {
-            throw new com.astral.express.pccms.common.exception.BusinessException(com.astral.express.pccms.common.exception.ErrorCode.ERR_MR_004_INVALID_SPO2);
+            throw new BusinessException(ErrorCode.ERR_MR_004_INVALID_SPO2);
         }
         if (weightKg != null && weightKg.compareTo(BigDecimal.ZERO) < 0) {
-            throw new com.astral.express.pccms.common.exception.BusinessException(com.astral.express.pccms.common.exception.ErrorCode.ERR_MR_005_INVALID_WEIGHT);
+            throw new BusinessException(ErrorCode.ERR_MR_005_INVALID_WEIGHT);
         }
 
         this.temperatureC = temperatureC;
@@ -126,13 +128,13 @@ public class MedicalRecord extends AuditableEntity {
 
     public void finalizeRecord(String finalDiagnosis, String treatmentNote, OffsetDateTime followUpAt) {
         if (this.recordStatus != RecordStatus.DRAFT) {
-            throw new com.astral.express.pccms.common.exception.BusinessException(com.astral.express.pccms.common.exception.ErrorCode.ERR_MR_006_RECORD_NOT_DRAFT);
+            throw new BusinessException(ErrorCode.ERR_MR_006_RECORD_NOT_DRAFT);
         }
         if (finalDiagnosis == null || finalDiagnosis.trim().isEmpty()) {
-            throw new com.astral.express.pccms.common.exception.BusinessException(com.astral.express.pccms.common.exception.ErrorCode.ERR_MR_007_MISSING_FINAL_DIAGNOSIS);
+            throw new BusinessException(ErrorCode.ERR_MR_007_MISSING_FINAL_DIAGNOSIS);
         }
         if (!hasAtLeastOneVitalSign()) {
-            throw new com.astral.express.pccms.common.exception.BusinessException(com.astral.express.pccms.common.exception.ErrorCode.ERR_MR_008_MISSING_VITAL_SIGNS);
+            throw new BusinessException(ErrorCode.ERR_MR_008_MISSING_VITAL_SIGNS);
         }
 
         this.finalDiagnosis = finalDiagnosis;

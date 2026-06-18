@@ -62,7 +62,11 @@ public class BoardingMapper {
                 careLog.getStaff().getId(),
                 careLog.getStaff().getFullName(),
                 careLog.getCreatedAt(),
-                media.stream().map(this::toCareLogMediaResponse).toList());
+                media.stream().map(this::toCareLogMediaResponse).toList(),
+                false,
+                false,
+                null,
+                "View only");
     }
 
     private CareLogMediaResponse toCareLogMediaResponse(CareLogMedia media) {

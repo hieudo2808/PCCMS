@@ -6,7 +6,6 @@ import com.astral.express.pccms.billing.entity.Invoice;
 import com.astral.express.pccms.billing.entity.InvoiceLine;
 import com.astral.express.pccms.billing.repository.InvoiceLineRepository;
 import com.astral.express.pccms.billing.repository.InvoiceRepository;
-import com.astral.express.pccms.billing.service.InvoiceService;
 import com.astral.express.pccms.common.dto.PageResponse;
 import com.astral.express.pccms.common.exception.BusinessException;
 import com.astral.express.pccms.common.exception.ErrorCode;
@@ -25,7 +24,7 @@ import java.util.UUID;
 public class InvoiceService {
     private final InvoiceRepository invoiceRepository;
     private final InvoiceLineRepository invoiceLineRepository;
-    private final SecurityContextService SecurityContextService;
+    private final SecurityContextService securityContextService;
 public PageResponse<InvoiceResponse> listMyInvoices(Pageable pageable) {
         UUID currentUserId = requireCurrentUserId();
         return PageResponse.of(invoiceRepository.findByOwnerIdOrderByIssuedAtDesc(currentUserId, pageable)
@@ -42,7 +41,7 @@ public InvoiceResponse getInvoice(UUID invoiceId) {
     }
 
     private void assertCanRead(Invoice invoice) {
-        if (SecurityContextService.hasAnyRole("ADMIN", "STAFF")) {
+        if (securityContextService.hasAnyRole("ADMIN", "STAFF")) {
             return;
         }
         UUID currentUserId = requireCurrentUserId();
@@ -52,7 +51,7 @@ public InvoiceResponse getInvoice(UUID invoiceId) {
     }
 
     private UUID requireCurrentUserId() {
-        UUID currentUserId = SecurityContextService.getCurrentUserId();
+        UUID currentUserId = securityContextService.getCurrentUserId();
         if (currentUserId == null) {
             throw new BusinessException(ErrorCode.ERR_401_UNAUTHORIZED);
         }

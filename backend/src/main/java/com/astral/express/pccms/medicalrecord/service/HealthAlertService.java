@@ -5,7 +5,6 @@ import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.medicalrecord.dto.request.CreateHealthAlertRequest;
 import com.astral.express.pccms.medicalrecord.entity.HealthAlert;
 import com.astral.express.pccms.medicalrecord.repository.HealthAlertRepository;
-import com.astral.express.pccms.medicalrecord.service.HealthAlertService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

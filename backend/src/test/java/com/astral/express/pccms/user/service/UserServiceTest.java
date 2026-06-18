@@ -5,6 +5,7 @@ import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.identity.repository.RefreshTokenRepository;
 import com.astral.express.pccms.identity.security.SecurityContextService;
 import com.astral.express.pccms.notification.service.EmailService;
+import com.astral.express.pccms.notification.service.NotificationService;
 import com.astral.express.pccms.user.dto.request.AdminUpdateUserRequest;
 import com.astral.express.pccms.user.dto.request.ChangePasswordRequest;
 import com.astral.express.pccms.user.dto.request.CreateUserRequest;
@@ -14,7 +15,9 @@ import com.astral.express.pccms.user.entity.UserStatus;
 import com.astral.express.pccms.user.entity.Users;
 import com.astral.express.pccms.user.mapper.UserMapper;
 import com.astral.express.pccms.user.repository.RoleRepository;
+import com.astral.express.pccms.user.repository.StaffProfileRepository;
 import com.astral.express.pccms.user.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -36,7 +39,15 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.*;
+import com.astral.express.pccms.user.entity.Roles;
+import com.astral.express.pccms.user.entity.StaffProfile;
+import java.time.OffsetDateTime;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -58,13 +69,53 @@ class UserServiceTest {
     private EmailService emailService;
 
     @Mock
-    private SecurityContextService SecurityContextService;
+    private NotificationService notificationService;
+
+    @Mock
+    private SecurityContextService securityContextService;
 
     @Mock
     private RefreshTokenRepository refreshTokenRepository;
 
-    @InjectMocks
     private UserService userService;
+
+    @Mock
+    private StaffProfileRepository staffProfileRepository;
+
+    @BeforeEach
+    void setUp() {
+        AccountResponseFactory accountResponseFactory = new AccountResponseFactory();
+        AccountProtectionPolicy accountProtectionPolicy = new AccountProtectionPolicy();
+        AccountAdminService accountAdminService = new AccountAdminService(
+                userRepository,
+                roleRepository,
+                userMapper,
+                refreshTokenRepository,
+                accountResponseFactory,
+                accountProtectionPolicy
+        );
+        StaffProfileProvisioningService staffProfileProvisioningService =
+                new StaffProfileProvisioningService(staffProfileRepository);
+        AccountCredentialService accountCredentialService = new AccountCredentialService(
+                userRepository,
+                roleRepository,
+                userMapper,
+                passwordEncoder,
+                emailService,
+                notificationService,
+                refreshTokenRepository,
+                staffProfileProvisioningService,
+                accountResponseFactory,
+                accountProtectionPolicy
+        );
+        UserProfileService userProfileService = new UserProfileService(
+                userRepository,
+                userMapper,
+                passwordEncoder,
+                securityContextService
+        );
+        userService = new UserService(accountAdminService, accountCredentialService, userProfileService);
+    }
 
     @ParameterizedTest(name = "[{0}] {1}: {6}")
     @CsvFileSource(resources = "/testcases/user-service-testcases.csv", numLinesToSkip = 1)
@@ -86,10 +137,10 @@ class UserServiceTest {
             case "DISABLE_USER":
             case "DELETE_USER":
                 if ("VALID".equals(mockState)) {
-                    given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
+                    given(userRepository.findByIdWithRoleAndPermissions(userId)).willReturn(Optional.of(mockUser));
                     given(userRepository.save(any(Users.class))).willAnswer(inv -> inv.getArgument(0));
                 } else if ("USER_NOT_FOUND".equals(mockState)) {
-                    given(userRepository.findById(userId)).willReturn(Optional.empty());
+                    given(userRepository.findByIdWithRoleAndPermissions(userId)).willReturn(Optional.empty());
                 }
                 break;
             case "ADMIN_UPDATE_USER":
@@ -109,7 +160,7 @@ class UserServiceTest {
             case "CREATE_USER":
                 if ("VALID".equals(mockState)) {
                     given(userRepository.existsByEmail(createReq.email())).willReturn(false);
-                    given(roleRepository.findByCodeIgnoreCase("CUSTOMER")).willReturn(Optional.of(new com.astral.express.pccms.user.entity.Roles()));
+                    given(roleRepository.findByCodeIgnoreCase("CUSTOMER")).willReturn(Optional.of(new Roles()));
                     given(passwordEncoder.encode(anyString())).willReturn("hash");
                     given(userRepository.save(any(Users.class))).willReturn(mockUser);
                     given(userMapper.toUserResponse(mockUser)).willReturn(new UserResponse(userId, "Name", "email", "phone", "CUSTOMER", null, UserStatus.ACTIVE));
@@ -125,7 +176,7 @@ class UserServiceTest {
                 break;
             case "GET_MY_PROFILE":
             case "UPDATE_MY_PROFILE":
-                given(SecurityContextService.getCurrentUserId()).willReturn(userId);
+                given(securityContextService.getCurrentUserId()).willReturn(userId);
                 if ("USER_NOT_FOUND".equals(mockState)) {
                     given(userRepository.findByIdWithRoleAndPermissions(userId)).willReturn(Optional.empty());
                 } else {
@@ -139,7 +190,7 @@ class UserServiceTest {
                 }
                 break;
             case "CHANGE_PASSWORD":
-                given(SecurityContextService.getCurrentUserId()).willReturn(userId);
+                given(securityContextService.getCurrentUserId()).willReturn(userId);
                 if ("USER_NOT_FOUND".equals(mockState)) {
                     given(userRepository.findById(userId)).willReturn(Optional.empty());
                 } else {
@@ -213,7 +264,7 @@ class UserServiceTest {
     @Test
     void should_CreateAccount_Success() {
         CreateUserRequest createReq = new CreateUserRequest("Test User", "test@test.com", "CUSTOMER", null);
-        com.astral.express.pccms.user.entity.Roles role = new com.astral.express.pccms.user.entity.Roles();
+        Roles role = new Roles();
         role.setIsActive(true);
         role.setCode("CUSTOMER");
         
@@ -280,7 +331,7 @@ class UserServiceTest {
         UUID accountId = UUID.randomUUID();
         Users user = new Users();
         user.setId(accountId);
-        user.setDeletedAt(java.time.OffsetDateTime.now());
+        user.setDeletedAt(OffsetDateTime.now());
         
         given(userRepository.findByIdWithRoleAndPermissions(accountId)).willReturn(Optional.of(user));
         
@@ -295,7 +346,7 @@ class UserServiceTest {
         Users user = new Users();
         user.setId(accountId);
         
-        com.astral.express.pccms.user.entity.Roles role = new com.astral.express.pccms.user.entity.Roles();
+        Roles role = new Roles();
         role.setIsActive(false);
         
         given(userRepository.findByIdWithRoleAndPermissions(accountId)).willReturn(Optional.of(user));
@@ -308,10 +359,10 @@ class UserServiceTest {
 
     @Test
     void should_SearchAccounts_WithFilters() {
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
-        org.springframework.data.domain.Page<Users> page = new org.springframework.data.domain.PageImpl<>(List.of(new Users()));
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Users> page = new PageImpl<>(List.of(new Users()));
         
-        given(userRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), eq(pageable))).willReturn(page);
+        given(userRepository.findAll(any(Specification.class), eq(pageable))).willReturn(page);
         
         var result = userService.searchAccounts("keyword", "ROLE", UserStatus.ACTIVE, pageable);
         
@@ -320,10 +371,10 @@ class UserServiceTest {
 
     @Test
     void should_SearchAccounts_WithNoFilters() {
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
-        org.springframework.data.domain.Page<Users> page = new org.springframework.data.domain.PageImpl<>(List.of(new Users()));
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Users> page = new PageImpl<>(List.of(new Users()));
         
-        given(userRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), eq(pageable))).willReturn(page);
+        given(userRepository.findAll(any(Specification.class), eq(pageable))).willReturn(page);
         
         var result = userService.searchAccounts(null, null, null, pageable);
         
@@ -348,13 +399,10 @@ class UserServiceTest {
         verify(emailService).sendTemporaryPasswordEmail(eq("test@test.com"), anyString());
     }
 
-    @Mock
-    private com.astral.express.pccms.user.repository.StaffProfileRepository staffProfileRepository;
-
     @Test
     void should_CreateUser_WithStaffProfile_WhenRoleIsVeterinarian() {
         CreateUserRequest createReq = new CreateUserRequest("Vet User", "vet@test.com", "VETERINARIAN", null);
-        com.astral.express.pccms.user.entity.Roles role = new com.astral.express.pccms.user.entity.Roles();
+        Roles role = new Roles();
         role.setIsActive(true);
         role.setCode("VETERINARIAN");
         role.setName("Veterinarian");
@@ -371,13 +419,13 @@ class UserServiceTest {
         
         userService.createUser(createReq);
         
-        verify(staffProfileRepository).save(any(com.astral.express.pccms.user.entity.StaffProfile.class));
+        verify(staffProfileRepository).save(any(StaffProfile.class));
     }
 
     @Test
     void should_CreateUser_WithStaffProfile_WhenRoleIsStaff() {
         CreateUserRequest createReq = new CreateUserRequest("Staff User", "staff@test.com", "STAFF", null);
-        com.astral.express.pccms.user.entity.Roles role = new com.astral.express.pccms.user.entity.Roles();
+        Roles role = new Roles();
         role.setIsActive(true);
         role.setCode("STAFF");
         role.setName("Staff");
@@ -394,7 +442,7 @@ class UserServiceTest {
         
         userService.createUser(createReq);
         
-        verify(staffProfileRepository).save(any(com.astral.express.pccms.user.entity.StaffProfile.class));
+        verify(staffProfileRepository).save(any(StaffProfile.class));
     }
 
     @Test
@@ -404,7 +452,7 @@ class UserServiceTest {
         user.setId(userId);
         user.setEmail("old@test.com");
         
-        com.astral.express.pccms.user.entity.Roles newRole = new com.astral.express.pccms.user.entity.Roles();
+        Roles newRole = new Roles();
         newRole.setIsActive(true);
         newRole.setCode("NEW_ROLE");
         
@@ -470,6 +518,67 @@ class UserServiceTest {
         userService.updateAccountStatus(accountId, UserStatus.ACTIVE);
         
         // No tokens revoked
+    }
+
+    @Test
+    void should_RejectAdminTarget_when_AdminUpdatesAccountStatus() {
+        UUID accountId = UUID.randomUUID();
+        Users admin = adminUser(accountId);
+
+        given(userRepository.findByIdWithRoleAndPermissions(accountId)).willReturn(Optional.of(admin));
+
+        assertThatThrownBy(() -> userService.updateAccountStatus(accountId, UserStatus.DISABLED))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_ACC_009_PROTECTED_ADMIN_ACCOUNT);
+    }
+
+    @Test
+    void should_RejectAdminTarget_when_AdminResetsPassword() {
+        UUID accountId = UUID.randomUUID();
+        Users admin = adminUser(accountId);
+
+        given(userRepository.findByIdWithRoleAndPermissions(accountId)).willReturn(Optional.of(admin));
+
+        assertThatThrownBy(() -> userService.resetAccountPassword(accountId))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_ACC_009_PROTECTED_ADMIN_ACCOUNT);
+    }
+
+    @Test
+    void should_RejectAdminRole_when_CreatingAccount() {
+        CreateUserRequest createReq = new CreateUserRequest("Admin User", "admin@test.com", "ADMIN", "0901234567");
+
+        given(userRepository.existsByEmail("admin@test.com")).willReturn(false);
+
+        assertThatThrownBy(() -> userService.createAccount(createReq))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_ACC_009_PROTECTED_ADMIN_ACCOUNT);
+    }
+
+    @Test
+    void should_RejectAdminRole_when_AssigningRole() {
+        UUID accountId = UUID.randomUUID();
+        Users user = new Users();
+        user.setId(accountId);
+
+        given(userRepository.findByIdWithRoleAndPermissions(accountId)).willReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> userService.assignAccountRole(accountId, "ADMIN"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_ACC_009_PROTECTED_ADMIN_ACCOUNT);
+    }
+
+    private Users adminUser(UUID accountId) {
+        Roles role = new Roles();
+        role.setCode("ADMIN");
+        role.setIsActive(true);
+
+        Users admin = new Users();
+        admin.setId(accountId);
+        admin.setEmail("admin@test.com");
+        admin.setRole(role);
+        admin.setStatusCode(UserStatus.ACTIVE);
+        return admin;
     }
 
 }

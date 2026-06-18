@@ -2,6 +2,7 @@ package com.astral.express.pccms.boarding.entity;
 
 import com.astral.express.pccms.common.domain.AuditableEntity;
 import com.astral.express.pccms.pet.entity.Pets;
+import com.astral.express.pccms.schedule.entity.WorkSchedule;
 import com.astral.express.pccms.user.entity.Users;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -23,6 +24,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
@@ -50,6 +52,10 @@ public class CareLog extends AuditableEntity {
     @JoinColumn(name = "staff_id", nullable = false)
     private Users staff;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "work_schedule_id")
+    private WorkSchedule workSchedule;
+
     @Column(name = "log_date", nullable = false)
     private LocalDate logDate;
 
@@ -69,4 +75,11 @@ public class CareLog extends AuditableEntity {
 
     @Column(name = "staff_note", columnDefinition = "TEXT")
     private String staffNote;
+
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "deleted_by")
+    private Users deletedBy;
 }

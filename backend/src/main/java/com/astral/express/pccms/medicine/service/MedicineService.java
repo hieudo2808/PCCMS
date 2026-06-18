@@ -14,7 +14,6 @@ import com.astral.express.pccms.medicine.mapper.MedicineMapper;
 import com.astral.express.pccms.medicalrecord.repository.PrescriptionItemRepository;
 import com.astral.express.pccms.medicine.repository.MedicineCategoryRepository;
 import com.astral.express.pccms.medicine.repository.MedicineRepository;
-import com.astral.express.pccms.medicine.service.MedicineService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

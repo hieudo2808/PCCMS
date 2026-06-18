@@ -53,6 +53,8 @@ class OtpServiceTest {
     private UserMapper userMapper;
     @Mock
     private EmailService emailService;
+    @Mock
+    private OtpAttemptService otpAttemptService;
 
     @InjectMocks
     private OtpService otpService;

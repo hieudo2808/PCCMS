@@ -11,7 +11,6 @@ import com.astral.express.pccms.medicalrecord.entity.LabResult;
 import com.astral.express.pccms.medicalrecord.entity.MedicalRecord;
 import com.astral.express.pccms.medicalrecord.repository.LabResultRepository;
 import com.astral.express.pccms.medicalrecord.repository.MedicalRecordRepository;
-import com.astral.express.pccms.medicalrecord.service.LabResultService;
 import com.astral.express.pccms.pet.entity.Pets;
 import com.astral.express.pccms.pet.repository.PetRepository;
 import com.astral.express.pccms.user.entity.Users;
@@ -32,7 +31,7 @@ public class LabResultService {
     private final FileAssetRepository fileAssetRepository;
     private final UserRepository userRepository;
     private final PetRepository petRepository;
-    private final SecurityContextService SecurityContextService;
+    private final SecurityContextService securityContextService;
 public List<LabResultResponse> listLabResults(UUID medicalRecordId) {
         MedicalRecord medicalRecord = findMedicalRecord(medicalRecordId);
         assertCanRead(medicalRecord);
@@ -65,7 +64,7 @@ public List<LabResultResponse> listLabResults(UUID medicalRecordId) {
     }
 
     private void assertCanRead(MedicalRecord medicalRecord) {
-        if (SecurityContextService.hasAnyRole("ADMIN", "VETERINARIAN")) {
+        if (securityContextService.hasAnyRole("ADMIN", "VETERINARIAN")) {
             return;
         }
         UUID currentUserId = requireCurrentUserId();
@@ -77,7 +76,7 @@ public List<LabResultResponse> listLabResults(UUID medicalRecordId) {
     }
 
     private UUID requireCurrentUserId() {
-        UUID currentUserId = SecurityContextService.getCurrentUserId();
+        UUID currentUserId = securityContextService.getCurrentUserId();
         if (currentUserId == null) {
             throw new BusinessException(ErrorCode.ERR_401_UNAUTHORIZED);
         }

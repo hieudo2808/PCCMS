@@ -7,6 +7,8 @@ import com.astral.express.pccms.reception.dto.request.AppointmentCancelRequest;
 import com.astral.express.pccms.reception.dto.request.AppointmentReceiveRequest;
 import com.astral.express.pccms.reception.dto.request.QuickAppointmentRequest;
 import com.astral.express.pccms.reception.dto.response.AppointmentReceptionResponse;
+import com.astral.express.pccms.reception.repository.AppointmentReceptionCommandRepository;
+import com.astral.express.pccms.reception.repository.AppointmentReceptionQueryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,6 +23,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,6 +47,11 @@ class AppointmentReceptionServiceTest {
     @Mock
     private SecurityContextService securityContextService;
 
+    @Mock
+    private AppointmentReceptionQueryRepository appointmentReceptionQueryRepository;
+    @Mock
+    private AppointmentReceptionCommandRepository appointmentReceptionCommandRepository;
+
     @InjectMocks
     private AppointmentReceptionService service;
 
@@ -57,17 +65,11 @@ class AppointmentReceptionServiceTest {
     @Test
     
     void listAppointments_shouldReturnList() {
-        Map<String, Object> row = Map.of(
-                "id", appointmentId,
-                "status_code", "PENDING",
-                "scheduled_start_at", Timestamp.valueOf(LocalDateTime.now()),
-                "scheduled_end_at", Timestamp.valueOf(LocalDateTime.now().plusHours(1)),
-                "symptom_text", "Fever",
-                "order_code", "SO-123",
-                "owner_name", "John",
-                "pet_name", "Rex"
-        );
-        given(jdbc.queryForList(anyString(), any(Object[].class))).willReturn(List.of(row));
+        AppointmentReceptionResponse response = new AppointmentReceptionResponse(
+                appointmentId, "PENDING", Timestamp.valueOf(LocalDateTime.now()),
+                Timestamp.valueOf(LocalDateTime.now().plusHours(1)), "Fever", "SO-123",
+                "John", null, "Rex", null, null);
+        given(appointmentReceptionQueryRepository.listAppointments("John", "PENDING")).willReturn(List.of(response));
 
         List<AppointmentReceptionResponse> responses = service.listAppointments("John", "PENDING");
 
@@ -84,27 +86,21 @@ class AppointmentReceptionServiceTest {
         UUID orderId = UUID.randomUUID();
         UUID newApptId = UUID.randomUUID();
 
-        given(jdbc.queryForMap(ArgumentMatchers.contains("SELECT id FROM users WHERE phone = ?"), eq("0123456789")))
-                .willThrow(new EmptyResultDataAccessException(1));
-        given(jdbc.queryForMap(ArgumentMatchers.contains("INSERT INTO users"), any(), eq("0123456789"), eq("John")))
-                .willReturn(Map.of("id", ownerId));
-
-        given(jdbc.queryForMap(ArgumentMatchers.contains("SELECT id FROM pets WHERE owner_id = ?"), eq(ownerId), eq("Rex")))
-                .willThrow(new EmptyResultDataAccessException(1));
-        given(jdbc.queryForMap(ArgumentMatchers.contains("INSERT INTO pets"), eq(ownerId), eq("Rex")))
-                .willReturn(Map.of("id", petId));
+        given(appointmentReceptionCommandRepository.findOwnerIdByPhone("0123456789")).willReturn(Optional.empty());
+        given(appointmentReceptionCommandRepository.createWalkinOwner(anyString(), eq("0123456789"), eq("John"))).willReturn(ownerId);
+        given(appointmentReceptionCommandRepository.findPetId(ownerId, "Rex")).willReturn(Optional.empty());
+        given(appointmentReceptionCommandRepository.createPet(ownerId, "Rex")).willReturn(petId);
 
         given(securityContextService.getCurrentUserId()).willReturn(UUID.randomUUID());
-        given(jdbc.queryForMap(ArgumentMatchers.contains("INSERT INTO service_orders"), any(), eq(ownerId), eq(petId), any(), any(), any(), any())).willReturn(Map.of("id", orderId));
+        given(appointmentReceptionCommandRepository.createServiceOrder(anyString(), eq(ownerId), eq(petId), any(), any(), any(), anyString())).willReturn(orderId);
 
-        given(jdbc.queryForMap(ArgumentMatchers.contains("INSERT INTO appointments"), eq(orderId), any(), any(), any(), eq("Fever"), eq("Note"), any())).willReturn(Map.of("id", newApptId));
+        given(appointmentReceptionCommandRepository.createAppointment(eq(orderId), any(), any(), any(), eq("Fever"), eq("Note"), any())).willReturn(newApptId);
 
         // For receive()
-        given(jdbc.queryForMap(ArgumentMatchers.contains("SELECT status_code FROM appointments WHERE id = ?"), eq(newApptId))).willReturn(Map.of("status_code", "PENDING"));
-        given(jdbc.queryForMap(ArgumentMatchers.contains("UPDATE appointments"), any(), eq(newApptId))).willReturn(Map.of("id", newApptId));
+        given(appointmentReceptionCommandRepository.findAppointmentStatus(newApptId)).willReturn(Optional.of("PENDING"));
 
         // For getById()
-        given(jdbc.queryForMap(ArgumentMatchers.contains("SELECT a.id, a.status_code"), eq(newApptId))).willReturn(Map.of("id", newApptId, "status_code", "CHECKED_IN", "order_code", "SO-123", "owner_name", "John"));
+        given(appointmentReceptionQueryRepository.findById(newApptId)).willReturn(Optional.of(new AppointmentReceptionResponse(newApptId, "CHECKED_IN", null, null, null, "SO-123", "John", null, null, null, null)));
 
         AppointmentReceptionResponse res = service.quickCreateAndReceive(req);
         assertThat(res.id()).isEqualTo(newApptId);
@@ -112,7 +108,7 @@ class AppointmentReceptionServiceTest {
 
     @Test
     void receive_shouldThrowException_whenNotFound() {
-        given(jdbc.queryForMap(ArgumentMatchers.contains("SELECT status_code"), any())).willThrow(new EmptyResultDataAccessException(1));
+        given(appointmentReceptionCommandRepository.findAppointmentStatus(appointmentId)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.receive(appointmentId, new AppointmentReceiveRequest(null, "note")))
                 .isInstanceOf(BusinessException.class)
@@ -121,7 +117,7 @@ class AppointmentReceptionServiceTest {
 
     @Test
     void receive_shouldThrowException_whenCancelled() {
-        given(jdbc.queryForMap(ArgumentMatchers.contains("SELECT status_code"), any())).willReturn(Map.of("status_code", "CANCELLED"));
+        given(appointmentReceptionCommandRepository.findAppointmentStatus(appointmentId)).willReturn(Optional.of("CANCELLED"));
 
         assertThatThrownBy(() -> service.receive(appointmentId, new AppointmentReceiveRequest(null, "note")))
                 .isInstanceOf(BusinessException.class)
@@ -130,22 +126,17 @@ class AppointmentReceptionServiceTest {
 
     @Test
     void cancel_shouldUpdateStatusAndReturn() {
-        given(jdbc.queryForMap(ArgumentMatchers.contains("UPDATE appointments"), eq("reason"), eq(appointmentId))).willReturn(Map.of("id", appointmentId));
-        given(jdbc.queryForMap(ArgumentMatchers.contains("SELECT a.id, a.status_code"), eq(appointmentId))).willReturn(Map.of("id", appointmentId, "status_code", "CANCELLED", "order_code", "SO-123", "owner_name", "John"));
+        given(appointmentReceptionQueryRepository.findById(appointmentId)).willReturn(Optional.of(new AppointmentReceptionResponse(appointmentId, "CANCELLED", null, null, null, "SO-123", "John", null, null, null, null)));
 
         AppointmentReceptionResponse res = service.cancel(appointmentId, new AppointmentCancelRequest("reason"));
 
         assertThat(res.statusCode()).isEqualTo("CANCELLED");
-        verify(jdbc).queryForMap(ArgumentMatchers.contains("UPDATE appointments"), eq("reason"), eq(appointmentId));
+        verify(appointmentReceptionCommandRepository).cancelAppointment(appointmentId, "reason");
     }
 
     @Test
     void listAppointments_shouldReturnList_WhenKeywordIsNullAndStatusIsEmpty() {
-        Map<String, Object> row = Map.of(
-                "id", appointmentId,
-                "status_code", "PENDING"
-        );
-        given(jdbc.queryForList(anyString(), any(Object[].class))).willReturn(List.of(row));
+        given(appointmentReceptionQueryRepository.listAppointments(null, " ")).willReturn(List.of(new AppointmentReceptionResponse(appointmentId, "PENDING", null, null, null, null, null, null, null, null, null)));
 
         List<AppointmentReceptionResponse> responses = service.listAppointments(null, " ");
 
@@ -161,21 +152,17 @@ class AppointmentReceptionServiceTest {
         UUID orderId = UUID.randomUUID();
         UUID newApptId = UUID.randomUUID();
 
-        given(jdbc.queryForMap(ArgumentMatchers.contains("SELECT id FROM users WHERE phone = ?"), eq("0123456789")))
-                .willReturn(Map.of("id", ownerId));
-
-        given(jdbc.queryForMap(ArgumentMatchers.contains("SELECT id FROM pets WHERE owner_id = ?"), eq(ownerId), eq("Rex")))
-                .willReturn(Map.of("id", petId));
+        given(appointmentReceptionCommandRepository.findOwnerIdByPhone("0123456789")).willReturn(Optional.of(ownerId));
+        given(appointmentReceptionCommandRepository.findPetId(ownerId, "Rex")).willReturn(Optional.of(petId));
 
         given(securityContextService.getCurrentUserId()).willReturn(UUID.randomUUID());
-        given(jdbc.queryForMap(ArgumentMatchers.contains("INSERT INTO service_orders"), any(), eq(ownerId), eq(petId), any(), any(), any(), eq("MED-GENERAL"))).willReturn(Map.of("id", orderId));
+        given(appointmentReceptionCommandRepository.createServiceOrder(anyString(), eq(ownerId), eq(petId), any(), any(), any(), eq("MED-GENERAL"))).willReturn(orderId);
 
-        given(jdbc.queryForMap(ArgumentMatchers.contains("INSERT INTO appointments"), eq(orderId), any(), any(), any(), eq("Fever"), eq("Note"), any())).willReturn(Map.of("id", newApptId));
+        given(appointmentReceptionCommandRepository.createAppointment(eq(orderId), any(), any(), any(), eq("Fever"), eq("Note"), any())).willReturn(newApptId);
 
-        given(jdbc.queryForMap(ArgumentMatchers.contains("SELECT status_code FROM appointments WHERE id = ?"), eq(newApptId))).willReturn(Map.of("status_code", "PENDING"));
-        given(jdbc.queryForMap(ArgumentMatchers.contains("UPDATE appointments"), any(), eq(newApptId))).willReturn(Map.of("id", newApptId));
+        given(appointmentReceptionCommandRepository.findAppointmentStatus(newApptId)).willReturn(Optional.of("PENDING"));
 
-        given(jdbc.queryForMap(ArgumentMatchers.contains("SELECT a.id, a.status_code"), eq(newApptId))).willReturn(Map.of("id", newApptId, "status_code", "CHECKED_IN", "order_code", "SO-123", "owner_name", "John"));
+        given(appointmentReceptionQueryRepository.findById(newApptId)).willReturn(Optional.of(new AppointmentReceptionResponse(newApptId, "CHECKED_IN", null, null, null, "SO-123", "John", null, null, null, null)));
 
         AppointmentReceptionResponse res = service.quickCreateAndReceive(req);
         assertThat(res.id()).isEqualTo(newApptId);
@@ -183,9 +170,8 @@ class AppointmentReceptionServiceTest {
 
     @Test
     void receive_shouldWork_WhenRequestIsNull() {
-        given(jdbc.queryForMap(ArgumentMatchers.contains("SELECT status_code"), any())).willReturn(Map.of("status_code", "CONFIRMED"));
-        given(jdbc.queryForMap(ArgumentMatchers.contains("UPDATE appointments"), eq(null), eq(appointmentId))).willReturn(Map.of("id", appointmentId));
-        given(jdbc.queryForMap(ArgumentMatchers.contains("SELECT a.id, a.status_code"), eq(appointmentId))).willReturn(Map.of("id", appointmentId, "status_code", "CHECKED_IN", "order_code", "SO-123", "owner_name", "John"));
+        given(appointmentReceptionCommandRepository.findAppointmentStatus(appointmentId)).willReturn(Optional.of("CONFIRMED"));
+        given(appointmentReceptionQueryRepository.findById(appointmentId)).willReturn(Optional.of(new AppointmentReceptionResponse(appointmentId, "CHECKED_IN", null, null, null, "SO-123", "John", null, null, null, null)));
 
         AppointmentReceptionResponse res = service.receive(appointmentId, null);
         assertThat(res.statusCode()).isEqualTo("CHECKED_IN");
@@ -193,8 +179,7 @@ class AppointmentReceptionServiceTest {
 
     @Test
     void cancel_shouldWork_WhenRequestIsNull() {
-        given(jdbc.queryForMap(ArgumentMatchers.contains("UPDATE appointments"), eq(null), eq(appointmentId))).willReturn(Map.of("id", appointmentId));
-        given(jdbc.queryForMap(ArgumentMatchers.contains("SELECT a.id, a.status_code"), eq(appointmentId))).willReturn(Map.of("id", appointmentId, "status_code", "CANCELLED", "order_code", "SO-123", "owner_name", "John"));
+        given(appointmentReceptionQueryRepository.findById(appointmentId)).willReturn(Optional.of(new AppointmentReceptionResponse(appointmentId, "CANCELLED", null, null, null, "SO-123", "John", null, null, null, null)));
 
         AppointmentReceptionResponse res = service.cancel(appointmentId, null);
         assertThat(res.statusCode()).isEqualTo("CANCELLED");
@@ -209,14 +194,13 @@ class AppointmentReceptionServiceTest {
         UUID orderId = UUID.randomUUID();
         UUID newApptId = UUID.randomUUID();
 
-        given(jdbc.queryForMap(ArgumentMatchers.contains("SELECT id FROM users WHERE phone = ?"), eq("0123456789"))).willReturn(Map.of("id", ownerId));
-        given(jdbc.queryForMap(ArgumentMatchers.contains("SELECT id FROM pets WHERE owner_id = ?"), eq(ownerId), eq("Rex"))).willReturn(Map.of("id", petId));
+        given(appointmentReceptionCommandRepository.findOwnerIdByPhone("0123456789")).willReturn(Optional.of(ownerId));
+        given(appointmentReceptionCommandRepository.findPetId(ownerId, "Rex")).willReturn(Optional.of(petId));
         given(securityContextService.getCurrentUserId()).willReturn(UUID.randomUUID());
-        given(jdbc.queryForMap(ArgumentMatchers.contains("INSERT INTO service_orders"), any(), any(), any(), any(), any(), any(), any())).willReturn(Map.of("id", orderId));
-        given(jdbc.queryForMap(ArgumentMatchers.contains("INSERT INTO appointments"), any(), any(), any(), any(), any(), any(), any())).willReturn(Map.of("id", newApptId));
-        given(jdbc.queryForMap(ArgumentMatchers.contains("SELECT status_code FROM appointments WHERE id = ?"), eq(newApptId))).willReturn(Map.of("status_code", "PENDING"));
-        given(jdbc.queryForMap(ArgumentMatchers.contains("UPDATE appointments"), any(), eq(newApptId))).willReturn(Map.of("id", newApptId));
-        given(jdbc.queryForMap(ArgumentMatchers.contains("SELECT a.id, a.status_code"), eq(newApptId))).willReturn(Map.of("id", newApptId, "status_code", "CHECKED_IN"));
+        given(appointmentReceptionCommandRepository.createServiceOrder(anyString(), any(), any(), any(), any(), any(), anyString())).willReturn(orderId);
+        given(appointmentReceptionCommandRepository.createAppointment(any(), any(), any(), any(), any(), any(), any())).willReturn(newApptId);
+        given(appointmentReceptionCommandRepository.findAppointmentStatus(newApptId)).willReturn(Optional.of("PENDING"));
+        given(appointmentReceptionQueryRepository.findById(newApptId)).willReturn(Optional.of(new AppointmentReceptionResponse(newApptId, "CHECKED_IN", null, null, null, null, null, null, null, null, null)));
 
         AppointmentReceptionResponse res = service.quickCreateAndReceive(req);
         assertThat(res.id()).isEqualTo(newApptId);

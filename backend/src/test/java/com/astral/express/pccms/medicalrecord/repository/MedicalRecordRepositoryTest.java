@@ -20,6 +20,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.springframework.transaction.annotation.Transactional;
+import java.math.BigDecimal;
 
 @Testcontainers(disabledWithoutDocker = true)
 @SpringBootTest
@@ -49,14 +50,14 @@ class MedicalRecordRepositoryTest {
                 .petId(petId)
                 .vetId(UUID.randomUUID())
                 .recordStatus(RecordStatus.FINALIZED)
-                .temperatureC(java.math.BigDecimal.valueOf(38.5))
-                .weightKg(java.math.BigDecimal.valueOf(5.2))
+                .temperatureC(BigDecimal.valueOf(38.5))
+                .weightKg(BigDecimal.valueOf(5.2))
                 .heartRateBpm(120)
                 .respiratoryRateBpm(30)
                 .bloodPressure("120/80")
                 .spo2Percent(98)
                 .mucousMembraneColor("Hồng")
-                .capillaryRefillSeconds(java.math.BigDecimal.valueOf(2.0))
+                .capillaryRefillSeconds(BigDecimal.valueOf(2.0))
                 .build();
         medicalRecordRepository.save(record1);
 

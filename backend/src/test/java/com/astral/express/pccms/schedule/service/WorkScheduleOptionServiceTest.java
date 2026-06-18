@@ -29,7 +29,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.given;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvFileSource;
+import org.mockito.ArgumentMatchers;
 
 @ExtendWith(MockitoExtension.class)
 class WorkScheduleOptionServiceTest {
@@ -51,8 +55,8 @@ class WorkScheduleOptionServiceTest {
     @InjectMocks
     private WorkScheduleOptionService workScheduleOptionService;
 
-    @org.junit.jupiter.params.ParameterizedTest
-    @org.junit.jupiter.params.provider.CsvFileSource(resources = "/testcases/work-schedule-option-testcases.csv", numLinesToSkip = 1)
+    @ParameterizedTest
+    @CsvFileSource(resources = "/testcases/work-schedule-option-testcases.csv", numLinesToSkip = 1)
     void should_ProcessOptions(String ruleId, String caseId, String action, boolean hasData) {
         if ("STAFF_OPTIONS".equals(action)) {
             if (hasData) {
@@ -62,7 +66,7 @@ class WorkScheduleOptionServiceTest {
                 user.setFullName("Staff One");
                 user.setRole(role);
 
-                given(userRepository.findScheduleStaffOptions(eq(UserStatus.ACTIVE), org.mockito.ArgumentMatchers.<String>anyList()))
+                given(userRepository.findScheduleStaffOptions(eq(UserStatus.ACTIVE), ArgumentMatchers.<String>anyList()))
                         .willReturn(List.of(user));
 
                 List<StaffOptionResponse> response = workScheduleOptionService.getStaffOptions();
@@ -73,7 +77,7 @@ class WorkScheduleOptionServiceTest {
                 assertThat(response.getFirst().roleCode()).isEqualTo("STAFF");
                 assertThat(response.getFirst().roleName()).isEqualTo("Nhan vien");
             } else {
-                given(userRepository.findScheduleStaffOptions(eq(UserStatus.ACTIVE), org.mockito.ArgumentMatchers.<String>anyList()))
+                given(userRepository.findScheduleStaffOptions(eq(UserStatus.ACTIVE), ArgumentMatchers.<String>anyList()))
                         .willReturn(List.of());
 
                 List<StaffOptionResponse> response = workScheduleOptionService.getStaffOptions();
@@ -147,14 +151,14 @@ class WorkScheduleOptionServiceTest {
         return UUID.fromString("00000000-0000-0000-0000-" + String.format("%012d", Long.parseLong(value)));
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_ProcessStaffOptions_WhenRoleIsNull() {
         Users user = new Users();
         user.setId(id("10"));
         user.setFullName("Staff Two");
         user.setRole(null);
 
-        given(userRepository.findScheduleStaffOptions(eq(UserStatus.ACTIVE), org.mockito.ArgumentMatchers.<String>anyList()))
+        given(userRepository.findScheduleStaffOptions(eq(UserStatus.ACTIVE), ArgumentMatchers.<String>anyList()))
                 .willReturn(List.of(user));
 
         List<StaffOptionResponse> response = workScheduleOptionService.getStaffOptions();
@@ -165,7 +169,7 @@ class WorkScheduleOptionServiceTest {
         assertThat(response.getFirst().roleName()).isNull();
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_ProcessRoleOptions_FilterNonSchedulable() {
         Roles role1 = role("30", "VETERINARIAN", "Bac si");
         Roles role2 = role("31", "ADMIN", "Quan tri"); // Non-schedulable

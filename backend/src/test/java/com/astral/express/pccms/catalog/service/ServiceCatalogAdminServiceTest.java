@@ -170,7 +170,7 @@ class ServiceCatalogAdminServiceTest {
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_SVC_004_IN_USE);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void update_shouldThrowException_whenNotFound() {
         UUID id = UUID.randomUUID();
         UpdateServiceCatalogRequest request = new UpdateServiceCatalogRequest("SVC1", "Service", ServiceCategory.MEDICAL, "", 100L, 30, true);
@@ -180,7 +180,7 @@ class ServiceCatalogAdminServiceTest {
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_SVC_001_NOT_FOUND);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void update_shouldThrowException_whenNameExistsForOtherService() {
         UUID id = UUID.randomUUID();
         UpdateServiceCatalogRequest request = new UpdateServiceCatalogRequest("SVC1", "Service", ServiceCategory.MEDICAL, "", 100L, 30, true);
@@ -193,7 +193,7 @@ class ServiceCatalogAdminServiceTest {
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_SVC_003_NAME_EXISTS);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void getById_shouldThrowException_whenNotFound() {
         UUID id = UUID.randomUUID();
         given(serviceCatalogRepository.findById(id)).willReturn(Optional.empty());
@@ -202,7 +202,7 @@ class ServiceCatalogAdminServiceTest {
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_SVC_001_NOT_FOUND);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void delete_shouldThrowException_whenNotFound() {
         UUID id = UUID.randomUUID();
         given(serviceCatalogRepository.findById(id)).willReturn(Optional.empty());
@@ -211,7 +211,7 @@ class ServiceCatalogAdminServiceTest {
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_SVC_001_NOT_FOUND);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void list_shouldReturnPage_withCategoryFilter() {
         PageRequest pageable = PageRequest.of(0, 10);
         ServiceCatalog service = new ServiceCatalog();
@@ -223,7 +223,7 @@ class ServiceCatalogAdminServiceTest {
         assertThat(response.data().content()).hasSize(1);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void listCategories_shouldReturnAllCategories() {
         List<ServiceCategory> categories = serviceCatalogAdminService.listCategories();
         assertThat(categories).containsExactly(ServiceCategory.values());

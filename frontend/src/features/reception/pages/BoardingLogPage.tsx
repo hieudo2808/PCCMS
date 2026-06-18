@@ -8,7 +8,7 @@ import { z } from "zod";
 import { Button, Input, Tag, Textarea } from "~/components/atoms";
 import { Card, EmptyState, SummaryRow } from "~/components/molecules";
 import { boardingApi, roomAdminApi } from "~/features/boarding/api/boardingApi";
-import type { BoardingBookingResponse, BoardingStatus, CarePeriod } from "~/types/boarding";
+import type { BoardingBookingResponse, BoardingStatus, CareLogResponse, CarePeriod } from "~/types/boarding";
 import { clinicTodayIso } from "~/shared/utils/dateGuards";
 import { parseApiError } from "~/shared/utils/errorHandlers";
 
@@ -60,6 +60,8 @@ export function BoardingLogPage() {
     const queryClient = useQueryClient();
     const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
     const [selectedRoomId, setSelectedRoomId] = useState("");
+    const [editingLog, setEditingLog] = useState<CareLogResponse | null>(null);
+    const [viewingLog, setViewingLog] = useState<CareLogResponse | null>(null);
 
     const bookingsQuery = useQuery({
         queryKey: ["staff-boarding-bookings"],
@@ -76,9 +78,9 @@ export function BoardingLogPage() {
         bookings.find((booking) => booking.id === selectedBookingId) ?? bookings[0];
 
     const careLogsQuery = useQuery({
-        queryKey: ["boarding-care-logs", selectedBooking?.id],
-        queryFn: () => boardingApi.getCareLogs(selectedBooking!.id),
-        enabled: Boolean(selectedBooking?.id),
+        queryKey: ["boarding-care-logs", selectedBooking?.sessionId],
+        queryFn: () => boardingApi.getReceptionCareLogs(selectedBooking!.sessionId!),
+        enabled: Boolean(selectedBooking?.sessionId),
     });
 
     const {
@@ -138,6 +140,7 @@ export function BoardingLogPage() {
         mutationFn: (values: CareLogFormValues) =>
             boardingApi.createCareLog({
                 sessionId: selectedBooking!.sessionId!,
+                petId: selectedBooking!.petId,
                 logDate: values.logDate,
                 periodCode: values.periodCode as CarePeriod,
                 feedingStatus: values.feedingStatus,
@@ -154,6 +157,51 @@ export function BoardingLogPage() {
         },
         onError: (error) => toast.error(parseApiError(error)),
     });
+
+    const updateCareLogMutation = useMutation({
+        mutationFn: (values: CareLogFormValues) =>
+            boardingApi.updateCareLog(editingLog!.id, {
+                sessionId: selectedBooking!.sessionId!,
+                petId: selectedBooking!.petId,
+                logDate: values.logDate,
+                periodCode: values.periodCode as CarePeriod,
+                feedingStatus: values.feedingStatus,
+                hygieneStatus: values.hygieneStatus,
+                healthNote: values.healthNote,
+                staffNote: values.staffNote,
+                caption: values.caption,
+                images: values.images ? Array.from(values.images) : [],
+            }),
+        onSuccess: () => {
+            toast.success("Đã cập nhật nhật ký");
+            setEditingLog(null);
+            reset();
+            invalidate();
+        },
+        onError: (error) => toast.error(parseApiError(error)),
+    });
+
+    const deleteCareLogMutation = useMutation({
+        mutationFn: boardingApi.deleteCareLog,
+        onSuccess: () => {
+            toast.success("Đã xóa nhật ký");
+            invalidate();
+        },
+        onError: (error) => toast.error(parseApiError(error)),
+    });
+
+    const startEditLog = (log: CareLogResponse) => {
+        setEditingLog(log);
+        reset({
+            logDate: log.logDate,
+            periodCode: log.periodCode,
+            feedingStatus: log.feedingStatus,
+            hygieneStatus: log.hygieneStatus,
+            healthNote: log.healthNote ?? "",
+            staffNote: log.staffNote ?? "",
+            caption: "",
+        });
+    };
 
     const availableRooms = (roomsQuery.data?.content ?? []).filter(
         (room) =>
@@ -332,9 +380,13 @@ export function BoardingLogPage() {
                     <Card title="Thêm nhật ký chăm sóc">
                         <form
                             className="space-y-4"
-                            onSubmit={handleSubmit((values) =>
-                                createCareLogMutation.mutate(values)
-                            )}
+                            onSubmit={handleSubmit((values) => {
+                                if (editingLog) {
+                                    updateCareLogMutation.mutate(values);
+                                    return;
+                                }
+                                createCareLogMutation.mutate(values);
+                            })}
                         >
                             <div className="grid gap-4 md:grid-cols-3">
                                 <Input
@@ -400,11 +452,12 @@ export function BoardingLogPage() {
                                     !["CHECKED_IN", "IN_STAY"].includes(
                                         selectedBooking.statusCode
                                     ) ||
-                                    createCareLogMutation.isPending
+                                    createCareLogMutation.isPending ||
+                                    updateCareLogMutation.isPending
                                 }
                             >
                                 <span className="inline-flex items-center gap-2">
-                                    {createCareLogMutation.isPending ? (
+                                    {createCareLogMutation.isPending || updateCareLogMutation.isPending ? (
                                         <Loader2 className="h-4 w-4 animate-spin" />
                                     ) : (
                                         <Upload className="h-4 w-4" />
@@ -441,6 +494,34 @@ export function BoardingLogPage() {
                                         <p className="mt-1 text-sm text-slate-500">
                                             {log.feedingStatus} | {log.hygieneStatus}
                                         </p>
+                                        {log.lockedReason && !log.canEdit && (
+                                            <p className="mt-2 text-xs text-amber-700">{log.lockedReason}</p>
+                                        )}
+                                        <div className="mt-3 flex flex-wrap gap-2">
+                                            <Button variant="outline" className="h-auto px-3 py-1 text-xs" onClick={() => setViewingLog(log)}>
+                                                Xem
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                className="h-auto px-3 py-1 text-xs"
+                                                disabled={!log.canEdit}
+                                                onClick={() => startEditLog(log)}
+                                            >
+                                                Sửa
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                className="h-auto px-3 py-1 text-xs text-red-600"
+                                                disabled={!log.canDelete || deleteCareLogMutation.isPending}
+                                                onClick={() => {
+                                                    if (window.confirm("Xóa nhật ký này?")) {
+                                                        deleteCareLogMutation.mutate(log.id);
+                                                    }
+                                                }}
+                                            >
+                                                Xóa
+                                            </Button>
+                                        </div>
                                         {log.media.length > 0 && (
                                             <p className="mt-2 text-xs text-slate-500">
                                                 {log.media.length} ảnh đã tải lên
@@ -451,6 +532,23 @@ export function BoardingLogPage() {
                             </div>
                         )}
                     </Card>
+                    {viewingLog && (
+                        <Card title="Chi tiết nhật ký">
+                            <div className="space-y-2 text-sm text-slate-700">
+                                <p><strong>Ngày:</strong> {viewingLog.logDate}</p>
+                                <p><strong>Buổi:</strong> {viewingLog.periodCode}</p>
+                                <p><strong>Ăn uống:</strong> {viewingLog.feedingStatus}</p>
+                                <p><strong>Vệ sinh:</strong> {viewingLog.hygieneStatus}</p>
+                                <p><strong>Sức khỏe:</strong> {viewingLog.healthNote || "Không có"}</p>
+                                <p><strong>Ghi chú nhân viên:</strong> {viewingLog.staffNote || "Không có"}</p>
+                                <p><strong>Người tạo:</strong> {viewingLog.staffName}</p>
+                                {viewingLog.lockedReason && <p><strong>Trạng thái sửa:</strong> {viewingLog.lockedReason}</p>}
+                            </div>
+                            <div className="mt-4 flex justify-end">
+                                <Button variant="outline" onClick={() => setViewingLog(null)}>Đóng</Button>
+                            </div>
+                        </Card>
+                    )}
                 </div>
             )}
         </div>

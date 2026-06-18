@@ -15,10 +15,11 @@ import com.astral.express.pccms.user.entity.UserStatus;
 import com.astral.express.pccms.user.entity.Users;
 import com.astral.express.pccms.user.repository.RoleRepository;
 import com.astral.express.pccms.user.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -36,6 +37,17 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import com.astral.express.pccms.appointment.entity.ExamRoom;
+import com.astral.express.pccms.common.dto.PageResponse;
+import com.astral.express.pccms.common.exception.BusinessException;
+import com.astral.express.pccms.grooming.entity.GroomingStation;
+import com.astral.express.pccms.schedule.dto.response.WorkScheduleResponse;
+import java.util.Optional;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -52,9 +64,40 @@ class WorkScheduleServiceTest {
     private ExamRoomRepository examRoomRepository;
     @Mock
     private GroomingStationRepository groomingStationRepository;
+    @Mock
+    private ScheduleConflictChecker scheduleConflictChecker;
+    @Spy
+    private ScheduleValidationService scheduleValidationService = new ScheduleValidationService();
+    @Spy
+    private WorkplaceAssignmentPolicy workplaceAssignmentPolicy = new WorkplaceAssignmentPolicy();
 
-    @InjectMocks
     private WorkScheduleService service;
+
+    @BeforeEach
+    void setUp() {
+        WeeklySchedulePlanner weeklySchedulePlanner = new WeeklySchedulePlanner(
+                workScheduleRepository,
+                shiftRepository,
+                userRepository,
+                examRoomRepository,
+                groomingStationRepository,
+                scheduleConflictChecker,
+                scheduleValidationService,
+                workplaceAssignmentPolicy);
+        WorkScheduleCrudService workScheduleCrudService = new WorkScheduleCrudService(
+                workScheduleRepository,
+                shiftRepository,
+                userRepository,
+                roleRepository,
+                examRoomRepository,
+                groomingStationRepository,
+                scheduleConflictChecker,
+                scheduleValidationService,
+                workplaceAssignmentPolicy);
+        service = new WorkScheduleService(
+                workScheduleCrudService,
+                weeklySchedulePlanner);
+    }
 
     @Test
     void previewWeeklyPlanGeneratesSchedulesWhenSourceWeekHasNoTemplate() {
@@ -130,10 +173,10 @@ class WorkScheduleServiceTest {
         Shift shift = shift("MORNING", "Morning");
         Roles role = role("VETERINARIAN");
 
-        when(userRepository.findById(any())).thenReturn(java.util.Optional.of(staff));
-        when(shiftRepository.findById(any())).thenReturn(java.util.Optional.of(shift));
-        when(roleRepository.findById(any())).thenReturn(java.util.Optional.of(role));
-        when(workScheduleRepository.existsByStaffIdAndWorkDateAndShiftId(request.staffId(), request.workDate(), request.shiftId()))
+        when(userRepository.findById(any())).thenReturn(Optional.of(staff));
+        when(shiftRepository.findById(any())).thenReturn(Optional.of(shift));
+        when(roleRepository.findById(any())).thenReturn(Optional.of(role));
+        when(scheduleConflictChecker.hasStaffShiftConflict(request.staffId(), request.workDate(), request.shiftId()))
                 .thenReturn(false);
 
         WorkSchedule saved = new WorkSchedule();
@@ -144,7 +187,7 @@ class WorkScheduleServiceTest {
         when(workScheduleRepository.save(any(WorkSchedule.class))).thenReturn(saved);
 
         // WHEN
-        com.astral.express.pccms.schedule.dto.response.WorkScheduleResponse response = service.createSchedule(request);
+        WorkScheduleResponse response = service.createSchedule(request);
 
         // THEN
         assertThat(response).isNotNull();
@@ -165,16 +208,16 @@ class WorkScheduleServiceTest {
         WorkSchedule existing = new WorkSchedule();
         existing.setId(scheduleId);
 
-        when(workScheduleRepository.findById(scheduleId)).thenReturn(java.util.Optional.of(existing));
-        when(userRepository.findById(any())).thenReturn(java.util.Optional.of(staff));
-        when(shiftRepository.findById(any())).thenReturn(java.util.Optional.of(shift));
-        when(roleRepository.findById(any())).thenReturn(java.util.Optional.of(role));
-        when(workScheduleRepository.existsByStaffIdAndWorkDateAndShiftIdAndIdNot(request.staffId(), request.workDate(), request.shiftId(), scheduleId))
+        when(workScheduleRepository.findById(scheduleId)).thenReturn(Optional.of(existing));
+        when(userRepository.findById(any())).thenReturn(Optional.of(staff));
+        when(shiftRepository.findById(any())).thenReturn(Optional.of(shift));
+        when(roleRepository.findById(any())).thenReturn(Optional.of(role));
+        when(scheduleConflictChecker.hasStaffShiftConflictExcluding(request.staffId(), request.workDate(), request.shiftId(), scheduleId))
                 .thenReturn(false);
         when(workScheduleRepository.save(any(WorkSchedule.class))).thenReturn(existing);
 
         // WHEN
-        com.astral.express.pccms.schedule.dto.response.WorkScheduleResponse response = service.updateSchedule(scheduleId, request);
+        WorkScheduleResponse response = service.updateSchedule(scheduleId, request);
 
         // THEN
         assertThat(response).isNotNull();
@@ -188,11 +231,11 @@ class WorkScheduleServiceTest {
         WorkSchedule existing = new WorkSchedule();
         existing.setId(scheduleId);
 
-        when(workScheduleRepository.findById(scheduleId)).thenReturn(java.util.Optional.of(existing));
+        when(workScheduleRepository.findById(scheduleId)).thenReturn(Optional.of(existing));
         when(workScheduleRepository.save(any(WorkSchedule.class))).thenReturn(existing);
 
         // WHEN
-        com.astral.express.pccms.schedule.dto.response.WorkScheduleResponse response = service.cancelSchedule(scheduleId);
+        WorkScheduleResponse response = service.cancelSchedule(scheduleId);
 
         // THEN
         assertThat(response).isNotNull();
@@ -218,7 +261,7 @@ class WorkScheduleServiceTest {
         when(workScheduleRepository.findByWorkDateBetweenAndStatusCodeOrderByWorkDateAsc(any(), any(), any()))
                 .thenReturn(List.of(schedule));
         // Simulate conflict
-        when(workScheduleRepository.existsByStaffIdAndWorkDateAndShiftId(any(), any(), any())).thenReturn(true);
+        when(scheduleConflictChecker.hasStaffShiftConflict(any(), any(), any())).thenReturn(true);
         
         WeeklySchedulePlanResponse res = service.applyWeeklyPlan(request);
         assertThat(res).isNotNull();
@@ -283,7 +326,7 @@ class WorkScheduleServiceTest {
         when(shiftRepository.findByIsActiveTrueOrderByStartTimeAsc()).thenReturn(List.of(shift));
         
         // Always conflict
-        when(workScheduleRepository.existsByStaffIdAndWorkDateAndShiftId(any(), any(), any())).thenReturn(true);
+        when(scheduleConflictChecker.hasStaffShiftConflict(any(), any(), any())).thenReturn(true);
         
         WeeklySchedulePlanResponse res = service.applyWeeklyPlan(request);
         
@@ -296,7 +339,7 @@ class WorkScheduleServiceTest {
 
     @Test
     void should_GetWorkSchedules_WithVariousFilters() {
-        org.springframework.data.domain.PageRequest pageable = org.springframework.data.domain.PageRequest.of(0, 10);
+        PageRequest pageable = PageRequest.of(0, 10);
         WorkSchedule schedule = new WorkSchedule();
         schedule.setId(UUID.randomUUID());
         Users mockStaff = new Users(); mockStaff.setId(UUID.randomUUID()); schedule.setStaff(mockStaff);
@@ -311,12 +354,12 @@ class WorkScheduleServiceTest {
         shift.setName("Shift");
         schedule.setShift(shift);
         
-        org.springframework.data.domain.Page<WorkSchedule> page = new org.springframework.data.domain.PageImpl<>(List.of(schedule));
+        Page<WorkSchedule> page = new PageImpl<>(List.of(schedule));
         
         // Use any() for Pageable
         when(workScheduleRepository.findByWorkDateBetween(any(), any(), eq(pageable))).thenReturn(page);
         
-        com.astral.express.pccms.common.dto.PageResponse<com.astral.express.pccms.schedule.dto.response.WorkScheduleResponse> res = service.searchSchedules(
+        PageResponse<WorkScheduleResponse> res = service.searchSchedules(
                 LocalDate.now(),
                 LocalDate.now().plusDays(1),
                 pageable
@@ -345,97 +388,97 @@ class WorkScheduleServiceTest {
 
     @Test
     void searchSchedules_shouldThrow_whenDatesInvalid() {
-        assertThatThrownBy(() -> service.searchSchedules(LocalDate.now(), LocalDate.now().minusDays(1), org.springframework.data.domain.PageRequest.of(0, 10)))
-            .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class);
+        assertThatThrownBy(() -> service.searchSchedules(LocalDate.now(), LocalDate.now().minusDays(1), PageRequest.of(0, 10)))
+            .isInstanceOf(BusinessException.class);
     }
 
     @Test
     void createSchedule_shouldThrow_whenCapacityInvalid() {
         WorkScheduleRequest req = new WorkScheduleRequest(UUID.randomUUID(), LocalDate.now(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 0, ScheduleStatus.ASSIGNED, "Note");
         assertThatThrownBy(() -> service.createSchedule(req))
-            .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class);
+            .isInstanceOf(BusinessException.class);
     }
 
     @Test
     void createSchedule_shouldThrow_whenShiftInactive() {
         WorkScheduleRequest req = new WorkScheduleRequest(UUID.randomUUID(), LocalDate.now(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 1, ScheduleStatus.ASSIGNED, "Note");
-        when(userRepository.findById(any())).thenReturn(java.util.Optional.of(new Users()));
+        when(userRepository.findById(any())).thenReturn(Optional.of(new Users()));
         Shift inactiveShift = new Shift();
         inactiveShift.setIsActive(false);
-        when(shiftRepository.findById(any())).thenReturn(java.util.Optional.of(inactiveShift));
+        when(shiftRepository.findById(any())).thenReturn(Optional.of(inactiveShift));
         
         assertThatThrownBy(() -> service.createSchedule(req))
-            .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class);
+            .isInstanceOf(BusinessException.class);
     }
 
     @Test
     void updateSchedule_shouldThrow_whenNotFound() {
         WorkScheduleRequest req = new WorkScheduleRequest(UUID.randomUUID(), LocalDate.now(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 1, ScheduleStatus.ASSIGNED, "Note");
-        when(workScheduleRepository.findById(any())).thenReturn(java.util.Optional.empty());
+        when(workScheduleRepository.findById(any())).thenReturn(Optional.empty());
         assertThatThrownBy(() -> service.updateSchedule(UUID.randomUUID(), req))
-            .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class);
+            .isInstanceOf(BusinessException.class);
     }
 
     @Test
     void createSchedule_shouldThrow_whenDuplicate() {
         WorkScheduleRequest req = new WorkScheduleRequest(UUID.randomUUID(), LocalDate.now(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 1, ScheduleStatus.ASSIGNED, "Note");
-        when(userRepository.findById(any())).thenReturn(java.util.Optional.of(new Users()));
+        when(userRepository.findById(any())).thenReturn(Optional.of(new Users()));
         Shift activeShift = new Shift(); activeShift.setIsActive(true);
-        when(shiftRepository.findById(any())).thenReturn(java.util.Optional.of(activeShift));
-        when(roleRepository.findById(any())).thenReturn(java.util.Optional.of(new Roles()));
-        when(workScheduleRepository.existsByStaffIdAndWorkDateAndShiftId(any(), any(), any())).thenReturn(true);
+        when(shiftRepository.findById(any())).thenReturn(Optional.of(activeShift));
+        when(roleRepository.findById(any())).thenReturn(Optional.of(new Roles()));
+        when(scheduleConflictChecker.hasStaffShiftConflict(any(), any(), any())).thenReturn(true);
         
         assertThatThrownBy(() -> service.createSchedule(req))
-            .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class);
+            .isInstanceOf(BusinessException.class);
     }
 
     @Test
     void updateSchedule_shouldThrow_whenDuplicate() {
         WorkScheduleRequest req = new WorkScheduleRequest(UUID.randomUUID(), LocalDate.now(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 1, ScheduleStatus.ASSIGNED, "Note");
-        when(workScheduleRepository.findById(any())).thenReturn(java.util.Optional.of(new WorkSchedule()));
-        when(userRepository.findById(any())).thenReturn(java.util.Optional.of(new Users()));
+        when(workScheduleRepository.findById(any())).thenReturn(Optional.of(new WorkSchedule()));
+        when(userRepository.findById(any())).thenReturn(Optional.of(new Users()));
         Shift activeShift = new Shift(); activeShift.setIsActive(true);
-        when(shiftRepository.findById(any())).thenReturn(java.util.Optional.of(activeShift));
-        when(roleRepository.findById(any())).thenReturn(java.util.Optional.of(new Roles()));
-        when(workScheduleRepository.existsByStaffIdAndWorkDateAndShiftIdAndIdNot(any(), any(), any(), any())).thenReturn(true);
+        when(shiftRepository.findById(any())).thenReturn(Optional.of(activeShift));
+        when(roleRepository.findById(any())).thenReturn(Optional.of(new Roles()));
+        when(scheduleConflictChecker.hasStaffShiftConflictExcluding(any(), any(), any(), any())).thenReturn(true);
         
         assertThatThrownBy(() -> service.updateSchedule(UUID.randomUUID(), req))
-            .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class);
+            .isInstanceOf(BusinessException.class);
     }
     
     @Test
     void createSchedule_shouldThrow_whenExamRoomNotFound() {
         WorkScheduleRequest req = new WorkScheduleRequest(UUID.randomUUID(), LocalDate.now(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 1, ScheduleStatus.ASSIGNED, "Note");
-        when(userRepository.findById(any())).thenReturn(java.util.Optional.of(new Users()));
+        when(userRepository.findById(any())).thenReturn(Optional.of(new Users()));
         Shift activeShift = new Shift(); activeShift.setIsActive(true);
-        when(shiftRepository.findById(any())).thenReturn(java.util.Optional.of(activeShift));
-        when(roleRepository.findById(any())).thenReturn(java.util.Optional.of(new Roles()));
-        when(workScheduleRepository.existsByStaffIdAndWorkDateAndShiftId(any(), any(), any())).thenReturn(false);
-        when(examRoomRepository.findById(any())).thenReturn(java.util.Optional.empty());
+        when(shiftRepository.findById(any())).thenReturn(Optional.of(activeShift));
+        when(roleRepository.findById(any())).thenReturn(Optional.of(new Roles()));
+        when(scheduleConflictChecker.hasStaffShiftConflict(any(), any(), any())).thenReturn(false);
+        when(examRoomRepository.findById(any())).thenReturn(Optional.empty());
         
         assertThatThrownBy(() -> service.createSchedule(req))
-            .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class);
+            .isInstanceOf(BusinessException.class);
     }
 
     @Test
     void createSchedule_shouldThrow_whenStationNotFound() {
         WorkScheduleRequest req = new WorkScheduleRequest(UUID.randomUUID(), LocalDate.now(), UUID.randomUUID(), null, UUID.randomUUID(), UUID.randomUUID(), 1, ScheduleStatus.ASSIGNED, "Note");
-        when(userRepository.findById(any())).thenReturn(java.util.Optional.of(new Users()));
+        when(userRepository.findById(any())).thenReturn(Optional.of(new Users()));
         Shift activeShift = new Shift(); activeShift.setIsActive(true);
-        when(shiftRepository.findById(any())).thenReturn(java.util.Optional.of(activeShift));
-        when(roleRepository.findById(any())).thenReturn(java.util.Optional.of(new Roles()));
-        when(workScheduleRepository.existsByStaffIdAndWorkDateAndShiftId(any(), any(), any())).thenReturn(false);
-        when(groomingStationRepository.findById(any())).thenReturn(java.util.Optional.empty());
+        when(shiftRepository.findById(any())).thenReturn(Optional.of(activeShift));
+        when(roleRepository.findById(any())).thenReturn(Optional.of(new Roles()));
+        when(scheduleConflictChecker.hasStaffShiftConflict(any(), any(), any())).thenReturn(false);
+        when(groomingStationRepository.findById(any())).thenReturn(Optional.empty());
         
         assertThatThrownBy(() -> service.createSchedule(req))
-            .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class);
+            .isInstanceOf(BusinessException.class);
     }
 
     @Test
     void previewWeeklyPlan_shouldThrow_whenDatesInvalid() {
         WeeklySchedulePlanRequest req = new WeeklySchedulePlanRequest(LocalDate.now(), LocalDate.now(), List.of(), List.of());
         assertThatThrownBy(() -> service.previewWeeklyPlan(req))
-            .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class);
+            .isInstanceOf(BusinessException.class);
     }
     
     @Test
@@ -452,7 +495,7 @@ class WorkScheduleServiceTest {
         source.setRole(new Roles());
         
         when(workScheduleRepository.findByWorkDateBetweenAndStatusCodeOrderByWorkDateAsc(any(), any(), any())).thenReturn(List.of(source));
-        when(workScheduleRepository.existsByStaffIdAndWorkDateAndShiftId(any(), any(), any())).thenReturn(false);
+        when(scheduleConflictChecker.hasStaffShiftConflict(any(), any(), any())).thenReturn(false);
         when(workScheduleRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         
         WeeklySchedulePlanResponse res = service.applyWeeklyPlan(req);
@@ -463,17 +506,17 @@ class WorkScheduleServiceTest {
 
     @Test
     void searchSchedules_shouldThrow_whenDatesInvalid_inverted() {
-        assertThatThrownBy(() -> service.searchSchedules(LocalDate.now(), LocalDate.now().minusDays(1), org.springframework.data.domain.PageRequest.of(0, 10)))
-            .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class);
-        assertThatThrownBy(() -> service.searchSchedules(null, LocalDate.now().minusDays(1), org.springframework.data.domain.PageRequest.of(0, 10)))
-            .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class);
+        assertThatThrownBy(() -> service.searchSchedules(LocalDate.now(), LocalDate.now().minusDays(1), PageRequest.of(0, 10)))
+            .isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> service.searchSchedules(null, LocalDate.now().minusDays(1), PageRequest.of(0, 10)))
+            .isInstanceOf(BusinessException.class);
     }
 
     @Test
     void createSchedule_shouldThrow_whenCapacityNegative() {
         WorkScheduleRequest req = new WorkScheduleRequest(UUID.randomUUID(), LocalDate.now(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), -1, ScheduleStatus.ASSIGNED, "Note");
         assertThatThrownBy(() -> service.createSchedule(req))
-            .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class);
+            .isInstanceOf(BusinessException.class);
     }
 
     @Test
@@ -481,7 +524,7 @@ class WorkScheduleServiceTest {
         LocalDate date = LocalDate.now();
         WeeklySchedulePlanRequest req = new WeeklySchedulePlanRequest(date, date, List.of(), List.of());
         assertThatThrownBy(() -> service.previewWeeklyPlan(req))
-            .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class);
+            .isInstanceOf(BusinessException.class);
     }
 
     @Test
@@ -508,7 +551,7 @@ class WorkScheduleServiceTest {
         when(shiftRepository.findByIsActiveTrueOrderByStartTimeAsc()).thenReturn(List.of(shift));
         
         // No conflict, will save
-        when(workScheduleRepository.existsByStaffIdAndWorkDateAndShiftId(any(), any(), any())).thenReturn(false);
+        when(scheduleConflictChecker.hasStaffShiftConflict(any(), any(), any())).thenReturn(false);
         when(workScheduleRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         
         WeeklySchedulePlanResponse res = service.applyWeeklyPlan(request);
@@ -589,26 +632,26 @@ class WorkScheduleServiceTest {
 
     @Test
     void searchSchedules_shouldThrow_whenDatesNull() {
-        assertThatThrownBy(() -> service.searchSchedules(LocalDate.now(), null, org.springframework.data.domain.PageRequest.of(0, 10)))
-            .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class);
+        assertThatThrownBy(() -> service.searchSchedules(LocalDate.now(), null, PageRequest.of(0, 10)))
+            .isInstanceOf(BusinessException.class);
     }
 
     @Test
     void createSchedule_shouldThrow_whenCapacityNull() {
         WorkScheduleRequest req = new WorkScheduleRequest(UUID.randomUUID(), LocalDate.now(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), null, ScheduleStatus.ASSIGNED, "Note");
         assertThatThrownBy(() -> service.createSchedule(req))
-            .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class);
+            .isInstanceOf(BusinessException.class);
     }
 
     @Test
     void previewWeeklyPlan_shouldThrow_whenDatesNull() {
         WeeklySchedulePlanRequest req1 = new WeeklySchedulePlanRequest(null, LocalDate.now(), List.of(), List.of());
         assertThatThrownBy(() -> service.previewWeeklyPlan(req1))
-            .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class);
+            .isInstanceOf(BusinessException.class);
             
         WeeklySchedulePlanRequest req2 = new WeeklySchedulePlanRequest(LocalDate.now(), null, List.of(), List.of());
         assertThatThrownBy(() -> service.previewWeeklyPlan(req2))
-            .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class);
+            .isInstanceOf(BusinessException.class);
     }
 
     @Test
@@ -657,7 +700,7 @@ class WorkScheduleServiceTest {
         when(userRepository.findScheduleStaffOptions(any(), any())).thenReturn(List.of(staff));
         when(shiftRepository.findByIsActiveTrueOrderByStartTimeAsc()).thenReturn(List.of(shift));
         
-        when(workScheduleRepository.existsByStaffIdAndWorkDateAndShiftId(any(), any(), any())).thenReturn(false);
+        when(scheduleConflictChecker.hasStaffShiftConflict(any(), any(), any())).thenReturn(false);
         
         WeeklySchedulePlanResponse res = service.previewWeeklyPlan(request);
         assertThat(res).isNotNull();
@@ -695,14 +738,14 @@ class WorkScheduleServiceTest {
         
         when(userRepository.findScheduleStaffOptions(any(), any())).thenReturn(List.of(vet, staff));
         when(shiftRepository.findByIsActiveTrueOrderByStartTimeAsc()).thenReturn(List.of(shift));
-        when(workScheduleRepository.existsByStaffIdAndWorkDateAndShiftId(any(), any(), any())).thenReturn(false);
+        when(scheduleConflictChecker.hasStaffShiftConflict(any(), any(), any())).thenReturn(false);
         when(workScheduleRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        com.astral.express.pccms.appointment.entity.ExamRoom room = new com.astral.express.pccms.appointment.entity.ExamRoom();
+        ExamRoom room = new ExamRoom();
         room.setId(UUID.randomUUID());
         room.setRoomCode("R1");
         
-        com.astral.express.pccms.grooming.entity.GroomingStation station = new com.astral.express.pccms.grooming.entity.GroomingStation();
+        GroomingStation station = new GroomingStation();
         station.setId(UUID.randomUUID());
         station.setStationCode("S1");
 
@@ -714,8 +757,8 @@ class WorkScheduleServiceTest {
         assertThat(res).isNotNull();
         assertThat(res.createdCount()).isEqualTo(14);
         
-        org.mockito.ArgumentCaptor<WorkSchedule> captor = org.mockito.ArgumentCaptor.forClass(WorkSchedule.class);
-        verify(workScheduleRepository, org.mockito.Mockito.times(14)).save(captor.capture());
+        ArgumentCaptor<WorkSchedule> captor = ArgumentCaptor.forClass(WorkSchedule.class);
+        verify(workScheduleRepository, Mockito.times(14)).save(captor.capture());
         
         List<WorkSchedule> savedSchedules = captor.getAllValues();
         

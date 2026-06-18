@@ -38,6 +38,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
 
 @ExtendWith(MockitoExtension.class)
 class ServiceCatalogServiceTest {
@@ -97,16 +100,16 @@ class ServiceCatalogServiceTest {
             ArgumentCaptor<Specification<ServiceCatalog>> captor = ArgumentCaptor.forClass(Specification.class);
             verify(serviceCatalogRepository).findAll(captor.capture(), eq(pageable));
 
-            Root<ServiceCatalog> root = org.mockito.Mockito.mock(Root.class);
-            CriteriaQuery<?> query = org.mockito.Mockito.mock(CriteriaQuery.class);
-            CriteriaBuilder criteriaBuilder = org.mockito.Mockito.mock(CriteriaBuilder.class);
-            Path<String> serviceCodePath = org.mockito.Mockito.mock(Path.class);
-            Path<String> namePath = org.mockito.Mockito.mock(Path.class);
-            Expression<String> lowerServiceCode = org.mockito.Mockito.mock(Expression.class);
-            Expression<String> lowerName = org.mockito.Mockito.mock(Expression.class);
-            Predicate serviceCodePredicate = org.mockito.Mockito.mock(Predicate.class);
-            Predicate namePredicate = org.mockito.Mockito.mock(Predicate.class);
-            Predicate keywordPredicate = org.mockito.Mockito.mock(Predicate.class);
+            Root<ServiceCatalog> root = Mockito.mock(Root.class);
+            CriteriaQuery<?> query = Mockito.mock(CriteriaQuery.class);
+            CriteriaBuilder criteriaBuilder = Mockito.mock(CriteriaBuilder.class);
+            Path<String> serviceCodePath = Mockito.mock(Path.class);
+            Path<String> namePath = Mockito.mock(Path.class);
+            Expression<String> lowerServiceCode = Mockito.mock(Expression.class);
+            Expression<String> lowerName = Mockito.mock(Expression.class);
+            Predicate serviceCodePredicate = Mockito.mock(Predicate.class);
+            Predicate namePredicate = Mockito.mock(Predicate.class);
+            Predicate keywordPredicate = Mockito.mock(Predicate.class);
 
             given(root.<String>get("serviceCode")).willReturn(serviceCodePath);
             given(root.<String>get("name")).willReturn(namePath);
@@ -280,29 +283,29 @@ class ServiceCatalogServiceTest {
     ) {
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void searchServices_shouldReturnPage_withMultipleFilters() {
         PageRequest pageable = PageRequest.of(0, 10);
         ServiceCatalog service = service("S1", "Service Name", ServiceCategory.MEDICAL, true);
-        given(serviceCatalogRepository.findAll(nullable(org.springframework.data.jpa.domain.Specification.class), org.mockito.ArgumentMatchers.eq(pageable)))
+        given(serviceCatalogRepository.findAll(nullable(Specification.class), ArgumentMatchers.eq(pageable)))
                 .willReturn(new PageImpl<>(List.of(service), pageable, 1));
 
         var response = serviceCatalogService.searchServices("keyword", ServiceCategory.MEDICAL, true, pageable);
         assertThat(response.data().content()).hasSize(1);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void searchServices_shouldReturnPage_withBlankKeyword() {
         PageRequest pageable = PageRequest.of(0, 10);
         ServiceCatalog service = service("S1", "Service Name", ServiceCategory.MEDICAL, true);
-        given(serviceCatalogRepository.findAll(nullable(org.springframework.data.jpa.domain.Specification.class), org.mockito.ArgumentMatchers.eq(pageable)))
+        given(serviceCatalogRepository.findAll(nullable(Specification.class), ArgumentMatchers.eq(pageable)))
                 .willReturn(new PageImpl<>(List.of(service), pageable, 1));
 
         var response = serviceCatalogService.searchServices("   ", null, null, pageable);
         assertThat(response.data().content()).hasSize(1);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void updateService_shouldThrowException_whenServiceCodeExistsForOtherService() {
         UUID serviceId = UUID.randomUUID();
         ServiceCatalogRequest request = new ServiceCatalogRequest("S1", "Service", ServiceCategory.MEDICAL, "", 1000L, 30, true, null, null);
@@ -313,7 +316,7 @@ class ServiceCatalogServiceTest {
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_VALIDATION_FAILED);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void updateService_shouldThrowException_whenNotFound() {
         UUID serviceId = UUID.randomUUID();
         given(serviceCatalogRepository.findById(serviceId)).willReturn(Optional.empty());
@@ -323,7 +326,7 @@ class ServiceCatalogServiceTest {
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_404_NOT_FOUND);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void deactivateService_shouldThrowException_whenNotFound() {
         UUID serviceId = UUID.randomUUID();
         given(serviceCatalogRepository.findById(serviceId)).willReturn(Optional.empty());
@@ -332,21 +335,21 @@ class ServiceCatalogServiceTest {
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_404_NOT_FOUND);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void createService_shouldThrowException_whenBasePriceIsNull() {
         ServiceCatalogRequest request = new ServiceCatalogRequest("S1", "Service", ServiceCategory.MEDICAL, "", null, 30, true, null, null);
         assertThatThrownBy(() -> serviceCatalogService.createService(request))
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_VALIDATION_FAILED);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void createService_shouldThrowException_whenBasePriceIsNegative() {
         ServiceCatalogRequest request = new ServiceCatalogRequest("S1", "Service", ServiceCategory.MEDICAL, "", -10L, 30, true, null, null);
         assertThatThrownBy(() -> serviceCatalogService.createService(request))
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_VALIDATION_FAILED);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void createService_shouldThrowException_whenDurationIsZeroOrNegative() {
         ServiceCatalogRequest request = new ServiceCatalogRequest("S1", "Service", ServiceCategory.MEDICAL, "", 1000L, 0, true, null, null);
         assertThatThrownBy(() -> serviceCatalogService.createService(request))
@@ -357,7 +360,7 @@ class ServiceCatalogServiceTest {
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_VALIDATION_FAILED);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void createService_shouldHandleIsActiveNullAndFalse() {
         // Null isActive
         ServiceCatalogRequest req1 = new ServiceCatalogRequest("S1", "Service", ServiceCategory.MEDICAL, "", 1000L, 30, null, null, null);
@@ -374,7 +377,7 @@ class ServiceCatalogServiceTest {
         serviceCatalogService.createService(req2);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void createService_shouldThrowException_whenEffectiveRangeInvalid() {
         LocalDate from = LocalDate.now();
         LocalDate to = from.minusDays(1);

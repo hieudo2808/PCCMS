@@ -9,7 +9,6 @@ import com.astral.express.pccms.billing.entity.Payment;
 import com.astral.express.pccms.billing.entity.PaymentStatus;
 import com.astral.express.pccms.billing.repository.InvoiceRepository;
 import com.astral.express.pccms.billing.repository.PaymentRepository;
-import com.astral.express.pccms.billing.service.PaymentService;
 import com.astral.express.pccms.common.exception.BusinessException;
 import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.identity.security.SecurityContextService;
@@ -30,8 +29,10 @@ public class PaymentService {
     private final InvoiceRepository invoiceRepository;
     private final PaymentRepository paymentRepository;
     private final UserRepository userRepository;
-    private final SecurityContextService SecurityContextService;
-@Transactional
+    private final SecurityContextService securityContextService;
+    private final PaymentTransitionPolicy paymentTransitionPolicy;
+
+    @Transactional
     public PaymentResponse recordPayment(RecordPaymentRequest request) {
         if (request.amountVnd() == null || request.amountVnd() <= 0) {
             throw new BusinessException(ErrorCode.ERR_BILLING_003_INVALID_PAYMENT_AMOUNT);
@@ -68,7 +69,7 @@ public class PaymentService {
 
         return toResponse(savedPayment);
     }
-@Transactional
+    @Transactional
     public PaymentResponse createOwnerPaymentRequest(UUID invoiceId, OwnerPaymentRequest request) {
         if (request.amountVnd() == null || request.amountVnd() <= 0) {
             throw new BusinessException(ErrorCode.ERR_BILLING_003_INVALID_PAYMENT_AMOUNT);
@@ -92,21 +93,20 @@ public class PaymentService {
                 .invoice(invoice)
                 .amountVnd(request.amountVnd())
                 .methodCode(request.methodCode())
-                .statusCode(PaymentStatus.SUCCEEDED)
-                .paidAt(OffsetDateTime.now())
+                .statusCode(PaymentStatus.PENDING)
                 .note(note)
                 .build();
         Payment savedPayment = paymentRepository.save(payment);
-        
-        applySucceededPayment(invoice, request.amountVnd());
-        
+
         return toResponse(savedPayment);
     }
-@Transactional
+
+    @Transactional
     public PaymentResponse updatePaymentStatus(UUID paymentId, PaymentStatus statusCode, String note) {
-        Payment payment = paymentRepository.findById(paymentId)
+        Payment payment = paymentRepository.findByIdForUpdate(paymentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ERR_BILLING_002_INVOICE_NOT_FOUND));
         PaymentStatus previousStatus = payment.getStatusCode();
+        paymentTransitionPolicy.requireAllowed(previousStatus, statusCode);
         payment.setStatusCode(statusCode);
         if (note != null && !note.isBlank()) {
             payment.setNote(note);
@@ -124,7 +124,7 @@ public class PaymentService {
     }
 
     private UUID requireCurrentUserId() {
-        UUID currentUserId = SecurityContextService.getCurrentUserId();
+        UUID currentUserId = securityContextService.getCurrentUserId();
         if (currentUserId == null) {
             throw new BusinessException(ErrorCode.ERR_401_UNAUTHORIZED);
         }

@@ -23,7 +23,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.data.domain.PageImpl;
 
 @ExtendWith(MockitoExtension.class)
 class InvoiceControllerTest {
@@ -46,7 +47,7 @@ class InvoiceControllerTest {
 
     @Test
     void listMyInvoices_success() throws Exception {
-        PageResponse<InvoiceResponse> page = PageResponse.of(new org.springframework.data.domain.PageImpl<>(List.of()));
+        PageResponse<InvoiceResponse> page = PageResponse.of(new PageImpl<>(List.of()));
         given(invoiceService.listMyInvoices(any(Pageable.class))).willReturn(page);
 
         mockMvc.perform(get("/v1/invoices/my"))
@@ -56,7 +57,7 @@ class InvoiceControllerTest {
 
     @Test
     void listInvoices_success() throws Exception {
-        PageResponse<InvoiceResponse> page = PageResponse.of(new org.springframework.data.domain.PageImpl<>(List.of()));
+        PageResponse<InvoiceResponse> page = PageResponse.of(new PageImpl<>(List.of()));
         given(invoiceService.listInvoices(any(Pageable.class))).willReturn(page);
 
         mockMvc.perform(get("/v1/invoices"))

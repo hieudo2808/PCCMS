@@ -1,6 +1,8 @@
 package com.astral.express.pccms.appointment.entity;
 
 import com.astral.express.pccms.common.domain.AuditableEntity;
+import com.astral.express.pccms.common.exception.BusinessException;
+import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.grooming.entity.GroomingStation;
 import com.astral.express.pccms.user.entity.Users;
 import jakarta.persistence.Column;
@@ -71,7 +73,7 @@ public class GroomingTicket extends AuditableEntity {
 
     public void confirm(GroomingStation station, Users assignedStaff, String internalNote, UUID actorId) {
         if (this.statusCode != GroomingStatus.PENDING) {
-            throw new com.astral.express.pccms.common.exception.BusinessException(com.astral.express.pccms.common.exception.ErrorCode.ERR_GROOMING_004_INVALID_STATUS_TRANSITION);
+            throw new BusinessException(ErrorCode.ERR_GROOMING_004_INVALID_STATUS_TRANSITION);
         }
         this.station = station;
         this.assignedStaff = assignedStaff;
@@ -88,10 +90,10 @@ public class GroomingTicket extends AuditableEntity {
 
     public void start(OffsetDateTime startedAt, UUID actorId) {
         if (this.statusCode != GroomingStatus.CONFIRMED) {
-            throw new com.astral.express.pccms.common.exception.BusinessException(com.astral.express.pccms.common.exception.ErrorCode.ERR_GROOMING_004_INVALID_STATUS_TRANSITION);
+            throw new BusinessException(ErrorCode.ERR_GROOMING_004_INVALID_STATUS_TRANSITION);
         }
         if (this.station == null) {
-            throw new com.astral.express.pccms.common.exception.BusinessException(com.astral.express.pccms.common.exception.ErrorCode.ERR_GROOMING_006_STATION_UNAVAILABLE);
+            throw new BusinessException(ErrorCode.ERR_GROOMING_006_STATION_UNAVAILABLE);
         }
         this.statusCode = GroomingStatus.IN_SERVICE;
         this.startedAt = startedAt;
@@ -108,7 +110,7 @@ public class GroomingTicket extends AuditableEntity {
             return;
         }
         if (this.statusCode != GroomingStatus.IN_SERVICE) {
-            throw new com.astral.express.pccms.common.exception.BusinessException(com.astral.express.pccms.common.exception.ErrorCode.ERR_GROOMING_004_INVALID_STATUS_TRANSITION);
+            throw new BusinessException(ErrorCode.ERR_GROOMING_004_INVALID_STATUS_TRANSITION);
         }
         this.statusCode = GroomingStatus.COMPLETED;
         this.completedAt = completedAt;
@@ -130,10 +132,10 @@ public class GroomingTicket extends AuditableEntity {
 
     public void cancel(String reason, OffsetDateTime cancelledAt, UUID actorId, boolean isStaff) {
         if (this.statusCode == GroomingStatus.COMPLETED || this.statusCode == GroomingStatus.CANCELLED) {
-            throw new com.astral.express.pccms.common.exception.BusinessException(com.astral.express.pccms.common.exception.ErrorCode.ERR_GROOMING_004_INVALID_STATUS_TRANSITION);
+            throw new BusinessException(ErrorCode.ERR_GROOMING_004_INVALID_STATUS_TRANSITION);
         }
         if (!isStaff && this.statusCode != GroomingStatus.PENDING) {
-            throw new com.astral.express.pccms.common.exception.BusinessException(com.astral.express.pccms.common.exception.ErrorCode.ERR_GROOMING_004_INVALID_STATUS_TRANSITION);
+            throw new BusinessException(ErrorCode.ERR_GROOMING_004_INVALID_STATUS_TRANSITION);
         }
         this.statusCode = GroomingStatus.CANCELLED;
         this.internalNote = reason;

@@ -12,7 +12,6 @@ import com.astral.express.pccms.schedule.entity.ShiftRequestStatus;
 import com.astral.express.pccms.schedule.entity.WorkSchedule;
 import com.astral.express.pccms.schedule.repository.ShiftChangeRequestRepository;
 import com.astral.express.pccms.schedule.repository.WorkScheduleRepository;
-import com.astral.express.pccms.schedule.service.ShiftChangeRequestService;
 import com.astral.express.pccms.user.entity.Users;
 import com.astral.express.pccms.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -33,8 +32,9 @@ public class ShiftChangeRequestService {
     private final ShiftChangeRequestRepository shiftChangeRequestRepository;
     private final WorkScheduleRepository workScheduleRepository;
     private final UserRepository userRepository;
-    private final SecurityContextService SecurityContextService;
-@PreAuthorize("isAuthenticated()")
+    private final SecurityContextService securityContextService;
+
+    @PreAuthorize("isAuthenticated()")
     public PageResponse<ShiftChangeRequestResponse> getMyRequests(
             ShiftRequestStatus statusCode,
             Pageable pageable) {
@@ -89,7 +89,7 @@ public class ShiftChangeRequestService {
         changeRequest.setStatusCode(ShiftRequestStatus.PENDING);
         return ScheduleMapperSupport.toShiftChangeRequestResponse(shiftChangeRequestRepository.save(changeRequest));
     }
-@Transactional
+    @Transactional
     @PreAuthorize("isAuthenticated()")
     public ShiftChangeRequestResponse cancelOwnRequest(UUID requestId) {
         UUID currentUserId = currentUserId();
@@ -104,7 +104,7 @@ public class ShiftChangeRequestService {
         request.setStatusCode(ShiftRequestStatus.CANCELLED);
         return ScheduleMapperSupport.toShiftChangeRequestResponse(shiftChangeRequestRepository.save(request));
     }
-@Transactional
+    @Transactional
     @PreAuthorize("hasAuthority('SCHEDULE_MANAGE')")
     public ShiftChangeRequestResponse updateRequestStatus(UUID requestId, ShiftRequestStatus statusCode) {
         UUID currentUserId = currentUserId();
@@ -204,7 +204,7 @@ public class ShiftChangeRequestService {
     }
 
     private UUID currentUserId() {
-        UUID currentUserId = SecurityContextService.getCurrentUserId();
+        UUID currentUserId = securityContextService.getCurrentUserId();
         if (currentUserId == null) {
             throw new BusinessException(ErrorCode.ERR_401_UNAUTHORIZED);
         }

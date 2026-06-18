@@ -61,14 +61,16 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.doThrow;
+import com.astral.express.pccms.grooming.dto.response.GroomingTicketResponse;
+import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class GroomingServiceTest {
 
     @Mock
-    private SecurityContextService SecurityContextService;
+    private SecurityContextService securityContextService;
 
     @Mock
     private UserRepository userRepository;
@@ -104,19 +106,43 @@ class GroomingServiceTest {
 
     @BeforeEach
     void setUp() {
-        groomingService = new GroomingService(
-                SecurityContextService,
+        GroomingMapper groomingMapper = new GroomingMapper();
+        GroomingAvailabilityPolicy groomingAvailabilityPolicy = new GroomingAvailabilityPolicy(groomingTicketRepository);
+        GroomingBookingUseCase groomingBookingUseCase = new GroomingBookingUseCase(
+                securityContextService,
                 userRepository,
                 petRepository,
                 serviceCatalogRepository,
                 serviceOrderRepository,
                 appointmentRepository,
                 groomingTicketRepository,
+                invoiceRepository,
+                groomingMapper,
+                roomAvailabilityChecker,
+                groomingAvailabilityPolicy);
+        GroomingTicketLifecycleService groomingTicketLifecycleService = new GroomingTicketLifecycleService(
+                securityContextService,
+                userRepository,
+                appointmentRepository,
+                serviceOrderRepository,
+                groomingTicketRepository,
                 groomingStationRepository,
                 billingHandoffService,
                 invoiceRepository,
-                new GroomingMapper(),
-                roomAvailabilityChecker);
+                groomingMapper,
+                groomingAvailabilityPolicy);
+        GroomingQueryService groomingQueryService = new GroomingQueryService(
+                serviceCatalogRepository,
+                groomingTicketRepository,
+                groomingStationRepository,
+                invoiceRepository,
+                groomingMapper);
+        groomingService = new GroomingService(
+                groomingQueryService,
+                groomingBookingUseCase,
+                groomingTicketLifecycleService,
+                new GroomingCatalogAdminService(serviceCatalogRepository, groomingMapper),
+                new GroomingStationAdminService(groomingStationRepository, groomingMapper));
     }
 
     @ParameterizedTest(name = "[{0}] {1}: {6}")
@@ -154,7 +180,7 @@ class GroomingServiceTest {
         service.setIsActive(true);
 
         if ("CREATE_BOOKING".equals(action)) {
-            given(SecurityContextService.getCurrentUserId()).willReturn(ownerId);
+            given(securityContextService.getCurrentUserId()).willReturn(ownerId);
             given(userRepository.findById(ownerId)).willReturn(Optional.of(owner));
             given(petRepository.findById(petId)).willReturn(Optional.of(pet));
             if (!"PET_OTHER_OWNER".equals(mockState)) {
@@ -201,7 +227,7 @@ class GroomingServiceTest {
                     .name("Bàn spa 1")
                     .isActive(true)
                     .build();
-            given(SecurityContextService.getCurrentUserId()).willReturn(staff.getId());
+            given(securityContextService.getCurrentUserId()).willReturn(staff.getId());
             given(userRepository.findById(staff.getId())).willReturn(Optional.of(staff));
             given(groomingTicketRepository.findLockedWithDetailsById(ticketId)).willReturn(Optional.of(ticket));
             given(groomingStationRepository.findWithLockById(stationId)).willReturn(Optional.of(station));
@@ -219,7 +245,7 @@ class GroomingServiceTest {
                     .totalAmountVnd(100000L)
                     .paidAmountVnd(0L)
                     .build();
-            given(SecurityContextService.getCurrentUserId()).willReturn(staff.getId());
+            given(securityContextService.getCurrentUserId()).willReturn(staff.getId());
             given(userRepository.findById(staff.getId())).willReturn(Optional.of(staff));
             given(groomingTicketRepository.findLockedWithDetailsById(ticketId)).willReturn(Optional.of(ticket));
             given(groomingTicketRepository.save(any(GroomingTicket.class))).willAnswer(invocation -> invocation.getArgument(0));
@@ -252,7 +278,7 @@ class GroomingServiceTest {
         }
     }
 
-    private com.astral.express.pccms.grooming.dto.response.GroomingTicketResponse execute(
+    private GroomingTicketResponse execute(
             String action,
             String mockState,
             UUID petId,
@@ -302,7 +328,7 @@ class GroomingServiceTest {
         return ticket;
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_RejectGroomingBooking_When_GroomingSlotFull() {
         // GIVEN
         UUID petId = UUID.randomUUID();
@@ -318,7 +344,7 @@ class GroomingServiceTest {
         service.setDurationMinutes(60);
         service.setBasePriceVnd(100000L);
 
-        given(SecurityContextService.getCurrentUserId()).willReturn(ownerId);
+        given(securityContextService.getCurrentUserId()).willReturn(ownerId);
         given(userRepository.findById(ownerId)).willReturn(Optional.of(owner));
         given(petRepository.findById(petId)).willReturn(Optional.of(pet));
         given(serviceCatalogRepository.findByIdAndCategoryCodeAndIsActiveTrue(serviceId, ServiceCategory.GROOMING)).willReturn(Optional.of(service));
@@ -338,7 +364,7 @@ class GroomingServiceTest {
         verify(groomingTicketRepository, never()).save(any());
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_ListActiveServices() {
         given(serviceCatalogRepository.findByCategoryCodeAndIsActiveTrueOrderByNameAsc(ServiceCategory.GROOMING))
                 .willReturn(List.of(new ServiceCatalog()));
@@ -346,7 +372,7 @@ class GroomingServiceTest {
         assertThat(res).hasSize(1);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_ListActiveStations() {
         given(groomingStationRepository.findByIsActiveTrueOrderByStationCodeAsc())
                 .willReturn(List.of(new GroomingStation()));
@@ -354,10 +380,10 @@ class GroomingServiceTest {
         assertThat(res).hasSize(1);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_ListMyTickets() {
         UUID userId = UUID.randomUUID();
-        given(SecurityContextService.getCurrentUserId()).willReturn(userId);
+        given(securityContextService.getCurrentUserId()).willReturn(userId);
         Page<GroomingTicket> page = new PageImpl<>(List.of(buildTicket(UUID.randomUUID(), new Users(), new Pets(), new ServiceCatalog(), GroomingStatus.PENDING)));
         given(groomingTicketRepository.findByAppointmentServiceOrderOwnerIdOrderByAppointmentScheduledStartAtDesc(eq(userId), any()))
                 .willReturn(page);
@@ -365,7 +391,7 @@ class GroomingServiceTest {
         assertThat(res.data().content()).hasSize(1);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_GetMyTicket() {
         UUID userId = UUID.randomUUID();
         UUID ticketId = UUID.randomUUID();
@@ -373,14 +399,14 @@ class GroomingServiceTest {
         GroomingTicket ticket = buildTicket(ticketId, owner, new Pets(), new ServiceCatalog(), GroomingStatus.PENDING);
         
         given(groomingTicketRepository.findWithDetailsById(ticketId)).willReturn(Optional.of(ticket));
-        given(SecurityContextService.hasAnyRole("ADMIN", "STAFF")).willReturn(false);
-        given(SecurityContextService.getCurrentUserId()).willReturn(userId);
+        given(securityContextService.hasAnyRole("ADMIN", "STAFF")).willReturn(false);
+        given(securityContextService.getCurrentUserId()).willReturn(userId);
 
         var res = groomingService.getMyTicket(ticketId);
         assertThat(res).isNotNull();
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_ListTickets() {
         Page<GroomingTicket> page = new PageImpl<>(List.of(buildTicket(UUID.randomUUID(), new Users(), new Pets(), new ServiceCatalog(), GroomingStatus.PENDING)));
         given(groomingTicketRepository.findByStatusCodeOrderByAppointmentScheduledStartAtAsc(eq(GroomingStatus.PENDING), any()))
@@ -389,7 +415,7 @@ class GroomingServiceTest {
         assertThat(res.data().content()).hasSize(1);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_StartTicket() {
         UUID ticketId = UUID.randomUUID();
         UUID staffId = UUID.randomUUID();
@@ -397,7 +423,7 @@ class GroomingServiceTest {
         GroomingTicket ticket = buildTicket(ticketId, new Users(), new Pets(), new ServiceCatalog(), GroomingStatus.CONFIRMED);
         ticket.setStation(new GroomingStation());
         
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(staff));
         given(groomingTicketRepository.findLockedWithDetailsById(ticketId)).willReturn(Optional.of(ticket));
         given(groomingTicketRepository.save(any())).willAnswer(i -> i.getArgument(0));
@@ -406,24 +432,24 @@ class GroomingServiceTest {
         assertThat(res.statusCode()).isEqualTo(GroomingStatus.IN_SERVICE);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_CancelTicket() {
         UUID ticketId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
         Users owner = Users.builder().id(userId).build();
         GroomingTicket ticket = buildTicket(ticketId, owner, new Pets(), new ServiceCatalog(), GroomingStatus.PENDING);
         
-        given(SecurityContextService.getCurrentUserId()).willReturn(userId);
+        given(securityContextService.getCurrentUserId()).willReturn(userId);
         given(userRepository.findById(userId)).willReturn(Optional.of(owner));
         given(groomingTicketRepository.findLockedWithDetailsById(ticketId)).willReturn(Optional.of(ticket));
-        given(SecurityContextService.hasAnyRole("ADMIN", "STAFF")).willReturn(false);
+        given(securityContextService.hasAnyRole("ADMIN", "STAFF")).willReturn(false);
         given(groomingTicketRepository.save(any())).willAnswer(i -> i.getArgument(0));
 
         var res = groomingService.cancelTicket(ticketId, new GroomingCancelRequest("Bận đột xuất"));
         assertThat(res.statusCode()).isEqualTo(GroomingStatus.CANCELLED);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_CreateGroomingService() {
         GroomingServiceRequest req = new GroomingServiceRequest("GRM-001", "Spa", "Desc", 100000L, 60);
         given(serviceCatalogRepository.existsByServiceCode("GRM-001")).willReturn(false);
@@ -437,7 +463,7 @@ class GroomingServiceTest {
         assertThat(res.serviceCode()).isEqualTo("GRM-001");
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_UpdateGroomingService() {
         UUID id = UUID.randomUUID();
         ServiceCatalog service = new ServiceCatalog();
@@ -453,7 +479,7 @@ class GroomingServiceTest {
         assertThat(res.name()).isEqualTo("Spa updated");
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_DeactivateGroomingService() {
         UUID id = UUID.randomUUID();
         ServiceCatalog service = new ServiceCatalog();
@@ -468,7 +494,7 @@ class GroomingServiceTest {
         assertThat(service.getIsActive()).isFalse();
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_CreateStation() {
         GroomingStationRequest req = new GroomingStationRequest("ST-01", "Station 1", true);
         given(groomingStationRepository.existsByStationCode("ST-01")).willReturn(false);
@@ -482,7 +508,7 @@ class GroomingServiceTest {
         assertThat(res.stationCode()).isEqualTo("ST-01");
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_UpdateStation() {
         UUID id = UUID.randomUUID();
         GroomingStation station = new GroomingStation();
@@ -497,7 +523,7 @@ class GroomingServiceTest {
         assertThat(res.isActive()).isFalse();
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_DeactivateStation() {
         UUID id = UUID.randomUUID();
         GroomingStation station = new GroomingStation();
@@ -520,7 +546,7 @@ class GroomingServiceTest {
         GroomingBookingCreateRequest request = new GroomingBookingCreateRequest(
                 UUID.randomUUID(), UUID.randomUUID(), OffsetDateTime.now().plusDays(1), "Note"
         );
-        given(SecurityContextService.getCurrentUserId()).willReturn(ownerId);
+        given(securityContextService.getCurrentUserId()).willReturn(ownerId);
         given(userRepository.findById(ownerId)).willReturn(Optional.of(owner));
         given(petRepository.findById(request.petId())).willReturn(Optional.empty());
 
@@ -537,7 +563,7 @@ class GroomingServiceTest {
         GroomingBookingCreateRequest request = new GroomingBookingCreateRequest(
                 pet.getId(), UUID.randomUUID(), OffsetDateTime.now().plusDays(1), "Note"
         );
-        given(SecurityContextService.getCurrentUserId()).willReturn(ownerId);
+        given(securityContextService.getCurrentUserId()).willReturn(ownerId);
         given(userRepository.findById(ownerId)).willReturn(Optional.of(owner));
         given(petRepository.findById(request.petId())).willReturn(Optional.of(pet));
         given(serviceCatalogRepository.findByIdAndCategoryCodeAndIsActiveTrue(request.serviceId(), ServiceCategory.GROOMING))
@@ -556,7 +582,7 @@ class GroomingServiceTest {
         ticket.setId(UUID.randomUUID());
         
         GroomingConfirmRequest req = new GroomingConfirmRequest(UUID.randomUUID(), null, "Internal");
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(staff));
         given(groomingTicketRepository.findLockedWithDetailsById(ticket.getId())).willReturn(Optional.of(ticket));
         given(groomingStationRepository.findWithLockById(req.stationId())).willReturn(Optional.empty());
@@ -577,7 +603,7 @@ class GroomingServiceTest {
         inactiveStation.setIsActive(false);
 
         GroomingConfirmRequest req = new GroomingConfirmRequest(inactiveStation.getId(), null, "Internal");
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(staff));
         given(groomingTicketRepository.findLockedWithDetailsById(ticket.getId())).willReturn(Optional.of(ticket));
         given(groomingStationRepository.findWithLockById(req.stationId())).willReturn(Optional.of(inactiveStation));
@@ -618,14 +644,14 @@ class GroomingServiceTest {
         ticket.setAppointment(appt);
         
         GroomingConfirmRequest req = new GroomingConfirmRequest(station.getId(), staffId, "Internal");
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(staff));
         given(groomingTicketRepository.findLockedWithDetailsById(ticket.getId())).willReturn(Optional.of(ticket));
         given(groomingStationRepository.findWithLockById(req.stationId())).willReturn(Optional.of(station));
         given(groomingTicketRepository.existsStationConflict(any(), any(), any(), any(), any())).willReturn(false);
         given(groomingTicketRepository.save(any())).willAnswer(i -> i.getArgument(0));
 
-        com.astral.express.pccms.grooming.dto.response.GroomingTicketResponse response = groomingService.confirmTicket(ticket.getId(), req);
+        GroomingTicketResponse response = groomingService.confirmTicket(ticket.getId(), req);
         assertThat(response).isNotNull();
     }
 
@@ -653,12 +679,12 @@ class GroomingServiceTest {
         appt.setServiceOrder(so);
         ticket.setAppointment(appt);
         
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(staff));
         given(groomingTicketRepository.findLockedWithDetailsById(ticket.getId())).willReturn(Optional.of(ticket));
         
         GroomingCompleteRequest request = new GroomingCompleteRequest("Done");
-        com.astral.express.pccms.grooming.dto.response.GroomingTicketResponse response = groomingService.completeTicket(ticket.getId(), request);
+        GroomingTicketResponse response = groomingService.completeTicket(ticket.getId(), request);
         assertThat(response).isNotNull();
     }
 
@@ -829,7 +855,7 @@ class GroomingServiceTest {
     
     @Test
     void requireCurrentUserId_null() {
-        given(SecurityContextService.getCurrentUserId()).willReturn(null);
+        given(securityContextService.getCurrentUserId()).willReturn(null);
         assertThatThrownBy(() -> groomingService.listMyTickets(PageRequest.of(0, 10)))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_401_UNAUTHORIZED);
@@ -838,8 +864,8 @@ class GroomingServiceTest {
     @Test
     void listTickets_withNullStatus() {
         given(groomingTicketRepository.findAllByOrderByAppointmentScheduledStartAtAsc(any()))
-                .willReturn(new org.springframework.data.domain.PageImpl<>(List.of()));
-        groomingService.listTickets(null, org.springframework.data.domain.Pageable.unpaged());
+                .willReturn(new PageImpl<>(List.of()));
+        groomingService.listTickets(null, Pageable.unpaged());
         verify(groomingTicketRepository).findAllByOrderByAppointmentScheduledStartAtAsc(any());
     }
 
@@ -875,14 +901,14 @@ class GroomingServiceTest {
         
         // request.assignedStaffId() is null here
         GroomingConfirmRequest req = new GroomingConfirmRequest(station.getId(), null, "Internal");
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(staff));
         given(groomingTicketRepository.findLockedWithDetailsById(ticket.getId())).willReturn(Optional.of(ticket));
         given(groomingStationRepository.findWithLockById(req.stationId())).willReturn(Optional.of(station));
         given(groomingTicketRepository.existsStationConflict(any(), any(), any(), any(), any())).willReturn(false);
         given(groomingTicketRepository.save(any())).willAnswer(i -> i.getArgument(0));
 
-        com.astral.express.pccms.grooming.dto.response.GroomingTicketResponse response = groomingService.confirmTicket(ticket.getId(), req);
+        GroomingTicketResponse response = groomingService.confirmTicket(ticket.getId(), req);
         assertThat(response).isNotNull();
     }
 
@@ -901,8 +927,8 @@ class GroomingServiceTest {
         ticket.setAppointment(appt);
         
         given(groomingTicketRepository.findWithDetailsById(ticket.getId())).willReturn(Optional.of(ticket));
-        given(SecurityContextService.hasAnyRole("ADMIN", "STAFF")).willReturn(false);
-        given(SecurityContextService.getCurrentUserId()).willReturn(currentUserId);
+        given(securityContextService.hasAnyRole("ADMIN", "STAFF")).willReturn(false);
+        given(securityContextService.getCurrentUserId()).willReturn(currentUserId);
         
         assertThatThrownBy(() -> groomingService.getMyTicket(ticket.getId()))
                 .isInstanceOf(BusinessException.class)
@@ -928,9 +954,9 @@ class GroomingServiceTest {
         ticket.setAppointment(appt);
         
         given(groomingTicketRepository.findWithDetailsById(ticket.getId())).willReturn(Optional.of(ticket));
-        given(SecurityContextService.hasAnyRole("ADMIN", "STAFF")).willReturn(true);
+        given(securityContextService.hasAnyRole("ADMIN", "STAFF")).willReturn(true);
         
-        com.astral.express.pccms.grooming.dto.response.GroomingTicketResponse response = groomingService.getMyTicket(ticket.getId());
+        GroomingTicketResponse response = groomingService.getMyTicket(ticket.getId());
         assertThat(response).isNotNull();
     }
 
@@ -943,7 +969,7 @@ class GroomingServiceTest {
         Users owner = Users.builder().id(ownerId).build();
         Pets pet = Pets.builder().id(request.petId()).owner(owner).build();
         
-        given(SecurityContextService.getCurrentUserId()).willReturn(ownerId);
+        given(securityContextService.getCurrentUserId()).willReturn(ownerId);
         given(userRepository.findById(ownerId)).willReturn(Optional.of(owner));
         given(petRepository.findById(request.petId())).willReturn(Optional.of(pet));
         
@@ -967,7 +993,7 @@ class GroomingServiceTest {
         Users owner = Users.builder().id(ownerId).build();
         Pets pet = Pets.builder().id(request.petId()).owner(owner).build();
         
-        given(SecurityContextService.getCurrentUserId()).willReturn(ownerId);
+        given(securityContextService.getCurrentUserId()).willReturn(ownerId);
         given(userRepository.findById(ownerId)).willReturn(Optional.of(owner));
         given(petRepository.findById(request.petId())).willReturn(Optional.of(pet));
         
@@ -991,7 +1017,7 @@ class GroomingServiceTest {
         Users owner = Users.builder().id(ownerId).build();
         Pets pet = Pets.builder().id(request.petId()).owner(owner).build();
         
-        given(SecurityContextService.getCurrentUserId()).willReturn(ownerId);
+        given(securityContextService.getCurrentUserId()).willReturn(ownerId);
         given(userRepository.findById(ownerId)).willReturn(Optional.of(owner));
         given(petRepository.findById(request.petId())).willReturn(Optional.of(pet));
         

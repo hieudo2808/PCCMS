@@ -1,6 +1,7 @@
 package com.astral.express.pccms.room.service;
 
 import com.astral.express.pccms.common.exception.BusinessException;
+import com.astral.express.pccms.common.exception.BusinessValidationException;
 import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.room.dto.request.RoomRequest;
 import com.astral.express.pccms.room.dto.request.RoomStatusUpdateRequest;
@@ -27,7 +28,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verify;
+import java.util.List;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 @ExtendWith(MockitoExtension.class)
 class RoomAdminServiceTest {
@@ -345,34 +351,75 @@ class RoomAdminServiceTest {
     ) {
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
+    void should_returnFieldErrors_when_CreateRoomHasInvalidCapacityAndFloor() {
+        RoomRequest request = new RoomRequest(
+                "R001",
+                "Room 1",
+                UUID.randomUUID(),
+                0,
+                0,
+                RoomStatus.AVAILABLE,
+                null);
+
+        BusinessValidationException exception = Assertions.assertThrows(
+                BusinessValidationException.class,
+                () -> roomAdminService.createRoom(request));
+
+        assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.ERR_VALIDATION_FAILED);
+        assertThat(exception.getFieldErrors())
+                .containsEntry("capacity", "Capacity must be at least 1")
+                .containsEntry("floor", "Floor must be at least 1");
+    }
+
+    @Test
+    void should_returnFieldErrors_when_CreateRoomTypeHasInvalidCapacityAndPrice() {
+        RoomTypeRequest request = new RoomTypeRequest(
+                "INVALID",
+                "Invalid",
+                0,
+                -1L,
+                null,
+                true);
+
+        BusinessValidationException exception = Assertions.assertThrows(
+                BusinessValidationException.class,
+                () -> roomAdminService.createRoomType(request));
+
+        assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.ERR_VALIDATION_FAILED);
+        assertThat(exception.getFieldErrors())
+                .containsEntry("defaultCapacity", "Default capacity must be at least 1")
+                .containsEntry("baseDailyPriceVnd", "Base daily price must be zero or greater");
+    }
+
+    @Test
     void should_listRoomTypes_activeOnly() {
-        given(roomTypeRepository.findByIsActiveTrueOrderByNameAsc()).willReturn(java.util.List.of(roomType(UUID.randomUUID())));
+        given(roomTypeRepository.findByIsActiveTrueOrderByNameAsc()).willReturn(List.of(roomType(UUID.randomUUID())));
         given(roomMapper.toRoomTypeResponse(any())).willReturn(new RoomTypeResponse(null, null, null, null, null, null, null));
         
         var list = roomAdminService.listRoomTypes(true);
         assertThat(list).hasSize(1);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_listRoomTypes_all() {
-        given(roomTypeRepository.findAllByOrderByNameAsc()).willReturn(java.util.List.of(roomType(UUID.randomUUID()), roomType(UUID.randomUUID())));
+        given(roomTypeRepository.findAllByOrderByNameAsc()).willReturn(List.of(roomType(UUID.randomUUID()), roomType(UUID.randomUUID())));
         given(roomMapper.toRoomTypeResponse(any())).willReturn(new RoomTypeResponse(null, null, null, null, null, null, null));
         
         var list = roomAdminService.listRoomTypes(false);
         assertThat(list).hasSize(2);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_listActiveRoomTypes() {
-        given(roomTypeRepository.findByIsActiveTrueOrderByNameAsc()).willReturn(java.util.List.of(roomType(UUID.randomUUID())));
+        given(roomTypeRepository.findByIsActiveTrueOrderByNameAsc()).willReturn(List.of(roomType(UUID.randomUUID())));
         given(roomMapper.toRoomTypeResponse(any())).willReturn(new RoomTypeResponse(null, null, null, null, null, null, null));
         
         var list = roomAdminService.listActiveRoomTypes();
         assertThat(list).hasSize(1);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_getRoomType() {
         UUID id = UUID.randomUUID();
         given(roomTypeRepository.findById(id)).willReturn(Optional.of(roomType(id)));
@@ -382,17 +429,17 @@ class RoomAdminServiceTest {
         assertThat(type).isNotNull();
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_listRooms() {
-        org.springframework.data.domain.PageRequest pageable = org.springframework.data.domain.PageRequest.of(0, 20);
-        given(roomRepository.findAll(pageable)).willReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of(new Room()), pageable, 1));
+        PageRequest pageable = PageRequest.of(0, 20);
+        given(roomRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(new Room()), pageable, 1));
         given(roomMapper.toRoomResponse(any())).willReturn(new RoomResponse(null, null, null, null, null, null, null, null, null));
         
         var page = roomAdminService.listRooms(pageable);
         assertThat(page.data().content()).hasSize(1);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_generateRoomTypeCode_when_CodeIsNull() {
         RoomTypeRequest request = new RoomTypeRequest(null, "VIP Room!@#", 2, 100000L, null, true);
         RoomType saved = new RoomType();
@@ -405,7 +452,7 @@ class RoomAdminServiceTest {
         assertThat(response.code()).isEqualTo("RT-VIPROOM-0001");
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_generateRoomTypeCode_when_NameIsLong() {
         RoomTypeRequest request = new RoomTypeRequest(null, "VeryLongNameIndeedYes", 2, 100000L, null, true);
         RoomType saved = new RoomType();
@@ -418,7 +465,7 @@ class RoomAdminServiceTest {
         assertThat(response.code()).isEqualTo("RT-VERYLONGNA-0001");
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_generateRoomTypeCode_when_NameIsBlankSymbols() {
         RoomTypeRequest request = new RoomTypeRequest("", "!@#", 2, 100000L, null, true);
         RoomType saved = new RoomType();
@@ -431,7 +478,7 @@ class RoomAdminServiceTest {
         assertThat(response.code()).isEqualTo("RT-ROOMTYPE-0001");
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_generateRoomTypeCode_when_CodeAlreadyExistsSequence() {
         RoomTypeRequest request = new RoomTypeRequest(null, "VIP", 2, 100000L, null, true);
         RoomType saved = new RoomType();
@@ -445,7 +492,7 @@ class RoomAdminServiceTest {
         assertThat(response.code()).isEqualTo("RT-VIP-0002");
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_resolveRoomTypeCode_when_UpdateWithExistingId() {
         UUID id = UUID.randomUUID();
         RoomTypeRequest request = new RoomTypeRequest(null, "VIP", 2, 100000L, null, true);
@@ -463,7 +510,7 @@ class RoomAdminServiceTest {
     }
 
 
-    @org.junit.jupiter.api.Test
+    @Test
     void createRoomType_shouldHandleNullAndFalseIsActive() {
         // Null isActive
         RoomTypeRequest req1 = new RoomTypeRequest("CODE1", "Name1", 2, 1000L, null, null);
@@ -484,7 +531,7 @@ class RoomAdminServiceTest {
         assertThat(rt2.getIsActive()).isFalse();
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void validateRoomTypeRequest_shouldThrow_whenValuesInvalid() {
         RoomTypeRequest req1 = new RoomTypeRequest("C", "N", 0, 1000L, null, true);
         assertThatThrownBy(() -> roomAdminService.createRoomType(req1))
@@ -495,7 +542,7 @@ class RoomAdminServiceTest {
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_VALIDATION_FAILED);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void validateRoomRequest_shouldThrow_whenValuesInvalid() {
         UUID rtId = UUID.randomUUID();
         // capacity null
@@ -515,7 +562,7 @@ class RoomAdminServiceTest {
         assertThatThrownBy(() -> roomAdminService.createRoom(req4)).isInstanceOf(BusinessException.class);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void updateRoom_shouldThrow_whenRoomNotFound() {
         UUID roomId = UUID.randomUUID();
         RoomRequest req = new RoomRequest("C", "N", UUID.randomUUID(), 1, 1, RoomStatus.AVAILABLE, "");
@@ -524,7 +571,7 @@ class RoomAdminServiceTest {
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_ROOM_002_ROOM_NOT_FOUND);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void updateRoom_shouldThrow_whenRoomTypeNotFound() {
         UUID roomId = UUID.randomUUID();
         UUID rtId = UUID.randomUUID();
@@ -535,7 +582,7 @@ class RoomAdminServiceTest {
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_ROOM_001_ROOM_TYPE_NOT_FOUND);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void updateRoomStatus_shouldThrow_whenRoomNotFound() {
         UUID roomId = UUID.randomUUID();
         RoomStatusUpdateRequest req = new RoomStatusUpdateRequest(RoomStatus.MAINTENANCE);
@@ -544,7 +591,7 @@ class RoomAdminServiceTest {
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_ROOM_002_ROOM_NOT_FOUND);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void findRoomType_shouldThrow_whenNotFound() {
         UUID rtId = UUID.randomUUID();
         given(roomTypeRepository.findById(rtId)).willReturn(Optional.empty());
@@ -553,7 +600,7 @@ class RoomAdminServiceTest {
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_ROOM_001_ROOM_TYPE_NOT_FOUND);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void resolveRoomTypeCode_shouldThrow_whenAllCodesExist() {
         RoomTypeRequest request = new RoomTypeRequest(null, "VIP", 2, 100000L, null, true);
         // mock existsByCodeAndIsActiveTrue to return true for all ANY

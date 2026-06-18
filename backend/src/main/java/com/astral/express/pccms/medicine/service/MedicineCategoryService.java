@@ -8,7 +8,6 @@ import com.astral.express.pccms.medicine.dto.response.MedicineCategoryResponse;
 import com.astral.express.pccms.medicine.entity.MedicineCategory;
 import com.astral.express.pccms.medicine.repository.MedicineCategoryRepository;
 import com.astral.express.pccms.medicine.repository.MedicineRepository;
-import com.astral.express.pccms.medicine.service.MedicineCategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

@@ -4,16 +4,15 @@ import com.astral.express.pccms.boarding.dto.request.UpsertCareLogRequest;
 import com.astral.express.pccms.boarding.dto.response.CareLogResponse;
 import com.astral.express.pccms.boarding.dto.response.StaffBoardingStayResponse;
 import com.astral.express.pccms.boarding.entity.CareLog;
+import com.astral.express.pccms.boarding.entity.CarePeriod;
+import com.astral.express.pccms.boarding.repository.BoardingSessionRepository;
 import com.astral.express.pccms.boarding.repository.CareLogRepository;
 import com.astral.express.pccms.boarding.support.BoardingPeriodLabels;
 import com.astral.express.pccms.common.exception.BusinessException;
 import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.pet.entity.Pets;
 import com.astral.express.pccms.pet.repository.PetRepository;
-import com.astral.express.pccms.user.entity.Users;
-import com.astral.express.pccms.boarding.entity.CarePeriod;
-import com.astral.express.pccms.boarding.entity.BoardingSession;
-import jakarta.persistence.EntityManager;
+import com.astral.express.pccms.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,9 +22,9 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-import java.util.Date;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +35,8 @@ public class BoardingStaffServiceImpl implements BoardingStaffService {
 
     private final CareLogRepository careLogRepository;
     private final PetRepository petRepository;
-    private final EntityManager entityManager;
+    private final BoardingSessionRepository boardingSessionRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -52,7 +52,10 @@ public class BoardingStaffServiceImpl implements BoardingStaffService {
         LocalDate resolvedDate = logDate != null ? logDate : LocalDate.now();
         assertActiveSession(sessionId);
 
-        List<CareLog> logs = careLogRepository.findBySessionIdAndLogDateOrderByPeriodCodeDesc(sessionId, resolvedDate);
+        List<CareLog> logs = careLogRepository.findBySessionIdAndLogDateAndDeletedAtIsNullOrderByPeriodCodeDesc(
+                sessionId,
+                resolvedDate
+        );
         if (logs.isEmpty()) {
             return List.of();
         }
@@ -73,12 +76,12 @@ public class BoardingStaffServiceImpl implements BoardingStaffService {
 
         CarePeriod period = CarePeriod.valueOf(request.periodCode());
         CareLog careLog = careLogRepository
-                .findBySessionIdAndLogDateAndPeriodCode(session.sessionId(), logDate, period)
+                .findBySessionIdAndLogDateAndPeriodCodeAndDeletedAtIsNull(session.sessionId(), logDate, period)
                 .orElseGet(CareLog::new);
 
-        careLog.setSession(entityManager.getReference(BoardingSession.class, session.sessionId()));
-        careLog.setPet(entityManager.getReference(Pets.class, session.petId()));
-        careLog.setStaff(entityManager.getReference(Users.class, staffId));
+        careLog.setSession(boardingSessionRepository.getReferenceById(session.sessionId()));
+        careLog.setPet(petRepository.getReferenceById(session.petId()));
+        careLog.setStaff(userRepository.getReferenceById(staffId));
         careLog.setLogDate(logDate);
         careLog.setPeriodCode(period);
         careLog.setFeedingStatus(request.feedingStatus().trim());
@@ -91,17 +94,17 @@ public class BoardingStaffServiceImpl implements BoardingStaffService {
         return toCareLogResponse(saved, petName);
     }
 
-    private StaffBoardingStayResponse mapStaffStayRow(Object[] row) {
-        UUID sessionId = (UUID) row[0];
-        UUID petId = (UUID) row[1];
-        String petName = row[2] != null ? (String) row[2] : "";
-        String roomLabel = row[3] != null ? (String) row[3] : "—";
+    private StaffBoardingStayResponse mapStaffStayRow(CareLogRepository.StaffActiveStayRow row) {
+        UUID sessionId = row.getSessionId();
+        UUID petId = row.getPetId();
+        String petName = row.getPetName() != null ? row.getPetName() : "";
+        String roomLabel = row.getRoomLabel() != null ? row.getRoomLabel() : "—";
 
-        LocalDate checkinDate = toLocalDate(row[4]);
+        LocalDate checkinDate = toLocalDate(row.getCheckinDate());
         if (checkinDate == null) {
-            checkinDate = toLocalDate(row[5]);
+            checkinDate = toLocalDate(row.getExpCheckin());
         }
-        LocalDate checkoutDate = toLocalDate(row[6]);
+        LocalDate checkoutDate = toLocalDate(row.getExpCheckout());
 
         int totalDays = 1;
         if (checkinDate != null && checkoutDate != null) {
@@ -110,10 +113,13 @@ public class BoardingStaffServiceImpl implements BoardingStaffService {
 
         int currentDay = 1;
         if (checkinDate != null) {
-            currentDay = Math.min(totalDays, Math.max(1, (int) ChronoUnit.DAYS.between(checkinDate, LocalDate.now()) + 1));
+            currentDay = Math.min(
+                    totalDays,
+                    Math.max(1, (int) ChronoUnit.DAYS.between(checkinDate, LocalDate.now()) + 1)
+            );
         }
 
-        String todayPeriods = row[7] != null ? (String) row[7] : "";
+        String todayPeriods = row.getTodayPeriods() != null ? row.getTodayPeriods() : "";
         String todayLogSummary = buildTodayLogSummary(todayPeriods);
 
         return new StaffBoardingStayResponse(
@@ -153,15 +159,15 @@ public class BoardingStaffServiceImpl implements BoardingStaffService {
     }
 
     private SessionContext assertActiveSession(UUID sessionId) {
-        Object[] row = careLogRepository.findSessionContext(sessionId)
+        CareLogRepository.SessionContextRow row = careLogRepository.findSessionContext(sessionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ERR_BRG_001_SESSION_NOT_FOUND));
 
-        String status = row[2] != null ? row[2].toString() : "";
+        String status = row.getStatus() != null ? row.getStatus() : "";
         if (!ACTIVE_SESSION_STATUSES.contains(status)) {
             throw new BusinessException(ErrorCode.ERR_BRG_002_SESSION_NOT_ACTIVE);
         }
 
-        return new SessionContext((UUID) row[0], (UUID) row[1]);
+        return new SessionContext(row.getSessionId(), row.getPetId());
     }
 
     private static CareLogResponse toCareLogResponse(CareLog log, String petName) {
@@ -177,7 +183,11 @@ public class BoardingStaffServiceImpl implements BoardingStaffService {
                 log.getStaff().getId(),
                 log.getStaff().getFullName(),
                 log.getCreatedAt(),
-                Collections.emptyList()
+                Collections.emptyList(),
+                false,
+                false,
+                null,
+                "View only"
         );
     }
 
@@ -208,5 +218,6 @@ public class BoardingStaffServiceImpl implements BoardingStaffService {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
-    private record SessionContext(UUID sessionId, UUID petId) {}
+    private record SessionContext(UUID sessionId, UUID petId) {
+    }
 }

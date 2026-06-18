@@ -52,7 +52,6 @@ import com.astral.express.pccms.boarding.entity.RoomAllocationStatus;
 import com.astral.express.pccms.boarding.entity.CareLog;
 import com.astral.express.pccms.boarding.entity.CarePeriod;
 import com.astral.express.pccms.billing.entity.Invoice;
-import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.Collections;
 import java.time.OffsetDateTime;
@@ -67,13 +66,21 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import com.astral.express.pccms.boarding.dto.response.BoardingBookingResponse;
+import com.astral.express.pccms.boarding.entity.CareLogMedia;
+import com.astral.express.pccms.filemedia.dto.UploadedFileResponse;
+import com.astral.express.pccms.filemedia.entity.FileAsset;
+import com.astral.express.pccms.filemedia.service.MediaUploadCommand;
+import java.time.LocalDate;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class BoardingServiceTest {
 
     @Mock
-    private SecurityContextService SecurityContextService;
+    private SecurityContextService securityContextService;
 
     @Mock
     private UserRepository userRepository;
@@ -127,8 +134,14 @@ class BoardingServiceTest {
 
     @BeforeEach
     void setUp() {
-        boardingService = new BoardingService(
-                SecurityContextService,
+        BoardingMapper boardingMapper = new BoardingMapper();
+        BoardingPricingPolicy boardingPricingPolicy = new BoardingPricingPolicy();
+        BoardingCodeGenerator boardingCodeGenerator = new BoardingCodeGenerator();
+        BoardingAvailabilityPolicy boardingAvailabilityPolicy = new BoardingAvailabilityPolicy(
+                boardingBookingRepository,
+                roomAllocationRepository);
+        BoardingBookingUseCase boardingBookingUseCase = new BoardingBookingUseCase(
+                securityContextService,
                 userRepository,
                 petRepository,
                 roomTypeRepository,
@@ -136,16 +149,47 @@ class BoardingServiceTest {
                 serviceCatalogRepository,
                 serviceOrderRepository,
                 boardingBookingRepository,
+                boardingSessionRepository,
+                invoiceRepository,
+                boardingMapper,
+                boardingPricingPolicy,
+                boardingCodeGenerator,
+                boardingAvailabilityPolicy);
+        BoardingStayLifecycleService boardingStayLifecycleService = new BoardingStayLifecycleService(
+                securityContextService,
+                userRepository,
+                roomRepository,
+                serviceOrderRepository,
+                boardingBookingRepository,
                 roomAllocationRepository,
+                boardingSessionRepository,
+                billingHandoffService,
+                invoiceRepository,
+                boardingMapper,
+                boardingPricingPolicy,
+                boardingAvailabilityPolicy);
+        BoardingCareLogApplicationService boardingCareLogApplicationService = new BoardingCareLogApplicationService(
+                securityContextService,
+                userRepository,
+                boardingBookingRepository,
                 boardingSessionRepository,
                 careLogRepository,
                 careLogMediaRepository,
                 fileMediaService,
                 fileAssetRepository,
                 fileLinkRepository,
-                billingHandoffService,
+                boardingMapper);
+        BoardingBookingQueryService boardingBookingQueryService = new BoardingBookingQueryService(
+                boardingBookingRepository,
+                roomAllocationRepository,
+                boardingSessionRepository,
                 invoiceRepository,
-                new BoardingMapper());
+                boardingMapper);
+        boardingService = new BoardingService(
+                boardingBookingUseCase,
+                boardingBookingQueryService,
+                boardingStayLifecycleService,
+                boardingCareLogApplicationService);
     }
 
     @ParameterizedTest(name = "[{0}] {1}: {6}")
@@ -182,7 +226,7 @@ class BoardingServiceTest {
                 .isActive(true)
                 .build();
 
-        given(SecurityContextService.getCurrentUserId()).willReturn(ownerId);
+        given(securityContextService.getCurrentUserId()).willReturn(ownerId);
         given(userRepository.findById(ownerId)).willReturn(Optional.of(owner));
         given(petRepository.findById(petId)).willReturn(Optional.of(pet));
         given(roomTypeRepository.findByIdAndIsActiveTrue(roomTypeId)).willReturn(Optional.of(roomType));
@@ -228,7 +272,7 @@ class BoardingServiceTest {
         assertThat(response.requestedRoomTypeId()).isEqualTo(roomTypeId);
     }
 
-    private com.astral.express.pccms.boarding.dto.response.BoardingBookingResponse execute(
+    private BoardingBookingResponse execute(
             String action,
             UUID petId,
             UUID roomTypeId,
@@ -258,12 +302,12 @@ class BoardingServiceTest {
                 .serviceOrder(order)
                 .statusCode(status)
                 .requestedRoomType(roomType)
-                .expectedCheckinAt(java.time.OffsetDateTime.now())
-                .expectedCheckoutAt(java.time.OffsetDateTime.now().plusDays(1))
+                .expectedCheckinAt(OffsetDateTime.now())
+                .expectedCheckoutAt(OffsetDateTime.now().plusDays(1))
                 .build();
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_getAvailability() {
         OffsetDateTime start = OffsetDateTime.now().plusDays(1);
         OffsetDateTime end = start.plusDays(2);
@@ -272,10 +316,10 @@ class BoardingServiceTest {
         assertThat(res).hasSize(1);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_listMyBookings() {
         UUID userId = UUID.randomUUID();
-        given(SecurityContextService.getCurrentUserId()).willReturn(userId);
+        given(securityContextService.getCurrentUserId()).willReturn(userId);
         Page<BoardingBooking> page = new PageImpl<>(List.of(createMockBooking(UUID.randomUUID(), BoardingStatus.RESERVED)));
         given(boardingBookingRepository.findByOwnerIdOrderByExpectedCheckinAtDesc(eq(userId), any())).willReturn(page);
         
@@ -283,7 +327,7 @@ class BoardingServiceTest {
         assertThat(res.data().content()).hasSize(1);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_listBookings() {
         Page<BoardingBooking> page = new PageImpl<>(List.of(createMockBooking(UUID.randomUUID(), BoardingStatus.RESERVED)));
         given(boardingBookingRepository.findByStatusCodeOrderByExpectedCheckinAtAsc(eq(BoardingStatus.RESERVED), any())).willReturn(page);
@@ -292,7 +336,7 @@ class BoardingServiceTest {
         assertThat(res.data().content()).hasSize(1);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_confirmBooking() {
         UUID staffId = UUID.randomUUID();
         UUID bookingId = UUID.randomUUID();
@@ -307,7 +351,7 @@ class BoardingServiceTest {
                 
         BoardingSession session = BoardingSession.builder().id(UUID.randomUUID()).build();
 
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(staff));
         given(boardingBookingRepository.findWithDetailsById(bookingId)).willReturn(Optional.of(booking));
         given(roomAllocationRepository.findFirstByBookingIdAndStatusCode(bookingId, RoomAllocationStatus.ALLOCATED)).willReturn(Optional.empty());
@@ -321,7 +365,7 @@ class BoardingServiceTest {
         assertThat(res.statusCode()).isEqualTo(BoardingStatus.RESERVED);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_checkIn() {
         UUID staffId = UUID.randomUUID();
         UUID bookingId = UUID.randomUUID();
@@ -335,7 +379,7 @@ class BoardingServiceTest {
         RoomAllocation allocation = RoomAllocation.builder().room(room).build();
         BoardingSession session = BoardingSession.builder().id(UUID.randomUUID()).build();
 
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(staff));
         given(boardingBookingRepository.findWithDetailsById(bookingId)).willReturn(Optional.of(booking));
         given(roomAllocationRepository.findFirstByBookingIdAndStatusCode(bookingId, RoomAllocationStatus.ALLOCATED)).willReturn(Optional.of(allocation));
@@ -345,7 +389,7 @@ class BoardingServiceTest {
         assertThat(res.statusCode()).isEqualTo(BoardingStatus.CHECKED_IN);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_startStay() {
         UUID bookingId = UUID.randomUUID();
         BoardingBooking booking = createMockBooking(bookingId, BoardingStatus.CHECKED_IN);
@@ -361,7 +405,7 @@ class BoardingServiceTest {
         assertThat(res.statusCode()).isEqualTo(BoardingStatus.IN_STAY);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_checkOut() {
         UUID staffId = UUID.randomUUID();
         UUID bookingId = UUID.randomUUID();
@@ -374,7 +418,7 @@ class BoardingServiceTest {
         RoomAllocation allocation = RoomAllocation.builder().room(room).build();
         BoardingSession session = BoardingSession.builder().id(UUID.randomUUID()).actualCheckinAt(OffsetDateTime.now().minusDays(1)).build();
 
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(staff));
         given(boardingBookingRepository.findWithDetailsById(bookingId)).willReturn(Optional.of(booking));
         given(boardingSessionRepository.findByBookingId(bookingId)).willReturn(Optional.of(session));
@@ -385,7 +429,7 @@ class BoardingServiceTest {
         assertThat(res.statusCode()).isEqualTo(BoardingStatus.CHECKED_OUT);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_cancelBooking() {
         UUID staffId = UUID.randomUUID();
         UUID bookingId = UUID.randomUUID();
@@ -397,7 +441,7 @@ class BoardingServiceTest {
                 
         BoardingSession session = BoardingSession.builder().id(UUID.randomUUID()).build();
 
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(staff));
         given(boardingBookingRepository.findWithDetailsById(bookingId)).willReturn(Optional.of(booking));
         given(roomAllocationRepository.findFirstByBookingIdAndStatusCode(bookingId, RoomAllocationStatus.ALLOCATED)).willReturn(Optional.empty());
@@ -407,7 +451,7 @@ class BoardingServiceTest {
         assertThat(res.statusCode()).isEqualTo(BoardingStatus.CANCELLED);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_createCareLog() {
         UUID staffId = UUID.randomUUID();
         UUID sessionId = UUID.randomUUID();
@@ -422,17 +466,17 @@ class BoardingServiceTest {
                 .booking(booking)
                 .build();
 
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(staff));
         given(boardingSessionRepository.findWithDetailsById(sessionId)).willReturn(Optional.of(session));
-        given(careLogRepository.existsBySessionIdAndLogDateAndPeriodCode(any(), any(), any())).willReturn(false);
+        given(careLogRepository.existsBySessionIdAndLogDateAndPeriodCodeAndDeletedAtIsNull(any(), any(), any())).willReturn(false);
         given(careLogRepository.save(any())).willAnswer(i -> i.getArgument(0));
 
-        var res = boardingService.createCareLog(sessionId, new CareLogCreateRequest(java.time.LocalDate.now(), CarePeriod.MORNING, "GOOD", "CLEAN", "Health", "Staff Note", "Caption"), Collections.emptyList());
+        var res = boardingService.createCareLog(sessionId, new CareLogCreateRequest(LocalDate.now(), CarePeriod.MORNING, "GOOD", "CLEAN", "Health", "Staff Note", "Caption"), Collections.emptyList());
         assertThat(res.periodCode()).isEqualTo(CarePeriod.MORNING);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_listCareLogs() {
         UUID userId = UUID.randomUUID();
         UUID bookingId = UUID.randomUUID();
@@ -441,10 +485,10 @@ class BoardingServiceTest {
         booking.setOwner(owner);
         booking.getPet().setOwner(owner);
 
-        given(SecurityContextService.getCurrentUserId()).willReturn(userId);
+        given(securityContextService.getCurrentUserId()).willReturn(userId);
         given(userRepository.findById(userId)).willReturn(Optional.of(owner));
         given(boardingBookingRepository.findWithDetailsById(bookingId)).willReturn(Optional.of(booking));
-        given(careLogRepository.findBySessionBookingIdOrderByLogDateDescCreatedAtDesc(bookingId)).willReturn(List.of(CareLog.builder()
+        given(careLogRepository.findBySessionBookingIdAndDeletedAtIsNullOrderByLogDateDescCreatedAtDesc(bookingId)).willReturn(List.of(CareLog.builder()
                 .id(UUID.randomUUID())
                 .session(BoardingSession.builder().id(UUID.randomUUID()).build())
                 .staff(Users.builder().id(UUID.randomUUID()).build())
@@ -454,10 +498,10 @@ class BoardingServiceTest {
         assertThat(res).hasSize(1);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void createBooking_shouldThrowPetNotFound() {
         UUID ownerId = UUID.randomUUID();
-        given(SecurityContextService.getCurrentUserId()).willReturn(ownerId);
+        given(securityContextService.getCurrentUserId()).willReturn(ownerId);
         given(userRepository.findById(ownerId)).willReturn(Optional.of(Users.builder().id(ownerId).build()));
         given(petRepository.findById(any())).willReturn(Optional.empty());
 
@@ -467,10 +511,10 @@ class BoardingServiceTest {
             .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_PET_001_NOT_FOUND);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void createBooking_shouldThrowForbiddenIfPetNotOwned() {
         UUID ownerId = UUID.randomUUID();
-        given(SecurityContextService.getCurrentUserId()).willReturn(ownerId);
+        given(securityContextService.getCurrentUserId()).willReturn(ownerId);
         given(userRepository.findById(ownerId)).willReturn(Optional.of(Users.builder().id(ownerId).build()));
         
         Pets pet = Pets.builder().id(UUID.randomUUID()).owner(Users.builder().id(UUID.randomUUID()).build()).build();
@@ -482,10 +526,10 @@ class BoardingServiceTest {
             .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_403_FORBIDDEN);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void createBooking_shouldThrowRoomTypeNotFound() {
         UUID ownerId = UUID.randomUUID();
-        given(SecurityContextService.getCurrentUserId()).willReturn(ownerId);
+        given(securityContextService.getCurrentUserId()).willReturn(ownerId);
         given(userRepository.findById(ownerId)).willReturn(Optional.of(Users.builder().id(ownerId).build()));
         
         Pets pet = Pets.builder().id(UUID.randomUUID()).owner(Users.builder().id(ownerId).build()).build();
@@ -498,10 +542,10 @@ class BoardingServiceTest {
             .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_ROOM_001_ROOM_TYPE_NOT_FOUND);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void createBooking_shouldThrowCatalogNotFound() {
         UUID ownerId = UUID.randomUUID();
-        given(SecurityContextService.getCurrentUserId()).willReturn(ownerId);
+        given(securityContextService.getCurrentUserId()).willReturn(ownerId);
         given(userRepository.findById(ownerId)).willReturn(Optional.of(Users.builder().id(ownerId).build()));
         
         Pets pet = Pets.builder().id(UUID.randomUUID()).owner(Users.builder().id(ownerId).build()).build();
@@ -515,7 +559,7 @@ class BoardingServiceTest {
             .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_404_NOT_FOUND);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void listBookings_shouldHandleNullStatusCode() {
         Page<BoardingBooking> page = new PageImpl<>(List.of(createMockBooking(UUID.randomUUID(), BoardingStatus.RESERVED)));
         given(boardingBookingRepository.findAllByOrderByExpectedCheckinAtAsc(any())).willReturn(page);
@@ -523,11 +567,11 @@ class BoardingServiceTest {
         assertThat(res.data().content()).hasSize(1);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void confirmBooking_shouldThrowIfAllocationExists() {
         UUID staffId = UUID.randomUUID();
         UUID bookingId = UUID.randomUUID();
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(Users.builder().id(staffId).build()));
         
         BoardingBooking booking = createMockBooking(bookingId, BoardingStatus.RESERVED);
@@ -540,11 +584,11 @@ class BoardingServiceTest {
             .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_ROOM_003_ROOM_UNAVAILABLE);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void confirmBooking_shouldThrowIfRoomNotFound() {
         UUID staffId = UUID.randomUUID();
         UUID bookingId = UUID.randomUUID();
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(Users.builder().id(staffId).build()));
         
         BoardingBooking booking = createMockBooking(bookingId, BoardingStatus.RESERVED);
@@ -557,11 +601,11 @@ class BoardingServiceTest {
             .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_ROOM_002_ROOM_NOT_FOUND);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void confirmBooking_shouldThrowIfRoomTypeMismatch() {
         UUID staffId = UUID.randomUUID();
         UUID bookingId = UUID.randomUUID();
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(Users.builder().id(staffId).build()));
         
         BoardingBooking booking = createMockBooking(bookingId, BoardingStatus.RESERVED);
@@ -576,11 +620,11 @@ class BoardingServiceTest {
             .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_ROOM_003_ROOM_UNAVAILABLE);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void confirmBooking_shouldThrowIfConflictExists() {
         UUID staffId = UUID.randomUUID();
         UUID bookingId = UUID.randomUUID();
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(Users.builder().id(staffId).build()));
         
         BoardingBooking booking = createMockBooking(bookingId, BoardingStatus.RESERVED);
@@ -596,11 +640,11 @@ class BoardingServiceTest {
             .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_ROOM_003_ROOM_UNAVAILABLE);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void confirmBooking_shouldThrowIfSessionNotFound() {
         UUID staffId = UUID.randomUUID();
         UUID bookingId = UUID.randomUUID();
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(Users.builder().id(staffId).build()));
         
         BoardingBooking booking = createMockBooking(bookingId, BoardingStatus.RESERVED);
@@ -618,11 +662,11 @@ class BoardingServiceTest {
             .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_BOARDING_005_SESSION_NOT_FOUND);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void checkOut_shouldThrowIfInvalidStatus() {
         UUID staffId = UUID.randomUUID();
         UUID bookingId = UUID.randomUUID();
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(Users.builder().id(staffId).build()));
         
         BoardingBooking booking = createMockBooking(bookingId, BoardingStatus.RESERVED);
@@ -633,11 +677,11 @@ class BoardingServiceTest {
             .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_BOARDING_003_INVALID_STATUS_TRANSITION);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void checkOut_shouldHandleRoomNotOccupied() {
         UUID staffId = UUID.randomUUID();
         UUID bookingId = UUID.randomUUID();
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(Users.builder().id(staffId).build()));
         
         BoardingBooking booking = createMockBooking(bookingId, BoardingStatus.IN_STAY);
@@ -655,13 +699,13 @@ class BoardingServiceTest {
         assertThat(res.statusCode()).isEqualTo(BoardingStatus.CHECKED_OUT);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void cancelBooking_shouldThrowIfCheckedOutOrCancelled() {
         UUID staffId = UUID.randomUUID();
         UUID bookingId = UUID.randomUUID();
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(Users.builder().id(staffId).build()));
-        given(SecurityContextService.hasAnyRole("ADMIN", "STAFF")).willReturn(true);
+        given(securityContextService.hasAnyRole("ADMIN", "STAFF")).willReturn(true);
         
         BoardingBooking booking = createMockBooking(bookingId, BoardingStatus.CHECKED_OUT);
         given(boardingBookingRepository.findWithDetailsById(bookingId)).willReturn(Optional.of(booking));
@@ -671,13 +715,13 @@ class BoardingServiceTest {
             .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_BOARDING_003_INVALID_STATUS_TRANSITION);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void cancelBooking_shouldHandleAllocationPresent() {
         UUID staffId = UUID.randomUUID();
         UUID bookingId = UUID.randomUUID();
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(Users.builder().id(staffId).build()));
-        given(SecurityContextService.hasAnyRole("ADMIN", "STAFF")).willReturn(true);
+        given(securityContextService.hasAnyRole("ADMIN", "STAFF")).willReturn(true);
         
         BoardingBooking booking = createMockBooking(bookingId, BoardingStatus.RESERVED);
         given(boardingBookingRepository.findWithDetailsById(bookingId)).willReturn(Optional.of(booking));
@@ -692,135 +736,131 @@ class BoardingServiceTest {
         assertThat(res.statusCode()).isEqualTo(BoardingStatus.CANCELLED);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void createCareLog_shouldThrowIfSessionNotFound() {
         UUID staffId = UUID.randomUUID();
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(Users.builder().id(staffId).build()));
         given(boardingSessionRepository.findWithDetailsById(any())).willReturn(Optional.empty());
 
-        CareLogCreateRequest request = new CareLogCreateRequest(java.time.LocalDate.now(), CarePeriod.MORNING, "G", "C", "H", "S", "C");
+        CareLogCreateRequest request = new CareLogCreateRequest(LocalDate.now(), CarePeriod.MORNING, "G", "C", "H", "S", "C");
         assertThatThrownBy(() -> boardingService.createCareLog(UUID.randomUUID(), request, null))
             .isInstanceOf(BusinessException.class)
             .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_BOARDING_005_SESSION_NOT_FOUND);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void createCareLog_shouldThrowIfInvalidStatus() {
         UUID staffId = UUID.randomUUID();
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(Users.builder().id(staffId).build()));
         
         BoardingSession session = BoardingSession.builder().statusCode(BoardingStatus.RESERVED).build();
         given(boardingSessionRepository.findWithDetailsById(any())).willReturn(Optional.of(session));
 
-        CareLogCreateRequest request = new CareLogCreateRequest(java.time.LocalDate.now(), CarePeriod.MORNING, "G", "C", "H", "S", "C");
+        CareLogCreateRequest request = new CareLogCreateRequest(LocalDate.now(), CarePeriod.MORNING, "G", "C", "H", "S", "C");
         assertThatThrownBy(() -> boardingService.createCareLog(UUID.randomUUID(), request, null))
             .isInstanceOf(BusinessException.class)
             .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_BOARDING_003_INVALID_STATUS_TRANSITION);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void createCareLog_shouldHandleNullImages() {
         UUID staffId = UUID.randomUUID();
         UUID sessionId = UUID.randomUUID();
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(Users.builder().id(staffId).build()));
         
         BoardingBooking booking = createMockBooking(UUID.randomUUID(), BoardingStatus.IN_STAY);
         BoardingSession session = BoardingSession.builder().id(sessionId).statusCode(BoardingStatus.IN_STAY).booking(booking).build();
         given(boardingSessionRepository.findWithDetailsById(any())).willReturn(Optional.of(session));
-        given(careLogRepository.existsBySessionIdAndLogDateAndPeriodCode(any(), any(), any())).willReturn(false);
+        given(careLogRepository.existsBySessionIdAndLogDateAndPeriodCodeAndDeletedAtIsNull(any(), any(), any())).willReturn(false);
         given(careLogRepository.save(any())).willAnswer(i -> i.getArgument(0));
 
-        CareLogCreateRequest request = new CareLogCreateRequest(java.time.LocalDate.now(), CarePeriod.MORNING, "G", "C", "H", "S", "C");
+        CareLogCreateRequest request = new CareLogCreateRequest(LocalDate.now(), CarePeriod.MORNING, "G", "C", "H", "S", "C");
         var res = boardingService.createCareLog(sessionId, request, null);
         assertThat(res.periodCode()).isEqualTo(CarePeriod.MORNING);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void createCareLog_shouldSaveMedia() {
         UUID staffId = UUID.randomUUID();
         UUID sessionId = UUID.randomUUID();
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(Users.builder().id(staffId).build()));
         
         BoardingBooking booking = createMockBooking(UUID.randomUUID(), BoardingStatus.IN_STAY);
         BoardingSession session = BoardingSession.builder().id(sessionId).statusCode(BoardingStatus.IN_STAY).booking(booking).build();
         given(boardingSessionRepository.findWithDetailsById(any())).willReturn(Optional.of(session));
-        given(careLogRepository.existsBySessionIdAndLogDateAndPeriodCode(any(), any(), any())).willReturn(false);
+        given(careLogRepository.existsBySessionIdAndLogDateAndPeriodCodeAndDeletedAtIsNull(any(), any(), any())).willReturn(false);
         given(careLogRepository.save(any())).willAnswer(i -> i.getArgument(0));
 
-        MultipartFile file = org.mockito.Mockito.mock(MultipartFile.class);
-        com.astral.express.pccms.filemedia.dto.UploadedFileResponse uploadRes = new com.astral.express.pccms.filemedia.dto.UploadedFileResponse(UUID.randomUUID(), "url", "key", "image/jpeg", 100L);
-        given(fileMediaService.uploadOwnerVisibleImage(any(), any())).willReturn(uploadRes);
-        given(fileAssetRepository.findById(any())).willReturn(Optional.of(com.astral.express.pccms.filemedia.entity.FileAsset.builder().build()));
+        MediaUploadCommand file = new MediaUploadCommand("care.jpg", "image/jpeg", new byte[] {1});
+        UploadedFileResponse uploadRes = new UploadedFileResponse(UUID.randomUUID(), "url", "key", "image/jpeg", 100L);
+        given(fileMediaService.uploadOwnerVisibleImage(any(MediaUploadCommand.class), any(UUID.class)))
+                .willReturn(uploadRes);
+        given(fileAssetRepository.findById(any())).willReturn(Optional.of(FileAsset.builder().build()));
         given(careLogMediaRepository.save(any())).willAnswer(i -> {
-            com.astral.express.pccms.boarding.entity.CareLogMedia media = i.getArgument(0);
+            CareLogMedia media = i.getArgument(0);
             media.setId(UUID.randomUUID());
             return media;
         });
 
-        CareLogCreateRequest request = new CareLogCreateRequest(java.time.LocalDate.now(), CarePeriod.MORNING, "G", "C", "H", "S", "C");
+        CareLogCreateRequest request = new CareLogCreateRequest(LocalDate.now(), CarePeriod.MORNING, "G", "C", "H", "S", "C");
         var res = boardingService.createCareLog(sessionId, request, List.of(file));
         assertThat(res.periodCode()).isEqualTo(CarePeriod.MORNING);
     }
     
-    @org.junit.jupiter.api.Test
+    @Test
     void createCareLog_shouldThrowIfMediaNotFound() {
         UUID staffId = UUID.randomUUID();
         UUID sessionId = UUID.randomUUID();
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(userRepository.findById(staffId)).willReturn(Optional.of(Users.builder().id(staffId).build()));
         
         BoardingBooking booking = createMockBooking(UUID.randomUUID(), BoardingStatus.IN_STAY);
         BoardingSession session = BoardingSession.builder().id(sessionId).statusCode(BoardingStatus.IN_STAY).booking(booking).build();
         given(boardingSessionRepository.findWithDetailsById(any())).willReturn(Optional.of(session));
-        given(careLogRepository.existsBySessionIdAndLogDateAndPeriodCode(any(), any(), any())).willReturn(false);
+        given(careLogRepository.existsBySessionIdAndLogDateAndPeriodCodeAndDeletedAtIsNull(any(), any(), any())).willReturn(false);
         given(careLogRepository.save(any())).willAnswer(i -> i.getArgument(0));
 
-        MultipartFile file = org.mockito.Mockito.mock(MultipartFile.class);
-        com.astral.express.pccms.filemedia.dto.UploadedFileResponse uploadRes = new com.astral.express.pccms.filemedia.dto.UploadedFileResponse(UUID.randomUUID(), "url", "key", "image/jpeg", 100L);
-        given(fileMediaService.uploadOwnerVisibleImage(any(), any())).willReturn(uploadRes);
+        MediaUploadCommand file = new MediaUploadCommand("care.jpg", "image/jpeg", new byte[] {1});
+        UploadedFileResponse uploadRes = new UploadedFileResponse(UUID.randomUUID(), "url", "key", "image/jpeg", 100L);
+        given(fileMediaService.uploadOwnerVisibleImage(any(MediaUploadCommand.class), any(UUID.class)))
+                .willReturn(uploadRes);
         given(fileAssetRepository.findById(any())).willReturn(Optional.empty());
 
-        CareLogCreateRequest request = new CareLogCreateRequest(java.time.LocalDate.now(), CarePeriod.MORNING, "G", "C", "H", "S", "C");
+        CareLogCreateRequest request = new CareLogCreateRequest(LocalDate.now(), CarePeriod.MORNING, "G", "C", "H", "S", "C");
         
         assertThatThrownBy(() -> boardingService.createCareLog(sessionId, request, List.of(file)))
             .isInstanceOf(BusinessException.class)
             .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_FILE_001_INVALID_IMAGE);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void requireCurrentUserId_shouldThrowIfNull() {
-        given(SecurityContextService.getCurrentUserId()).willReturn(null);
+        given(securityContextService.getCurrentUserId()).willReturn(null);
         assertThatThrownBy(() -> boardingService.listMyBookings(PageRequest.of(0, 10)))
             .isInstanceOf(BusinessException.class)
             .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_401_UNAUTHORIZED);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void assertCanAccessBooking_shouldThrowForbidden() {
         UUID staffId = UUID.randomUUID();
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
-        given(SecurityContextService.hasAnyRole("ADMIN", "STAFF")).willReturn(false);
+        UUID bookingId = UUID.randomUUID();
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.hasAnyRole("ADMIN", "STAFF")).willReturn(false);
         
         BoardingBooking booking = createMockBooking(UUID.randomUUID(), BoardingStatus.RESERVED); // owner id is random, not staffId
+        given(boardingBookingRepository.findWithDetailsById(bookingId)).willReturn(Optional.of(booking));
 
-        assertThatThrownBy(() -> {
-            try {
-                java.lang.reflect.Method method = BoardingService.class.getDeclaredMethod("assertCanAccessBooking", BoardingBooking.class);
-                method.setAccessible(true);
-                method.invoke(boardingService, booking);
-            } catch (java.lang.reflect.InvocationTargetException e) {
-                throw e.getCause();
-            }
-        })
+        assertThatThrownBy(() -> boardingService.listCareLogs(bookingId))
         .isInstanceOf(BusinessException.class)
         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_403_FORBIDDEN);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void calculateBillableDays_shouldReturn1IfNegative() {
         BoardingBookingCreateRequest request = new BoardingBookingCreateRequest(UUID.randomUUID(), UUID.randomUUID(), OffsetDateTime.now(), OffsetDateTime.now().minusDays(1), "Note");
         assertThatThrownBy(() -> boardingService.createBooking(request))
@@ -828,7 +868,7 @@ class BoardingServiceTest {
             .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_BOARDING_002_INVALID_TIME_RANGE);
     }
     
-    @org.junit.jupiter.api.Test
+    @Test
     void getAvailability_shouldThrowIfInvalidTimeRange() {
         assertThatThrownBy(() -> boardingService.getAvailability(OffsetDateTime.now(), OffsetDateTime.now().minusDays(1)))
             .isInstanceOf(BusinessException.class)

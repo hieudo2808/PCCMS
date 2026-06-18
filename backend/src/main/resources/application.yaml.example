@@ -5,9 +5,9 @@ spring:
     application:
         name: pccms
     datasource:
-        url: jdbc:postgresql://localhost:5432/pccms
-        username: postgre
-        password: StrongPassword@0318
+        url: ${DB_URL:jdbc:postgresql://localhost:17284/pccms}
+        username: ${DB_USERNAME:postgres}
+        password: ${DB_PASSWORD:}
         driver-class-name: org.postgresql.Driver
     jpa:
         hibernate:
@@ -20,14 +20,14 @@ spring:
         redis:
             host: localhost
             port: 6379
-            password: redis-password
+            password: ${REDIS_PASSWORD:}
             ssl:
                 enabled: false
     mail:
         host: smtp.gmail.com
         port: 587
-        username: youremail@gmail.com
-        password: your_password
+        username: ${SMTP_USERNAME:}
+        password: ${SMTP_PASSWORD:}
         properties:
             mail:
                 smtp:
@@ -38,16 +38,18 @@ spring:
 
 jwt:
     # Base64URL-encoded key >= 64 bytes (512 bits) for HS512. Generate a new secret for production.
-    secret: 4pIU5PCRJ5mhpcfRDxexZsPk8BnZTXA+6E+M9DyZDTdyATvP6V5UDcO66fUCklCGgTRIpXJ0QqUmf7qISrwDgA
+    secret: ${JWT_SECRET:}
     expiration: 600000
     refresh-expiration: 604800000
 
 security:
-    pepper: ZXLx6CIS8StkPC2vmaAf4w3fdq3d32f23FEF45h6h
+    pepper: ${SECURITY_PEPPER:}
 
 app:
     cors:
         allowed-origins: http://localhost:5173
+    auth:
+        refresh-cookie-secure: false
 
 management:
     endpoints:

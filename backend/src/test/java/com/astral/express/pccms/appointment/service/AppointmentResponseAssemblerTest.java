@@ -20,7 +20,10 @@ import org.junit.jupiter.api.Test;
 import java.time.LocalTime;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+import com.astral.express.pccms.appointment.entity.ServiceCategory;
+import com.astral.express.pccms.grooming.entity.GroomingStation;
+import java.math.BigDecimal;
 
 class AppointmentResponseAssemblerTest {
 
@@ -125,7 +128,7 @@ class AppointmentResponseAssemblerTest {
         GroomingTicket ticket = new GroomingTicket();
         ticket.setAppointment(createMockAppointment(AppointmentStatus.PENDING));
 
-        com.astral.express.pccms.grooming.entity.GroomingStation station = new com.astral.express.pccms.grooming.entity.GroomingStation();
+        GroomingStation station = new GroomingStation();
         station.setName("Station 1");
         ticket.setStation(station);
 
@@ -163,12 +166,12 @@ class AppointmentResponseAssemblerTest {
         booking.setEstimatedPriceVnd(1000L);
         booking.setStatusCode(BoardingStatus.RESERVED);
         assertThat(assembler.toBoardingResponse(booking).statusLabel()).isEqualTo("Đã đặt phòng");
-        assertThat(assembler.toBoardingResponse(booking).estimatedPriceVnd()).isEqualTo(java.math.BigDecimal.valueOf(1000L));
+        assertThat(assembler.toBoardingResponse(booking).estimatedPriceVnd()).isEqualTo(BigDecimal.valueOf(1000L));
 
         booking.setEstimatedPriceVnd(null);
         booking.setStatusCode(BoardingStatus.CHECKED_IN);
         assertThat(assembler.toBoardingResponse(booking).statusLabel()).isEqualTo("Đã nhận phòng");
-        assertThat(assembler.toBoardingResponse(booking).estimatedPriceVnd()).isEqualTo(java.math.BigDecimal.ZERO);
+        assertThat(assembler.toBoardingResponse(booking).estimatedPriceVnd()).isEqualTo(BigDecimal.ZERO);
 
         booking.setStatusCode(BoardingStatus.IN_STAY);
         assertThat(assembler.toBoardingResponse(booking).statusLabel()).isEqualTo("Đang lưu trú");
@@ -188,10 +191,10 @@ class AppointmentResponseAssemblerTest {
         rt.setName("Room 1");
 
         rt.setBaseDailyPriceVnd(500L);
-        assertThat(assembler.toRoomTypeOptionResponse(rt).baseDailyPriceVnd()).isEqualTo(java.math.BigDecimal.valueOf(500L));
+        assertThat(assembler.toRoomTypeOptionResponse(rt).baseDailyPriceVnd()).isEqualTo(BigDecimal.valueOf(500L));
 
         rt.setBaseDailyPriceVnd(null);
-        assertThat(assembler.toRoomTypeOptionResponse(rt).baseDailyPriceVnd()).isEqualTo(java.math.BigDecimal.ZERO);
+        assertThat(assembler.toRoomTypeOptionResponse(rt).baseDailyPriceVnd()).isEqualTo(BigDecimal.ZERO);
     }
 
     @Test
@@ -200,7 +203,7 @@ class AppointmentResponseAssemblerTest {
         s.setId(UUID.randomUUID());
         s.setServiceCode("S1");
         s.setName("Service");
-        s.setCategoryCode(com.astral.express.pccms.appointment.entity.ServiceCategory.MEDICAL);
+        s.setCategoryCode(ServiceCategory.MEDICAL);
         s.setBasePriceVnd(100L);
         s.setDurationMinutes(30);
 

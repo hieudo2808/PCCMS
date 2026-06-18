@@ -25,6 +25,7 @@ function unwrapPage<T>(value: PageEnvelope<T>): PageResponse<T> {
 
 export interface CareLogFormPayload {
     sessionId: string;
+    petId?: string;
     logDate: string;
     periodCode: CarePeriod;
     feedingStatus: string;
@@ -76,27 +77,54 @@ export const boardingApi = {
     cancelBooking: (bookingId: string, reason: string): Promise<BoardingBookingResponse> =>
         axiosClient.post(`/v1/boarding/bookings/${bookingId}/cancellations`, { reason }),
 
-    createCareLog: (payload: CareLogFormPayload): Promise<CareLogResponse> => {
-        const formData = new FormData();
-        formData.append("logDate", payload.logDate);
-        formData.append("periodCode", payload.periodCode);
-        formData.append("feedingStatus", payload.feedingStatus);
-        formData.append("hygieneStatus", payload.hygieneStatus);
-        if (payload.healthNote) formData.append("healthNote", payload.healthNote);
-        if (payload.staffNote) formData.append("staffNote", payload.staffNote);
-        if (payload.caption) formData.append("caption", payload.caption);
-        payload.images?.forEach((image) => formData.append("images", image));
-        return axiosClient.post(
-            `/v1/boarding/sessions/${payload.sessionId}/care-logs`,
-            formData,
-            {
-                headers: { "Content-Type": "multipart/form-data" },
-            }
-        );
+    createCareLog: async (payload: CareLogFormPayload): Promise<CareLogResponse> => {
+        const careLog = await axiosClient.post<any, CareLogResponse>("/v1/reception/boarding/care-logs", {
+            sessionId: payload.sessionId,
+            petId: payload.petId,
+            logDate: payload.logDate,
+            periodCode: payload.periodCode,
+            feedingStatus: payload.feedingStatus,
+            hygieneStatus: payload.hygieneStatus,
+            healthNote: payload.healthNote,
+            staffNote: payload.staffNote,
+        });
+        if (payload.images?.length) {
+            await Promise.all(payload.images.map((image) => boardingApi.uploadCareLogMedia(careLog.id, image)));
+        }
+        return careLog;
     },
 
     getCareLogs: (bookingId: string): Promise<CareLogResponse[]> =>
         axiosClient.get(`/v1/boarding/bookings/${bookingId}/care-logs`),
+
+    getReceptionCareLogs: (sessionId: string): Promise<CareLogResponse[]> =>
+        axiosClient.get("/v1/reception/boarding/care-logs", { params: { sessionId } }),
+
+    getCareLogDetail: (careLogId: string): Promise<CareLogResponse> =>
+        axiosClient.get(`/v1/reception/boarding/care-logs/${careLogId}`),
+
+    updateCareLog: (careLogId: string, payload: CareLogFormPayload): Promise<CareLogResponse> =>
+        axiosClient.put(`/v1/reception/boarding/care-logs/${careLogId}`, {
+            sessionId: payload.sessionId,
+            petId: payload.petId,
+            logDate: payload.logDate,
+            periodCode: payload.periodCode,
+            feedingStatus: payload.feedingStatus,
+            hygieneStatus: payload.hygieneStatus,
+            healthNote: payload.healthNote,
+            staffNote: payload.staffNote,
+        }),
+
+    deleteCareLog: (careLogId: string): Promise<void> =>
+        axiosClient.delete(`/v1/reception/boarding/care-logs/${careLogId}`),
+
+    uploadCareLogMedia: (careLogId: string, image: File): Promise<void> => {
+        const formData = new FormData();
+        formData.append("file", image);
+        return axiosClient.post(`/v1/reception/boarding/care-logs/${careLogId}/media`, formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
+    },
 };
 
 export const roomAdminApi = {

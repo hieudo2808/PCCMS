@@ -206,7 +206,7 @@ export function GroomingBookingPage() {
                                 {...register("scheduledDate")}
                             />
                             <label className="flex flex-col gap-1.5 text-[13px] font-medium text-slate-700">
-                                Giờ hẹn *
+                                Giờ hẹn
                                 <select
                                     className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
                                     {...register("scheduledTime")}

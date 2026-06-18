@@ -2,16 +2,21 @@ package com.astral.express.pccms.appointment.repository;
 
 import com.astral.express.pccms.appointment.entity.GroomingStatus;
 import com.astral.express.pccms.appointment.entity.GroomingTicket;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.OffsetDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.Collection;
 
 @Repository
 public interface GroomingTicketRepository extends JpaRepository<GroomingTicket, UUID> {
@@ -44,7 +49,7 @@ public interface GroomingTicketRepository extends JpaRepository<GroomingTicket, 
             """)
     Optional<GroomingTicket> findDetailById(@Param("id") UUID id);
 
-    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {
+    @EntityGraph(attributePaths = {
             "appointment",
             "appointment.serviceOrder",
             "appointment.serviceOrder.owner",
@@ -56,8 +61,8 @@ public interface GroomingTicketRepository extends JpaRepository<GroomingTicket, 
     })
     Optional<GroomingTicket> findWithDetailsById(UUID id);
 
-    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
-    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @EntityGraph(attributePaths = {
             "appointment",
             "appointment.serviceOrder",
             "appointment.serviceOrder.owner",
@@ -69,7 +74,7 @@ public interface GroomingTicketRepository extends JpaRepository<GroomingTicket, 
     })
     Optional<GroomingTicket> findLockedWithDetailsById(UUID id);
 
-    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {
+    @EntityGraph(attributePaths = {
             "appointment",
             "appointment.serviceOrder",
             "appointment.serviceOrder.owner",
@@ -79,9 +84,11 @@ public interface GroomingTicketRepository extends JpaRepository<GroomingTicket, 
             "assignedStaff",
             "station"
     })
-    org.springframework.data.domain.Page<GroomingTicket> findByAppointmentServiceOrderOwnerIdOrderByAppointmentScheduledStartAtDesc(UUID ownerId, org.springframework.data.domain.Pageable pageable);
+    Page<GroomingTicket> findByAppointmentServiceOrderOwnerIdOrderByAppointmentScheduledStartAtDesc(
+            UUID ownerId,
+            Pageable pageable);
 
-    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {
+    @EntityGraph(attributePaths = {
             "appointment",
             "appointment.serviceOrder",
             "appointment.serviceOrder.owner",
@@ -91,9 +98,11 @@ public interface GroomingTicketRepository extends JpaRepository<GroomingTicket, 
             "assignedStaff",
             "station"
     })
-    org.springframework.data.domain.Page<GroomingTicket> findByStatusCodeOrderByAppointmentScheduledStartAtAsc(GroomingStatus statusCode, org.springframework.data.domain.Pageable pageable);
+    Page<GroomingTicket> findByStatusCodeOrderByAppointmentScheduledStartAtAsc(
+            GroomingStatus statusCode,
+            Pageable pageable);
 
-    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {
+    @EntityGraph(attributePaths = {
             "appointment",
             "appointment.serviceOrder",
             "appointment.serviceOrder.owner",
@@ -103,7 +112,7 @@ public interface GroomingTicketRepository extends JpaRepository<GroomingTicket, 
             "assignedStaff",
             "station"
     })
-    org.springframework.data.domain.Page<GroomingTicket> findAllByOrderByAppointmentScheduledStartAtAsc(org.springframework.data.domain.Pageable pageable);
+    Page<GroomingTicket> findAllByOrderByAppointmentScheduledStartAtAsc(Pageable pageable);
 
     @Query("""
             SELECT CASE WHEN COUNT(ticket) > 0 THEN true ELSE false END

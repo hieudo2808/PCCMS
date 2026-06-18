@@ -29,7 +29,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verify;
+import com.astral.express.pccms.appointment.entity.Appointment;
+import com.astral.express.pccms.appointment.entity.GroomingTicket;
+import com.astral.express.pccms.appointment.entity.ServiceCatalog;
+import com.astral.express.pccms.grooming.entity.GroomingStation;
+import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
 class BillingHandoffServiceTest {
@@ -118,7 +123,7 @@ class BillingHandoffServiceTest {
         Users staff = Users.builder().id(UUID.randomUUID()).fullName("Staff").build();
         Pets pet = Pets.builder().id(UUID.randomUUID()).name("Milu").owner(owner).build();
         
-        com.astral.express.pccms.appointment.entity.ServiceCatalog service = new com.astral.express.pccms.appointment.entity.ServiceCatalog();
+        ServiceCatalog service = new ServiceCatalog();
         service.setName("Grooming Basic");
         service.setBasePriceVnd(250000L);
         
@@ -130,16 +135,16 @@ class BillingHandoffServiceTest {
                 .service(service)
                 .build();
                 
-        com.astral.express.pccms.appointment.entity.Appointment appt = new com.astral.express.pccms.appointment.entity.Appointment();
+        Appointment appt = new Appointment();
         appt.setScheduledStartAt(OffsetDateTime.parse("2026-06-01T09:00:00+07:00"));
         appt.setScheduledEndAt(OffsetDateTime.parse("2026-06-01T10:00:00+07:00"));
         
-        com.astral.express.pccms.appointment.entity.GroomingTicket ticket = new com.astral.express.pccms.appointment.entity.GroomingTicket();
-        com.astral.express.pccms.grooming.entity.GroomingStation station = new com.astral.express.pccms.grooming.entity.GroomingStation();
+        GroomingTicket ticket = new GroomingTicket();
+        GroomingStation station = new GroomingStation();
         station.setName("Station 1");
         ticket.setStation(station);
 
-        given(invoiceRepository.findByServiceOrderId(serviceOrderId)).willReturn(java.util.Optional.empty());
+        given(invoiceRepository.findByServiceOrderId(serviceOrderId)).willReturn(Optional.empty());
         given(invoiceRepository.save(any(Invoice.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         Invoice invoice = billingHandoffService.createGroomingInvoice(serviceOrder, appt, ticket, staff);
@@ -154,7 +159,7 @@ class BillingHandoffServiceTest {
         ServiceOrder serviceOrder = ServiceOrder.builder().id(serviceOrderId).build();
         Invoice existingInvoice = Invoice.builder().id(UUID.randomUUID()).build();
         
-        given(invoiceRepository.findByServiceOrderId(serviceOrderId)).willReturn(java.util.Optional.of(existingInvoice));
+        given(invoiceRepository.findByServiceOrderId(serviceOrderId)).willReturn(Optional.of(existingInvoice));
         
         Invoice invoice = billingHandoffService.createGroomingInvoice(serviceOrder, null, null, null);
         

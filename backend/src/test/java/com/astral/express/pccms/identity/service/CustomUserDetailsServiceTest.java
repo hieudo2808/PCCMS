@@ -18,6 +18,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import com.astral.express.pccms.user.entity.Roles;
+import java.util.Set;
 
 @ExtendWith(MockitoExtension.class)
 class CustomUserDetailsServiceTest {
@@ -37,9 +39,9 @@ class CustomUserDetailsServiceTest {
         mockUser.setEmail(email);
         mockUser.setPasswordHash("hashedPassword");
         
-        com.astral.express.pccms.user.entity.Roles role = new com.astral.express.pccms.user.entity.Roles();
+        Roles role = new Roles();
         role.setCode("USER");
-        role.setPermissions(java.util.Set.of());
+        role.setPermissions(Set.of());
         mockUser.setRole(role);
         
         when(userRepository.findByEmailWithRoleAndPermissions(email)).thenReturn(Optional.of(mockUser));
@@ -74,9 +76,9 @@ class CustomUserDetailsServiceTest {
         mockUser.setEmail("test@example.com");
         mockUser.setPasswordHash("hashedPassword");
         
-        com.astral.express.pccms.user.entity.Roles role = new com.astral.express.pccms.user.entity.Roles();
+        Roles role = new Roles();
         role.setCode("USER");
-        role.setPermissions(java.util.Set.of());
+        role.setPermissions(Set.of());
         mockUser.setRole(role);
         
         when(userRepository.findByIdWithRoleAndPermissions(userId)).thenReturn(Optional.of(mockUser));

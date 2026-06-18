@@ -36,7 +36,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.data.domain.PageImpl;
 
 @ExtendWith(MockitoExtension.class)
 class GroomingControllerTest {
@@ -87,7 +88,7 @@ class GroomingControllerTest {
 
     @Test
     void listMyTickets_success() throws Exception {
-        PageResponse<GroomingTicketResponse> page = PageResponse.of(new org.springframework.data.domain.PageImpl<>(List.of()));
+        PageResponse<GroomingTicketResponse> page = PageResponse.of(new PageImpl<>(List.of()));
         given(groomingService.listMyTickets(any(Pageable.class))).willReturn(page);
 
         mockMvc.perform(get("/v1/grooming/tickets/my"))
@@ -105,7 +106,7 @@ class GroomingControllerTest {
 
     @Test
     void listTickets_success() throws Exception {
-        PageResponse<GroomingTicketResponse> page = PageResponse.of(new org.springframework.data.domain.PageImpl<>(List.of()));
+        PageResponse<GroomingTicketResponse> page = PageResponse.of(new PageImpl<>(List.of()));
         given(groomingService.listTickets(any(), any(Pageable.class))).willReturn(page);
 
         mockMvc.perform(get("/v1/grooming/tickets"))

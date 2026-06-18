@@ -31,6 +31,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 @ExtendWith(MockitoExtension.class)
 class QuickCheckInUseCaseTest {
@@ -98,9 +102,9 @@ class QuickCheckInUseCaseTest {
 
         given(availabilityService.isSlotAvailable(any(), any(), any())).willReturn(false);
 
-        try (org.mockito.MockedStatic<ClinicDateTime> mockedTime = org.mockito.Mockito.mockStatic(ClinicDateTime.class)) {
-            mockedTime.when(ClinicDateTime::nowTime).thenReturn(java.time.LocalTime.of(10, 0));
-            mockedTime.when(ClinicDateTime::today).thenReturn(java.time.LocalDate.now());
+        try (MockedStatic<ClinicDateTime> mockedTime = Mockito.mockStatic(ClinicDateTime.class)) {
+            mockedTime.when(ClinicDateTime::nowTime).thenReturn(LocalTime.of(10, 0));
+            mockedTime.when(ClinicDateTime::today).thenReturn(LocalDate.now());
             mockedTime.when(() -> ClinicDateTime.toOffsetDateTime(any(), any())).thenCallRealMethod();
 
             assertThatThrownBy(() -> useCase.execute(request, staffId))
@@ -125,9 +129,9 @@ class QuickCheckInUseCaseTest {
         given(serviceCatalogRepository.findByServiceCodeAndIsActiveTrue("MED-GENERAL")).willReturn(Optional.empty());
         given(serviceCatalogRepository.findFirstByCategoryCodeAndIsActiveTrue(ServiceCategory.MEDICAL)).willReturn(Optional.empty());
 
-        try (org.mockito.MockedStatic<ClinicDateTime> mockedTime = org.mockito.Mockito.mockStatic(ClinicDateTime.class)) {
-            mockedTime.when(ClinicDateTime::nowTime).thenReturn(java.time.LocalTime.of(10, 0));
-            mockedTime.when(ClinicDateTime::today).thenReturn(java.time.LocalDate.now());
+        try (MockedStatic<ClinicDateTime> mockedTime = Mockito.mockStatic(ClinicDateTime.class)) {
+            mockedTime.when(ClinicDateTime::nowTime).thenReturn(LocalTime.of(10, 0));
+            mockedTime.when(ClinicDateTime::today).thenReturn(LocalDate.now());
             mockedTime.when(() -> ClinicDateTime.toOffsetDateTime(any(), any())).thenCallRealMethod();
 
             assertThatThrownBy(() -> useCase.execute(request, staffId))
@@ -166,9 +170,9 @@ class QuickCheckInUseCaseTest {
 
         given(receptionService.receiveAppointment(any(Appointment.class), eq(staff), eq(vet))).willReturn(1);
 
-        try (org.mockito.MockedStatic<ClinicDateTime> mockedTime = org.mockito.Mockito.mockStatic(ClinicDateTime.class)) {
-            mockedTime.when(ClinicDateTime::nowTime).thenReturn(java.time.LocalTime.of(10, 0));
-            mockedTime.when(ClinicDateTime::today).thenReturn(java.time.LocalDate.now());
+        try (MockedStatic<ClinicDateTime> mockedTime = Mockito.mockStatic(ClinicDateTime.class)) {
+            mockedTime.when(ClinicDateTime::nowTime).thenReturn(LocalTime.of(10, 0));
+            mockedTime.when(ClinicDateTime::today).thenReturn(LocalDate.now());
             mockedTime.when(() -> ClinicDateTime.toOffsetDateTime(any(), any())).thenCallRealMethod();
 
             QuickCheckInUseCase.Result result = useCase.execute(request, staffId);
@@ -200,13 +204,14 @@ class QuickCheckInUseCaseTest {
 
         given(serviceCatalogRepository.findByServiceCodeAndIsActiveTrue("MED-GENERAL")).willReturn(Optional.empty());
 
-        try (org.mockito.MockedStatic<ClinicDateTime> mockedTime = org.mockito.Mockito.mockStatic(ClinicDateTime.class)) {
-            mockedTime.when(ClinicDateTime::nowTime).thenReturn(java.time.LocalTime.of(16, 45));
-            mockedTime.when(ClinicDateTime::today).thenReturn(java.time.LocalDate.now());
+        try (MockedStatic<ClinicDateTime> mockedTime = Mockito.mockStatic(ClinicDateTime.class)) {
+            mockedTime.when(ClinicDateTime::nowTime).thenReturn(LocalTime.of(21, 45));
+            mockedTime.when(ClinicDateTime::today).thenReturn(LocalDate.now());
+            mockedTime.when(() -> ClinicDateTime.toOffsetDateTime(any(), any())).thenCallRealMethod();
 
             assertThatThrownBy(() -> useCase.execute(request, staffId))
                     .isInstanceOf(BusinessException.class)
-                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_APT_005_NO_VET_AVAILABLE);
+                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_APT_010_OUT_OF_BUSINESS_HOURS);
         }
     }
 
@@ -239,10 +244,10 @@ class QuickCheckInUseCaseTest {
         given(userRepository.findById(staffId)).willReturn(Optional.of(staff));
         given(receptionService.receiveAppointment(any(Appointment.class), eq(staff), eq(vet))).willReturn(1);
 
-        try (org.mockito.MockedStatic<ClinicDateTime> mockedTime = org.mockito.Mockito.mockStatic(ClinicDateTime.class)) {
+        try (MockedStatic<ClinicDateTime> mockedTime = Mockito.mockStatic(ClinicDateTime.class)) {
             // 10:10 -> should round up to 10:30 (with 30 min slots)
-            mockedTime.when(ClinicDateTime::nowTime).thenReturn(java.time.LocalTime.of(10, 10));
-            mockedTime.when(ClinicDateTime::today).thenReturn(java.time.LocalDate.now());
+            mockedTime.when(ClinicDateTime::nowTime).thenReturn(LocalTime.of(10, 10));
+            mockedTime.when(ClinicDateTime::today).thenReturn(LocalDate.now());
             mockedTime.when(() -> ClinicDateTime.toOffsetDateTime(any(), any())).thenCallRealMethod();
 
             QuickCheckInUseCase.Result result = useCase.execute(request, staffId);
@@ -261,10 +266,10 @@ class QuickCheckInUseCaseTest {
 
         given(serviceCatalogRepository.findByServiceCodeAndIsActiveTrue("MED-GENERAL")).willReturn(Optional.empty());
 
-        try (org.mockito.MockedStatic<ClinicDateTime> mockedTime = org.mockito.Mockito.mockStatic(ClinicDateTime.class)) {
+        try (MockedStatic<ClinicDateTime> mockedTime = Mockito.mockStatic(ClinicDateTime.class)) {
             // 23:45 -> should round up to 24:00 (LocalTime.MAX)
-            mockedTime.when(ClinicDateTime::nowTime).thenReturn(java.time.LocalTime.of(23, 45));
-            mockedTime.when(ClinicDateTime::today).thenReturn(java.time.LocalDate.now());
+            mockedTime.when(ClinicDateTime::nowTime).thenReturn(LocalTime.of(23, 45));
+            mockedTime.when(ClinicDateTime::today).thenReturn(LocalDate.now());
             mockedTime.when(() -> ClinicDateTime.toOffsetDateTime(any(), any())).thenCallRealMethod();
 
             // When startAt is evaluated, LocalTime.MAX will be used, availabilityService returns false

@@ -581,15 +581,17 @@ CREATE TABLE care_logs (
     session_id         UUID NOT NULL REFERENCES boarding_sessions(id) ON DELETE CASCADE,
     pet_id             UUID NOT NULL REFERENCES pets(id) ON DELETE RESTRICT,
     staff_id           UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    work_schedule_id   UUID REFERENCES work_schedules(id) ON DELETE SET NULL,
     log_date           DATE NOT NULL,
     period_code        care_period_enum NOT NULL,
     feeding_status     VARCHAR(120) NOT NULL,
     hygiene_status     VARCHAR(120) NOT NULL,
     health_note        TEXT,
     staff_note         TEXT,
+    deleted_at         TIMESTAMPTZ,
+    deleted_by         UUID REFERENCES users(id),
     created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (session_id, log_date, period_code)
+    updated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE care_log_media (
@@ -1163,6 +1165,8 @@ CREATE INDEX idx_boarding_bookings_pet ON boarding_bookings (pet_id, expected_ch
 CREATE INDEX idx_boarding_bookings_status ON boarding_bookings (status_code, expected_checkin_at, expected_checkout_at);
 CREATE INDEX idx_room_allocations_room_time ON room_allocations (room_id, allocated_from, allocated_to);
 CREATE INDEX idx_care_logs_session_date ON care_logs (session_id, log_date DESC);
+CREATE UNIQUE INDEX uk_care_logs_active_session_date_period ON care_logs (session_id, log_date, period_code) WHERE deleted_at IS NULL;
+CREATE INDEX idx_care_logs_work_schedule ON care_logs (work_schedule_id);
 
 CREATE INDEX idx_work_schedules_staff_date ON work_schedules (staff_id, work_date);
 CREATE INDEX idx_work_schedules_date_shift ON work_schedules (work_date, shift_id, status_code);

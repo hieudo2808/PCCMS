@@ -1,7 +1,5 @@
 package com.astral.express.pccms.identity.security;
 
-import com.astral.express.pccms.common.exception.BusinessException;
-import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.identity.service.CustomUserDetails;
 import com.astral.express.pccms.identity.service.CustomUserDetailsService;
 import com.astral.express.pccms.identity.service.TokenBlacklistService;
@@ -14,7 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
-import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -80,7 +78,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 boolean isBlacklisted = false;
                 try { 
                     isBlacklisted = tokenBlacklistService.isBlacklisted(jti);
-                } catch (org.springframework.data.redis.RedisConnectionFailureException ex) {
+                } catch (RedisConnectionFailureException ex) {
                     // Log warning, allow request if redis is down
                     System.err.println("Redis unavailable, proceeding without blacklist check: " + ex.getMessage());
                 }

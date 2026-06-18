@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router-dom";
 import { PetProfilesPage } from "~/features/owner/pages/PetProfilesPage";
 import { petApi } from "~/shared/api/petApi";
 
@@ -22,7 +23,9 @@ const queryClient = new QueryClient({
 const renderComponent = () => {
     return render(
         <QueryClientProvider client={queryClient}>
-            <PetProfilesPage />
+            <MemoryRouter>
+                <PetProfilesPage />
+            </MemoryRouter>
         </QueryClientProvider>
     );
 };
@@ -190,7 +193,7 @@ describe("PetProfilesPage", () => {
         renderComponent();
 
         await screen.findByText("Milu");
-        await userEvent.click(screen.getByRole("button", { name: "Chỉnh sửa" }));
+        await userEvent.click(screen.getByRole("button", { name: "Sửa" }));
 
         expect(screen.getByText("Chỉnh sửa hồ sơ thú cưng")).toBeInTheDocument();
 

@@ -22,6 +22,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import com.astral.express.pccms.medicalrecord.dto.response.HealthAlertResponse;
+import java.util.List;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvFileSource;
+import org.mockito.Mockito;
 
 @ExtendWith(MockitoExtension.class)
 class HealthAlertServiceTest {
@@ -35,8 +40,8 @@ class HealthAlertServiceTest {
     @Captor
     private ArgumentCaptor<HealthAlert> captor;
 
-    @org.junit.jupiter.params.ParameterizedTest
-    @org.junit.jupiter.params.provider.CsvFileSource(resources = "/testcases/health-alert-testcases.csv", numLinesToSkip = 1)
+    @ParameterizedTest
+    @CsvFileSource(resources = "/testcases/health-alert-testcases.csv", numLinesToSkip = 1)
     void should_ProcessHealthAlert(String ruleId, String caseId, String action, String expectedError) {
         if ("CREATE".equals(action)) {
             UUID petId = UUID.randomUUID();
@@ -84,7 +89,7 @@ class HealthAlertServiceTest {
 
             healthAlertService.resolveHealthAlert(alertId, resolvedBy);
 
-            verify(healthAlertRepository, org.mockito.Mockito.never()).save(any());
+            verify(healthAlertRepository, Mockito.never()).save(any());
         } else if ("GET_UNRESOLVED".equals(action)) {
             UUID petId = UUID.randomUUID();
             HealthAlert alert = new HealthAlert();
@@ -92,9 +97,9 @@ class HealthAlertServiceTest {
             alert.setPetId(petId);
             alert.setSeverity(AlertSeverity.HIGH);
             
-            given(healthAlertRepository.findByPetIdAndResolvedAtIsNull(petId)).willReturn(java.util.List.of(alert));
+            given(healthAlertRepository.findByPetIdAndResolvedAtIsNull(petId)).willReturn(List.of(alert));
             
-            java.util.List<com.astral.express.pccms.medicalrecord.dto.response.HealthAlertResponse> results = healthAlertService.getUnresolvedAlertsByPetId(petId);
+            List<HealthAlertResponse> results = healthAlertService.getUnresolvedAlertsByPetId(petId);
             
             assertThat(results).hasSize(1);
         }

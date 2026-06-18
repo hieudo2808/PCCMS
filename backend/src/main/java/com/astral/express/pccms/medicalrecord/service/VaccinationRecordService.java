@@ -5,7 +5,6 @@ import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.medicalrecord.dto.request.CreateVaccinationRequest;
 import com.astral.express.pccms.medicalrecord.entity.VaccinationRecord;
 import com.astral.express.pccms.medicalrecord.repository.VaccinationRecordRepository;
-import com.astral.express.pccms.medicalrecord.service.VaccinationRecordService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

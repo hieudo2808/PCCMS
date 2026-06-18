@@ -1,7 +1,6 @@
 package com.astral.express.pccms.notification.service;
 
 import com.astral.express.pccms.notification.config.MailProperties;
-import com.astral.express.pccms.notification.service.EmailService;
 import com.astral.express.pccms.notification.service.EmailTemplateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

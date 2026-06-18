@@ -28,7 +28,9 @@ import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import java.util.List;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 @ExtendWith(MockitoExtension.class)
 class MedicalRecordControllerTest {
@@ -156,7 +158,7 @@ class MedicalRecordControllerTest {
         UUID recordId = UUID.randomUUID();
         given(medicalRecordService.getMedicalRecordById(recordId)).willReturn(null);
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/v1/medical-records/{id}", recordId))
+        mockMvc.perform(MockMvcRequestBuilders.get("/v1/medical-records/{id}", recordId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
@@ -166,16 +168,16 @@ class MedicalRecordControllerTest {
         UUID appointmentId = UUID.randomUUID();
         given(medicalRecordService.getOrCreateMedicalRecordByAppointmentId(appointmentId)).willReturn(null);
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/v1/medical-records/appointment/{appointmentId}", appointmentId))
+        mockMvc.perform(MockMvcRequestBuilders.get("/v1/medical-records/appointment/{appointmentId}", appointmentId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test
     void getMedicalRecords_success() throws Exception {
-        given(medicalRecordService.getMedicalRecords(any())).willReturn(java.util.List.of());
+        given(medicalRecordService.getMedicalRecords(any())).willReturn(List.of());
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/v1/medical-records"))
+        mockMvc.perform(MockMvcRequestBuilders.get("/v1/medical-records"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }

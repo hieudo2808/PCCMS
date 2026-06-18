@@ -166,7 +166,7 @@ class PetControllerTest {
 
     @Test
     void listPets_success() throws Exception {
-        given(petService.listPets(any(), any(), any())).willReturn(PageResponse.of(new PageImpl<>(java.util.List.of(mockPetResponse()))));
+        given(petService.listPets(any(), any(), any())).willReturn(PageResponse.of(new PageImpl<>(List.of(mockPetResponse()))));
 
         mockMvc.perform(get("/v1/pets?ownerId=" + UUID.randomUUID()))
                 .andExpect(status().isOk())
@@ -175,7 +175,7 @@ class PetControllerTest {
 
     @Test
     void listPets_noOwner_success() throws Exception {
-        given(petService.listPets(any(), any())).willReturn(PageResponse.of(new PageImpl<>(java.util.List.of(mockPetResponse()))));
+        given(petService.listPets(any(), any())).willReturn(PageResponse.of(new PageImpl<>(List.of(mockPetResponse()))));
 
         mockMvc.perform(get("/v1/pets"))
                 .andExpect(status().isOk())

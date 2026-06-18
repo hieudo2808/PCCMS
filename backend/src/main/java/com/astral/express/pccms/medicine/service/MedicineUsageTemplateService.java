@@ -9,7 +9,6 @@ import com.astral.express.pccms.medicine.entity.Medicine;
 import com.astral.express.pccms.medicine.entity.MedicineUsageTemplate;
 import com.astral.express.pccms.medicine.repository.MedicineRepository;
 import com.astral.express.pccms.medicine.repository.MedicineUsageTemplateRepository;
-import com.astral.express.pccms.medicine.service.MedicineUsageTemplateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

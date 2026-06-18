@@ -111,6 +111,10 @@ export interface CareLogResponse {
     staffName: string;
     createdAt: string;
     media: CareLogMediaResponse[];
+    canEdit?: boolean;
+    canDelete?: boolean;
+    lockedAt?: string;
+    lockedReason?: string;
 }
 
 export interface CreateBoardingBookingRequest {

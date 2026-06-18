@@ -142,7 +142,7 @@ class AppointmentLifecycleUseCaseTest {
     }
 
     @Test
-    void startExam_shouldThrowException_whenNotMedical() {
+    void startExam_shouldThrowException_whenAppointmentTypeMissing() {
         UUID id = UUID.randomUUID();
         Appointment appointment = new Appointment();
         appointment.setAppointmentType(AppointmentType.GROOMING);
@@ -150,7 +150,7 @@ class AppointmentLifecycleUseCaseTest {
 
         assertThatThrownBy(() -> useCase.startExam(id, UUID.randomUUID()))
                 .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_VALIDATION_FAILED);
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_APT_011_INVALID_TYPE);
     }
 
     @Test

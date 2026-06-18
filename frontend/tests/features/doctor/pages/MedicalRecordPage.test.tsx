@@ -46,7 +46,14 @@ const mockRecord = {
     recordStatus: "DRAFT" as RecordStatus,
     temperatureC: 39,
     heartRateBpm: 120,
+    respiratoryRateBpm: 24,
     weightKg: 5,
+    bloodPressure: "120/80",
+    spo2Percent: 98,
+    mucousMembraneColor: "Hồng",
+    capillaryRefillSeconds: 1,
+    preliminaryDiagnosis: "Theo dõi viêm da",
+    treatmentNote: "Điều trị theo phác đồ",
 } as any;
 
 const renderWithProviders = (ui: React.ReactElement, initialEntries = ["/records/record-123"]) => {

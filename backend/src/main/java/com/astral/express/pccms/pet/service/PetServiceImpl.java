@@ -39,7 +39,7 @@ public class PetServiceImpl implements PetService {
     private final PetSpeciesRepository petSpeciesRepository;
     private final PetBreedsRepository petBreedsRepository;
     private final UserRepository userRepository;
-    private final SecurityContextService SecurityContextService;
+    private final SecurityContextService securityContextService;
     private final PetMapper petMapper;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -70,9 +70,9 @@ public class PetServiceImpl implements PetService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<PetResponse> listPets(Boolean isActive, Pageable pageable) {
-        UUID currentUserId = SecurityContextService.getCurrentUserId();
+        UUID currentUserId = securityContextService.getCurrentUserId();
         Page<Pets> pets;
-        if (SecurityContextService.isAdminOrStaff()) {
+        if (securityContextService.isAdminOrStaff()) {
             pets = isActive == null
                     ? petRepository.findAll(pageable)
                     : petRepository.findByIsActive(isActive, pageable);
@@ -153,29 +153,29 @@ public class PetServiceImpl implements PetService {
     }
 
     private void assertCanAccessPet(Pets pet) {
-        UUID currentUserId = SecurityContextService.getCurrentUserId();
-        if (!pet.getOwner().getId().equals(currentUserId) && !SecurityContextService.isAdminOrStaff()) {
+        UUID currentUserId = securityContextService.getCurrentUserId();
+        if (!pet.getOwner().getId().equals(currentUserId) && !securityContextService.isAdminOrStaff()) {
             throw new BusinessException(ErrorCode.ERR_403_FORBIDDEN);
         }
     }
 
     private UUID resolveOwnerIdForCreate(UUID requestedOwnerId) {
-        UUID currentUserId = SecurityContextService.getCurrentUserId();
+        UUID currentUserId = securityContextService.getCurrentUserId();
         if (requestedOwnerId == null) {
             return currentUserId;
         }
-        if (!requestedOwnerId.equals(currentUserId) && !SecurityContextService.isAdminOrStaff()) {
+        if (!requestedOwnerId.equals(currentUserId) && !securityContextService.isAdminOrStaff()) {
             throw new BusinessException(ErrorCode.ERR_403_FORBIDDEN);
         }
         return requestedOwnerId;
     }
 
     private UUID resolveOwnerIdForList(UUID requestedOwnerId) {
-        UUID currentUserId = SecurityContextService.getCurrentUserId();
+        UUID currentUserId = securityContextService.getCurrentUserId();
         if (requestedOwnerId == null || requestedOwnerId.equals(currentUserId)) {
             return currentUserId;
         }
-        if (!SecurityContextService.isAdminOrStaff()) {
+        if (!securityContextService.isAdminOrStaff()) {
             throw new BusinessException(ErrorCode.ERR_403_FORBIDDEN);
         }
         return requestedOwnerId;

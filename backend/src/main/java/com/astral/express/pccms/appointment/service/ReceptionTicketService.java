@@ -1,6 +1,7 @@
 package com.astral.express.pccms.appointment.service;
 
 import com.astral.express.pccms.appointment.entity.Appointment;
+import com.astral.express.pccms.appointment.entity.AppointmentStatus;
 import com.astral.express.pccms.appointment.entity.ReceptionTicket;
 import com.astral.express.pccms.appointment.repository.ReceptionTicketRepository;
 import com.astral.express.pccms.user.entity.Users;
@@ -9,9 +10,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.util.UUID;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +42,6 @@ public class ReceptionTicketService {
     }
 
     public List<ReceptionTicket> getQueueForVet(UUID vetId, OffsetDateTime start, OffsetDateTime end) {
-        return receptionTicketRepository.findVetQueueTickets(vetId, start, end, com.astral.express.pccms.appointment.entity.AppointmentStatus.CHECKED_IN);
+        return receptionTicketRepository.findVetQueueTickets(vetId, start, end, AppointmentStatus.CHECKED_IN);
     }
 }

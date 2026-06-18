@@ -6,6 +6,7 @@ import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.identity.repository.RefreshTokenRepository;
 import com.astral.express.pccms.identity.security.SecurityContextService;
 import com.astral.express.pccms.notification.service.EmailService;
+import com.astral.express.pccms.notification.service.NotificationService;
 import com.astral.express.pccms.user.dto.response.AccountResponse;
 import com.astral.express.pccms.user.entity.Roles;
 import com.astral.express.pccms.user.entity.UserStatus;
@@ -13,6 +14,7 @@ import com.astral.express.pccms.user.entity.Users;
 import com.astral.express.pccms.user.mapper.UserMapper;
 import com.astral.express.pccms.user.repository.RoleRepository;
 import com.astral.express.pccms.user.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -64,13 +66,27 @@ class AdminAccountServiceTest {
     private EmailService emailService;
 
     @Mock
-    private SecurityContextService SecurityContextService;
+    private NotificationService notificationService;
+
+    @Mock
+    private SecurityContextService securityContextService;
 
     @Mock
     private RefreshTokenRepository refreshTokenRepository;
 
-    @InjectMocks
-    private UserService userService;
+    private AccountAdminService userService;
+
+    @BeforeEach
+    void setUp() {
+        userService = new AccountAdminService(
+                userRepository,
+                roleRepository,
+                userMapper,
+                refreshTokenRepository,
+                new AccountResponseFactory(),
+                new AccountProtectionPolicy()
+        );
+    }
 
     @ParameterizedTest(name = "[{1}] {3}")
     @CsvFileSource(resources = "/testcases/account-search.csv", numLinesToSkip = 1)

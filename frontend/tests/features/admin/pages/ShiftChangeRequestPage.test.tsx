@@ -41,8 +41,8 @@ describe("ShiftChangeRequestPage", () => {
             content: [
                 {
                     id: "req-1",
-                    requestedByStaffName: "Nguyen Van A",
-                    targetStaffName: "Le Thi B",
+                    requestedBy: "Nguyen Van A",
+                    targetStaff: "Le Thi B",
                     reason: "Ban viec gia dinh",
                     statusCode: "PENDING",
                     workDate: "2026-06-12",
@@ -67,8 +67,8 @@ describe("ShiftChangeRequestPage", () => {
             content: [
                 {
                     id: "req-1",
-                    requestedByStaffName: "Nguyen Van A",
-                    targetStaffName: "Le Thi B",
+                    requestedBy: "Nguyen Van A",
+                    targetStaff: "Le Thi B",
                     reason: "Ban viec gia dinh",
                     statusCode: "PENDING",
                     workDate: "2026-06-12",

@@ -86,9 +86,9 @@ export function PetProfilesPage() {
             {!isLoading && !isError && pets.length > 0 && (
                 <div className="grid gap-4 lg:grid-cols-3">
                     {pets.map((pet) => (
-                        <Card key={pet.id} className="relative overflow-hidden p-0">
+                        <Card key={pet.id} className="p-4">
                             {pet.healthAlerts?.length > 0 && (
-                                <div className="absolute right-2 top-2 z-10 flex flex-col gap-1">
+                                <div className="mb-3 flex flex-wrap gap-1.5">
                                     {pet.healthAlerts.map((alert) => (
                                         <Tag
                                             key={alert.id}
@@ -105,10 +105,9 @@ export function PetProfilesPage() {
                                     ))}
                                 </div>
                             )}
-                            <div className="h-36 bg-linear-to-br from-amber-100 via-emerald-50 to-sky-100" />
-                            <div className="p-5">
+                            <div className="space-y-4">
                                 <div className="flex items-start justify-between gap-3">
-                                    <div>
+                                    <div className="min-w-0">
                                         <h3 className="text-lg font-semibold">{pet.name}</h3>
                                         <p className="text-sm text-slate-500">
                                             {pet.speciesName || "-"} • {pet.breedName || "-"}
@@ -118,19 +117,19 @@ export function PetProfilesPage() {
                                         {pet.isActive ? "Đang hoạt động" : "Đã ẩn"}
                                     </Tag>
                                 </div>
-                                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                                    <div className="rounded-2xl bg-slate-50 p-3">
+                                <div className="grid grid-cols-2 gap-3 text-sm">
+                                    <div className="rounded-lg bg-slate-50 p-3">
                                         <p className="text-slate-500">Cân nặng</p>
                                         <p className="mt-1 font-medium">
                                             {pet.weightKg ? `${pet.weightKg} kg` : "Chưa cập nhật"}
                                         </p>
                                     </div>
-                                    <div className="rounded-2xl bg-slate-50 p-3">
+                                    <div className="rounded-lg bg-slate-50 p-3">
                                         <p className="text-slate-500">Giới tính</p>
                                         <p className="mt-1 font-medium">{sexLabel(pet.sex)}</p>
                                     </div>
                                 </div>
-                                <div className="mt-4 flex flex-wrap gap-2">
+                                <div className="flex flex-wrap gap-2">
                                     <Button
                                         variant="outline"
                                         className="flex-1 px-3 py-1.5 text-xs"

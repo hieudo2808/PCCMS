@@ -16,10 +16,14 @@ vi.mock("~/features/owner", () => ({
     OwnerDashboard: () => <div>Owner Dashboard Route</div>,
     PetProfilesPage: () => <div>Owner Pets Route</div>,
     OwnerAppointmentsPage: () => <div>Owner Appointments Route</div>,
+    BookingGatewayPage: () => <div>Owner Booking Gateway Route</div>,
+    MedicalBookingPage: () => <div>Owner Medical Booking Route</div>,
+    BoardingBookingPage: () => <div>Owner Boarding Booking Route</div>,
     UnifiedBookingPage: () => <div>Owner Booking Route</div>,
     GroomingBookingPage: () => <div>Owner Grooming Booking Route</div>,
     GroomingTrackingPage: () => <div>Owner Grooming Tracking Route</div>,
     BoardingTrackingPage: () => <div>Owner Boarding Tracking Route</div>,
+    PetMedicalRecordsPage: () => <div>Owner Pet Medical Records Route</div>,
     PaymentsPage: () => <div>Owner Payments Route</div>,
 }));
 

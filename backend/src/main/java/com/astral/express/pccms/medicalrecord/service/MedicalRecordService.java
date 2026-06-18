@@ -1,43 +1,38 @@
 package com.astral.express.pccms.medicalrecord.service;
 
-import com.astral.express.pccms.common.exception.BusinessException;
-import com.astral.express.pccms.common.exception.ErrorCode;
-import com.astral.express.pccms.medicalrecord.dto.request.FinalizeMedicalRecordRequest;
-import com.astral.express.pccms.medicalrecord.dto.request.UpdateMedicalRecordRequest;
-import com.astral.express.pccms.medicalrecord.dto.response.MedicalRecordResponse;
-import com.astral.express.pccms.medicalrecord.entity.MedicalRecord;
-import com.astral.express.pccms.medicalrecord.entity.RecordStatus;
-import com.astral.express.pccms.medicalrecord.mapper.MedicalRecordMapper;
-import com.astral.express.pccms.medicalrecord.repository.MedicalRecordRepository;
-import com.astral.express.pccms.medicalrecord.event.MedicalRecordFinalizedEvent;
+import com.astral.express.pccms.appointment.dto.response.AppointmentResponse;
 import com.astral.express.pccms.appointment.service.AppointmentLifecycleUseCase;
 import com.astral.express.pccms.appointment.service.AppointmentQueryUseCase;
-import com.astral.express.pccms.appointment.dto.response.AppointmentResponse;
+import com.astral.express.pccms.common.exception.BusinessException;
+import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.identity.security.SecurityContextService;
-import com.astral.express.pccms.medicalrecord.service.MedicalRecordService;
-import com.astral.express.pccms.pet.entity.Pets;
-import com.astral.express.pccms.pet.repository.PetRepository;
-import com.astral.express.pccms.user.entity.Users;
-import com.astral.express.pccms.user.repository.UserRepository;
+import com.astral.express.pccms.medicalrecord.dto.request.FinalizeMedicalRecordRequest;
+import com.astral.express.pccms.medicalrecord.dto.request.UpdateMedicalRecordRequest;
+import com.astral.express.pccms.medicalrecord.dto.response.MedicalRecordOwnerResponse;
+import com.astral.express.pccms.medicalrecord.dto.response.MedicalRecordResponse;
+import com.astral.express.pccms.medicalrecord.dto.response.PrescriptionItemResponse;
+import com.astral.express.pccms.medicalrecord.dto.response.PrescriptionResponse;
+import com.astral.express.pccms.medicalrecord.entity.MedicalRecord;
+import com.astral.express.pccms.medicalrecord.entity.Prescription;
+import com.astral.express.pccms.medicalrecord.entity.PrescriptionItem;
+import com.astral.express.pccms.medicalrecord.entity.RecordStatus;
+import com.astral.express.pccms.medicalrecord.event.MedicalRecordFinalizedEvent;
+import com.astral.express.pccms.medicalrecord.repository.MedicalRecordRepository;
+import com.astral.express.pccms.medicalrecord.repository.PrescriptionRepository;
+import com.astral.express.pccms.medicine.entity.Medicine;
+import com.astral.express.pccms.medicine.repository.MedicineRepository;
+import com.astral.express.pccms.pet.dto.response.PetResponse;
+import com.astral.express.pccms.pet.service.PetService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import com.astral.express.pccms.medicalrecord.repository.PrescriptionRepository;
-import com.astral.express.pccms.medicalrecord.entity.Prescription;
-import com.astral.express.pccms.medicalrecord.dto.response.MedicalRecordOwnerResponse;
-import com.astral.express.pccms.medicalrecord.dto.response.PrescriptionResponse;
-import com.astral.express.pccms.medicalrecord.dto.response.PrescriptionItemResponse;
-import com.astral.express.pccms.pet.dto.response.PetResponse;
-import com.astral.express.pccms.pet.service.PetService;
 
 @Service
 @RequiredArgsConstructor
@@ -48,14 +43,13 @@ public class MedicalRecordService {
     private final ApplicationEventPublisher eventPublisher;
     private final AppointmentLifecycleUseCase appointmentLifecycleUseCase;
     private final AppointmentQueryUseCase appointmentQueryUseCase;
-    private final SecurityContextService SecurityContextService;
+    private final SecurityContextService securityContextService;
     private final PetService petService;
     private final PrescriptionRepository prescriptionRepository;
-    private final com.astral.express.pccms.medicine.repository.MedicineRepository medicineRepository;
+    private final MedicineRepository medicineRepository;
 
-@Transactional
+    @Transactional
     public MedicalRecordResponse updateMedicalRecord(UUID recordId, UpdateMedicalRecordRequest request) {
-        // Find record
         MedicalRecord record = medicalRecordRepository.findById(recordId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ERR_400_BAD_REQUEST)); // Or not found exception
 
@@ -75,9 +69,8 @@ public class MedicalRecordService {
         return medicalRecordRepository.findResponseById(medicalRecordRepository.save(record).getId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.ERR_400_BAD_REQUEST));
     }
-@Transactional
+    @Transactional
     public MedicalRecordResponse finalizeMedicalRecord(UUID recordId, FinalizeMedicalRecordRequest request) {
-        // Find record
         MedicalRecord record = medicalRecordRepository.findById(recordId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ERR_400_BAD_REQUEST)); // Or not found exception
 
@@ -97,18 +90,17 @@ public class MedicalRecordService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.ERR_400_BAD_REQUEST));
     }
 
-    // Helper methods have been moved to the domain model.
-public MedicalRecordResponse getMedicalRecordById(UUID recordId) {
+    public MedicalRecordResponse getMedicalRecordById(UUID recordId) {
         return medicalRecordRepository.findResponseById(recordId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ERR_400_BAD_REQUEST));
     }
-public List<MedicalRecordResponse> getMedicalRecords(UUID vetId) {
+    public List<MedicalRecordResponse> getMedicalRecords(UUID vetId) {
         if (vetId != null) {
             return medicalRecordRepository.findResponsesByVetId(vetId);
         }
         return medicalRecordRepository.findAllResponses();
     }
-@Transactional
+    @Transactional
     public MedicalRecordResponse getOrCreateMedicalRecordByAppointmentId(UUID appointmentId) {
         AppointmentResponse appointment = shouldStartExamForCurrentUser()
                 ? appointmentLifecycleUseCase.startExam(appointmentId, currentUserIdOrNull())
@@ -132,11 +124,11 @@ public List<MedicalRecordResponse> getMedicalRecords(UUID vetId) {
     }
 
     private boolean shouldStartExamForCurrentUser() {
-        return SecurityContextService != null && SecurityContextService.hasAnyRole("VETERINARIAN");
+        return securityContextService != null && securityContextService.hasAnyRole("VETERINARIAN");
     }
 
     private UUID currentUserIdOrNull() {
-        return SecurityContextService == null ? null : SecurityContextService.getCurrentUserId();
+        return securityContextService == null ? null : securityContextService.getCurrentUserId();
     }
 
     public List<MedicalRecordOwnerResponse> getOwnerMedicalRecords(UUID petId, UUID currentUserId) {
@@ -157,10 +149,10 @@ public List<MedicalRecordResponse> getMedicalRecords(UUID vetId) {
         // Fetch all medicines to avoid N+1
         List<UUID> medicineIds = prescriptions.stream()
                 .flatMap(p -> p.getItems().stream())
-                .map(com.astral.express.pccms.medicalrecord.entity.PrescriptionItem::getMedicineId)
+                .map(PrescriptionItem::getMedicineId)
                 .toList();
-        Map<UUID, com.astral.express.pccms.medicine.entity.Medicine> medicineMap = medicineRepository.findAllById(medicineIds).stream()
-                .collect(Collectors.toMap(com.astral.express.pccms.medicine.entity.Medicine::getId, m -> m));
+        Map<UUID, Medicine> medicineMap = medicineRepository.findAllById(medicineIds).stream()
+                .collect(Collectors.toMap(Medicine::getId, medicine -> medicine));
 
         Map<UUID, PrescriptionResponse> prescriptionMap = prescriptions.stream()
                 .collect(Collectors.toMap(Prescription::getMedicalRecordId, p -> new PrescriptionResponse(

@@ -9,7 +9,6 @@ import com.astral.express.pccms.identity.entity.OtpPurpose;
 import com.astral.express.pccms.identity.entity.OtpToken;
 import com.astral.express.pccms.identity.repository.OtpTokenRepository;
 import com.astral.express.pccms.identity.security.SecurityContextService;
-import com.astral.express.pccms.identity.service.OtpService;
 import com.astral.express.pccms.notification.service.EmailService;
 import com.astral.express.pccms.user.dto.response.UserResponse;
 import com.astral.express.pccms.user.entity.Users;
@@ -39,9 +38,10 @@ public class OtpService {
     private final OtpTokenRepository otpTokenRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final SecurityContextService SecurityContextService;
+    private final SecurityContextService securityContextService;
     private final UserMapper userMapper;
     private final EmailService emailService;
+    private final OtpAttemptService otpAttemptService;
 @Transactional
     public void requestPasswordResetOtp(OtpRequest request) {
         Users user = userRepository.findByEmail(normalizeEmail(request.contact()))
@@ -125,8 +125,7 @@ public class OtpService {
             throw new BusinessException(ErrorCode.ERR_403_FORBIDDEN);
         }
         if (!hash(otp).equals(token.getTokenHash())) {
-            token.setAttemptCount(token.getAttemptCount() + 1);
-            otpTokenRepository.save(token);
+            otpAttemptService.incrementFailedAttempt(token.getId());
             throw new BusinessException(ErrorCode.ERR_OTP_001_INVALID_OR_EXPIRED);
         }
 
@@ -135,7 +134,7 @@ public class OtpService {
     }
 
     private Users currentUser() {
-        UUID userId = SecurityContextService.getCurrentUserId();
+        UUID userId = securityContextService.getCurrentUserId();
         if (userId == null) {
             throw new BusinessException(ErrorCode.ERR_401_UNAUTHORIZED);
         }

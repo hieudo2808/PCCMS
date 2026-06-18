@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Mail, Phone, ShieldCheck, User } from "lucide-react";
+import { Mail, Phone, ShieldCheck } from "lucide-react";
 import { Button, Input } from "~/components/atoms";
 import { Card } from "~/components/molecules";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -208,12 +208,8 @@ export function ProfilePage() {
         <div className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
             <Card title="Hồ sơ người dùng" subtitle="Cập nhật tên hiển thị">
                 <form onSubmit={handleProfileSubmit(onSaveProfile)} className="space-y-6">
-                    <div className="flex flex-col items-center rounded-3xl bg-slate-50 p-6 text-center">
-                        <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-emerald-100 text-emerald-700">
-                            <User className="h-10 w-10" />
-                        </div>
-
-                        <h3 className="mt-4 text-lg font-semibold">{profile.fullName}</h3>
+                    <div className="rounded-lg bg-slate-50 p-4">
+                        <h3 className="text-lg font-semibold">{profile.fullName}</h3>
                         <p className="text-sm text-slate-500">
                             {roleLabels[profile.roleCode] || profile.roleCode} • ID:{" "}
                             {profile.id.substring(0, 8)}

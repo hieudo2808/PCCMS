@@ -2,12 +2,10 @@ package com.astral.express.pccms.filemedia.service;
 
 import com.astral.express.pccms.common.exception.BusinessException;
 import com.astral.express.pccms.common.exception.ErrorCode;
-import com.astral.express.pccms.filemedia.service.CloudMediaStorageService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -16,7 +14,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-import java.io.IOException;
 import java.net.URI;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -74,11 +71,11 @@ public class R2MediaStorageService implements CloudMediaStorageService {
                 require(secretAccessKey, "pccms.r2.secret-access-key"))
                 : s3Client;
     }
-public StoredMedia uploadImage(MultipartFile file, String folder) {
-        String mimeType = file.getContentType() == null ? "image/jpeg" : file.getContentType();
-        String objectKey = buildObjectKey(folder, file);
+    public StoredMedia store(StoreMediaCommand command) {
+        String mimeType = command.contentType() == null ? "image/jpeg" : command.contentType();
+        String objectKey = buildObjectKey(command);
         try {
-            byte[] bytes = file.getBytes();
+            byte[] bytes = command.bytes();
             PutObjectRequest request = PutObjectRequest.builder()
                     .bucket(bucket)
                     .key(objectKey)
@@ -88,17 +85,17 @@ public StoredMedia uploadImage(MultipartFile file, String folder) {
                     .build();
             s3Client.putObject(request, RequestBody.fromBytes(bytes));
             return new StoredMedia(objectKey, publicUrl(objectKey), mimeType, bytes.length);
-        } catch (IOException | RuntimeException exception) {
+        } catch (RuntimeException exception) {
             log.warn("Cloudflare R2 upload failed: {}", exception.getMessage());
             throw new BusinessException(ErrorCode.ERR_FILE_001_INVALID_IMAGE);
         }
     }
 
-    private String buildObjectKey(String folder, MultipartFile file) {
-        String normalizedFolder = normalizeFolder(folder);
+    private String buildObjectKey(StoreMediaCommand command) {
+        String normalizedFolder = normalizeFolder(command.folder());
         String prefix = normalizedFolder.isBlank() ? "pccms" : "pccms/" + normalizedFolder;
         String datePath = DATE_PATH_FORMATTER.format(LocalDate.now(clock));
-        return prefix + "/" + datePath + "/" + UUID.randomUUID() + "." + extensionFor(file);
+        return prefix + "/" + datePath + "/" + UUID.randomUUID() + "." + extensionFor(command);
     }
 
     private String publicUrl(String objectKey) {
@@ -133,8 +130,8 @@ public StoredMedia uploadImage(MultipartFile file, String folder) {
         return cleaned.replaceAll("[^A-Za-z0-9/_-]", "-");
     }
 
-    private static String extensionFor(MultipartFile file) {
-        String originalName = file.getOriginalFilename();
+    private static String extensionFor(StoreMediaCommand command) {
+        String originalName = command.originalFilename();
         if (originalName != null) {
             int dotIndex = originalName.lastIndexOf('.');
             if (dotIndex >= 0 && dotIndex < originalName.length() - 1) {
@@ -144,7 +141,7 @@ public StoredMedia uploadImage(MultipartFile file, String folder) {
                 }
             }
         }
-        return switch (file.getContentType() == null ? "" : file.getContentType()) {
+        return switch (command.contentType() == null ? "" : command.contentType()) {
             case "image/png" -> "png";
             case "image/webp" -> "webp";
             case "image/jpeg" -> "jpg";

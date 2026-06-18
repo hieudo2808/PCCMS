@@ -42,6 +42,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import com.astral.express.pccms.pet.dto.request.UpdatePetRequest;
+import com.astral.express.pccms.pet.dto.response.PetResponse;
+import com.astral.express.pccms.pet.entity.PetBreeds;
+import org.mockito.Mockito;
 
 @ExtendWith(MockitoExtension.class)
 class PetServiceTest {
@@ -59,7 +63,7 @@ class PetServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private SecurityContextService SecurityContextService;
+    private SecurityContextService securityContextService;
 
     @Mock
     private PetMapper petMapper;
@@ -91,11 +95,11 @@ class PetServiceTest {
         pet.setSpecies(species);
         pet.setIsActive(true);
 
-        given(SecurityContextService.getCurrentUserId()).willReturn(ownerId);
+        given(securityContextService.getCurrentUserId()).willReturn(ownerId);
         given(petRepository.findByOwner_Id(ownerId, pageable))
                 .willReturn(new PageImpl<>(List.of(pet), pageable, 1));
         given(petMapper.toResponse(eq(pet), anyList())).willReturn(
-                new com.astral.express.pccms.pet.dto.response.PetResponse(
+                new PetResponse(
                         petId, ownerId, "Milo", speciesId, "Chó", null, null,
                         PetSex.MALE, null, 12, BigDecimal.valueOf(5), "Brown",
                         null, null, null, null, true));
@@ -117,12 +121,12 @@ class PetServiceTest {
         pet.setId(UUID.randomUUID());
         pet.setOwner(owner);
 
-        given(SecurityContextService.getCurrentUserId()).willReturn(ownerId);
-        given(SecurityContextService.isAdminOrStaff()).willReturn(false);
+        given(securityContextService.getCurrentUserId()).willReturn(ownerId);
+        given(securityContextService.isAdminOrStaff()).willReturn(false);
         given(petRepository.findByOwner_IdAndIsActive(ownerId, true, pageable))
                 .willReturn(new PageImpl<>(List.of(pet), pageable, 1));
         given(petMapper.toResponse(eq(pet), anyList())).willReturn(
-                new com.astral.express.pccms.pet.dto.response.PetResponse(
+                new PetResponse(
                         pet.getId(), ownerId, "Milo", UUID.randomUUID(), "Chó", null, null,
                         PetSex.MALE, null, 12, BigDecimal.valueOf(5), "Brown",
                         null, null, null, null, true));
@@ -138,11 +142,11 @@ class PetServiceTest {
         Pets pet = new Pets();
         pet.setId(UUID.randomUUID());
 
-        given(SecurityContextService.isAdminOrStaff()).willReturn(true);
+        given(securityContextService.isAdminOrStaff()).willReturn(true);
         given(petRepository.findByIsActive(true, pageable))
                 .willReturn(new PageImpl<>(List.of(pet), pageable, 1));
         given(petMapper.toResponse(eq(pet), anyList())).willReturn(
-                new com.astral.express.pccms.pet.dto.response.PetResponse(
+                new PetResponse(
                         pet.getId(), UUID.randomUUID(), "Milo", UUID.randomUUID(), "Chó", null, null,
                         PetSex.MALE, null, 12, BigDecimal.valueOf(5), "Brown",
                         null, null, null, null, true));
@@ -158,11 +162,11 @@ class PetServiceTest {
         Pets pet = new Pets();
         pet.setId(UUID.randomUUID());
 
-        given(SecurityContextService.isAdminOrStaff()).willReturn(true);
+        given(securityContextService.isAdminOrStaff()).willReturn(true);
         given(petRepository.findAll(pageable))
                 .willReturn(new PageImpl<>(List.of(pet), pageable, 1));
         given(petMapper.toResponse(eq(pet), anyList())).willReturn(
-                new com.astral.express.pccms.pet.dto.response.PetResponse(
+                new PetResponse(
                         pet.getId(), UUID.randomUUID(), "Milo", UUID.randomUUID(), "Chó", null, null,
                         PetSex.MALE, null, 12, BigDecimal.valueOf(5), "Brown",
                         null, null, null, null, true));
@@ -179,11 +183,11 @@ class PetServiceTest {
         Pets pet = new Pets();
         pet.setId(UUID.randomUUID());
 
-        given(SecurityContextService.isAdminOrStaff()).willReturn(true);
+        given(securityContextService.isAdminOrStaff()).willReturn(true);
         given(petRepository.findByOwner_IdAndIsActive(ownerId, true, pageable))
                 .willReturn(new PageImpl<>(List.of(pet), pageable, 1));
         given(petMapper.toResponse(eq(pet), anyList())).willReturn(
-                new com.astral.express.pccms.pet.dto.response.PetResponse(
+                new PetResponse(
                         pet.getId(), UUID.randomUUID(), "Milo", UUID.randomUUID(), "Chó", null, null,
                         PetSex.MALE, null, 12, BigDecimal.valueOf(5), "Brown",
                         null, null, null, null, true));
@@ -200,11 +204,11 @@ class PetServiceTest {
         Pets pet = new Pets();
         pet.setId(UUID.randomUUID());
 
-        given(SecurityContextService.isAdminOrStaff()).willReturn(true);
+        given(securityContextService.isAdminOrStaff()).willReturn(true);
         given(petRepository.findByOwner_Id(ownerId, pageable))
                 .willReturn(new PageImpl<>(List.of(pet), pageable, 1));
         given(petMapper.toResponse(eq(pet), anyList())).willReturn(
-                new com.astral.express.pccms.pet.dto.response.PetResponse(
+                new PetResponse(
                         pet.getId(), UUID.randomUUID(), "Milo", UUID.randomUUID(), "Chó", null, null,
                         PetSex.MALE, null, 12, BigDecimal.valueOf(5), "Brown",
                         null, null, null, null, true));
@@ -218,8 +222,8 @@ class PetServiceTest {
     void should_ListPetsByOwnerId_ThrowForbidden() {
         UUID ownerId = UUID.randomUUID();
         Pageable pageable = PageRequest.of(0, 20);
-        given(SecurityContextService.getCurrentUserId()).willReturn(UUID.randomUUID());
-        given(SecurityContextService.isAdminOrStaff()).willReturn(false);
+        given(securityContextService.getCurrentUserId()).willReturn(UUID.randomUUID());
+        given(securityContextService.isAdminOrStaff()).willReturn(false);
 
         assertThatThrownBy(() -> petService.listPets(ownerId, true, pageable))
                 .isInstanceOf(BusinessException.class)
@@ -247,7 +251,7 @@ class PetServiceTest {
         CreatePetRequest createRequest = new CreatePetRequest(
                 null, "Milo", speciesId, null, PetSex.MALE, birthDate, estimatedAgeMonths, weightKg, "Brown", null, null, null, null
         );
-        com.astral.express.pccms.pet.dto.request.UpdatePetRequest updateRequest = new com.astral.express.pccms.pet.dto.request.UpdatePetRequest(
+        UpdatePetRequest updateRequest = new UpdatePetRequest(
                 "Milo Updated", speciesId, null, PetSex.MALE, birthDate, estimatedAgeMonths, weightKg, "Brown", null, null, null, null
         );
 
@@ -274,17 +278,17 @@ class PetServiceTest {
 
         if (!"CREATE_PET".equals(action)) {
             given(petRepository.findById(petId)).willReturn(Optional.of(mockPet));
-            given(SecurityContextService.getCurrentUserId()).willReturn(currentUserId);
+            given(securityContextService.getCurrentUserId()).willReturn(currentUserId);
         }
 
         if ("CREATE_PET".equals(action) && "SUCCESS".equals(expectedResult)) {
-            given(SecurityContextService.getCurrentUserId()).willReturn(currentUserId);
+            given(securityContextService.getCurrentUserId()).willReturn(currentUserId);
             given(userRepository.findById(currentUserId)).willReturn(Optional.of(owner));
             given(petSpeciesRepository.findByIdAndIsActiveTrue(speciesId)).willReturn(Optional.of(species));
             given(petMapper.toEntity(createRequest)).willReturn(new Pets());
             given(petRepository.save(any(Pets.class))).willReturn(mockPet);
             given(petMapper.toResponse(eq(mockPet), anyList())).willReturn(
-                    new com.astral.express.pccms.pet.dto.response.PetResponse(
+                    new PetResponse(
                             petId, currentUserId, "Milo", speciesId, "Chó", null, null,
                             PetSex.MALE, birthDate, estimatedAgeMonths, weightKg, "Brown",
                             null, null, null, null, true));
@@ -294,7 +298,7 @@ class PetServiceTest {
             given(petSpeciesRepository.findByIdAndIsActiveTrue(speciesId)).willReturn(Optional.of(species));
             given(petRepository.save(any(Pets.class))).willAnswer(inv -> inv.getArgument(0));
             given(petMapper.toResponse(any(Pets.class), anyList())).willReturn(
-                    new com.astral.express.pccms.pet.dto.response.PetResponse(
+                    new PetResponse(
                             petId, owner.getId(), "Milo Updated", speciesId, "Chó", null, null,
                             PetSex.MALE, birthDate, estimatedAgeMonths, weightKg, "Brown",
                             null, null, null, null, true));
@@ -306,7 +310,7 @@ class PetServiceTest {
 
         if ("GET_PET".equals(action) && "SUCCESS".equals(expectedResult)) {
             given(petMapper.toResponse(eq(mockPet), anyList())).willReturn(
-                    new com.astral.express.pccms.pet.dto.response.PetResponse(
+                    new PetResponse(
                             petId, owner.getId(), "Milo", speciesId, "Chó", null, null,
                             PetSex.MALE, birthDate, estimatedAgeMonths, weightKg, "Brown",
                             null, null, null, null, true));
@@ -353,7 +357,7 @@ class PetServiceTest {
         UUID petId = UUID.randomUUID();
         UUID speciesId = UUID.randomUUID();
         UUID breedId = UUID.randomUUID();
-        com.astral.express.pccms.pet.dto.request.UpdatePetRequest updateRequest = new com.astral.express.pccms.pet.dto.request.UpdatePetRequest(
+        UpdatePetRequest updateRequest = new UpdatePetRequest(
                 "Milo Updated", speciesId, breedId, PetSex.MALE, LocalDate.now(), 12, BigDecimal.valueOf(5), "Brown", null, null, null, null
         );
 
@@ -361,7 +365,7 @@ class PetServiceTest {
         owner.setId(UUID.randomUUID());
 
         PetSpecies species = PetSpecies.builder().id(speciesId).name("Chó").build();
-        com.astral.express.pccms.pet.entity.PetBreeds breed = new com.astral.express.pccms.pet.entity.PetBreeds();
+        PetBreeds breed = new PetBreeds();
         breed.setId(breedId);
         breed.setSpecies(species);
 
@@ -374,7 +378,7 @@ class PetServiceTest {
         mockPet.setWeightKg(BigDecimal.valueOf(5));
 
         given(petRepository.findById(petId)).willReturn(Optional.of(mockPet));
-        given(SecurityContextService.getCurrentUserId()).willReturn(owner.getId());
+        given(securityContextService.getCurrentUserId()).willReturn(owner.getId());
         given(petSpeciesRepository.findByIdAndIsActiveTrue(speciesId)).willReturn(Optional.of(species));
         given(petBreedsRepository.findByIdAndIsActiveTrue(breedId)).willReturn(Optional.of(breed));
         given(petRepository.save(any(Pets.class))).willAnswer(inv -> inv.getArgument(0));
@@ -397,12 +401,12 @@ class PetServiceTest {
         owner.setId(ownerId);
 
         PetSpecies species = PetSpecies.builder().id(speciesId).name("Chó").build();
-        com.astral.express.pccms.pet.entity.PetBreeds breed = new com.astral.express.pccms.pet.entity.PetBreeds();
+        PetBreeds breed = new PetBreeds();
         breed.setId(breedId);
         breed.setSpecies(species);
 
-        given(SecurityContextService.getCurrentUserId()).willReturn(UUID.randomUUID());
-        given(SecurityContextService.isAdminOrStaff()).willReturn(true);
+        given(securityContextService.getCurrentUserId()).willReturn(UUID.randomUUID());
+        given(securityContextService.isAdminOrStaff()).willReturn(true);
         given(userRepository.findById(ownerId)).willReturn(Optional.of(owner));
         given(petSpeciesRepository.findByIdAndIsActiveTrue(speciesId)).willReturn(Optional.of(species));
         given(petBreedsRepository.findByIdAndIsActiveTrue(breedId)).willReturn(Optional.of(breed));
@@ -428,11 +432,11 @@ class PetServiceTest {
 
         PetSpecies species = PetSpecies.builder().id(speciesId).name("Chó").build();
         PetSpecies wrongSpecies = PetSpecies.builder().id(UUID.randomUUID()).name("Mèo").build();
-        com.astral.express.pccms.pet.entity.PetBreeds breed = new com.astral.express.pccms.pet.entity.PetBreeds();
+        PetBreeds breed = new PetBreeds();
         breed.setId(breedId);
         breed.setSpecies(wrongSpecies);
 
-        given(SecurityContextService.getCurrentUserId()).willReturn(ownerId);
+        given(securityContextService.getCurrentUserId()).willReturn(ownerId);
         given(userRepository.findById(ownerId)).willReturn(Optional.of(owner));
         given(petSpeciesRepository.findByIdAndIsActiveTrue(speciesId)).willReturn(Optional.of(species));
         given(petBreedsRepository.findByIdAndIsActiveTrue(breedId)).willReturn(Optional.of(breed));
@@ -486,7 +490,7 @@ class PetServiceTest {
 
         PetSpecies species = PetSpecies.builder().id(speciesId).name("Chó").build();
 
-        given(SecurityContextService.getCurrentUserId()).willReturn(ownerId);
+        given(securityContextService.getCurrentUserId()).willReturn(ownerId);
         given(userRepository.findById(ownerId)).willReturn(Optional.of(owner));
         given(petSpeciesRepository.findByIdAndIsActiveTrue(speciesId)).willReturn(Optional.of(species));
         given(petBreedsRepository.findByIdAndIsActiveTrue(breedId)).willReturn(Optional.empty());
@@ -500,7 +504,7 @@ class PetServiceTest {
     void should_updatePet_RemoveBreed() {
         UUID petId = UUID.randomUUID();
         UUID speciesId = UUID.randomUUID();
-        com.astral.express.pccms.pet.dto.request.UpdatePetRequest updateRequest = new com.astral.express.pccms.pet.dto.request.UpdatePetRequest(
+        UpdatePetRequest updateRequest = new UpdatePetRequest(
                 "Milo Updated", speciesId, null, PetSex.MALE, LocalDate.now(), 12, BigDecimal.valueOf(5), "Brown", null, null, null, null
         );
 
@@ -508,7 +512,7 @@ class PetServiceTest {
         owner.setId(UUID.randomUUID());
 
         PetSpecies species = PetSpecies.builder().id(speciesId).name("Chó").build();
-        com.astral.express.pccms.pet.entity.PetBreeds breed = new com.astral.express.pccms.pet.entity.PetBreeds();
+        PetBreeds breed = new PetBreeds();
         breed.setId(UUID.randomUUID());
         breed.setSpecies(species);
 
@@ -522,7 +526,7 @@ class PetServiceTest {
         mockPet.setWeightKg(BigDecimal.valueOf(5));
 
         given(petRepository.findById(petId)).willReturn(Optional.of(mockPet));
-        given(SecurityContextService.getCurrentUserId()).willReturn(owner.getId());
+        given(securityContextService.getCurrentUserId()).willReturn(owner.getId());
         given(petSpeciesRepository.findByIdAndIsActiveTrue(speciesId)).willReturn(Optional.of(species));
         given(petRepository.save(any(Pets.class))).willAnswer(inv -> inv.getArgument(0));
 
@@ -544,11 +548,11 @@ class PetServiceTest {
         mockPet.setIsActive(false);
 
         given(petRepository.findById(petId)).willReturn(Optional.of(mockPet));
-        given(SecurityContextService.getCurrentUserId()).willReturn(owner.getId());
+        given(securityContextService.getCurrentUserId()).willReturn(owner.getId());
 
         petService.deactivatePet(petId);
 
-        verify(petRepository, org.mockito.Mockito.never()).save(any());
-        verify(eventPublisher, org.mockito.Mockito.never()).publishEvent(any());
+        verify(petRepository, Mockito.never()).save(any());
+        verify(eventPublisher, Mockito.never()).publishEvent(any());
     }
 }

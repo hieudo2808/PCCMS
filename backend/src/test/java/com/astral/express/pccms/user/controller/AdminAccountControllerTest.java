@@ -43,7 +43,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import com.astral.express.pccms.user.dto.request.AdminUpdateUserRequest;
 
 @ExtendWith(MockitoExtension.class)
 class AdminAccountControllerTest {
@@ -248,7 +249,7 @@ class AdminAccountControllerTest {
     @Test
     void updateAccount_returnsUpdatedAccount() throws Exception {
         UUID accountId = UUID.randomUUID();
-        com.astral.express.pccms.user.dto.request.AdminUpdateUserRequest request = new com.astral.express.pccms.user.dto.request.AdminUpdateUserRequest("New Name", "test@gmail.com", "0901234567", "STAFF", UserStatus.ACTIVE);
+        AdminUpdateUserRequest request = new AdminUpdateUserRequest("New Name", "test@gmail.com", "0901234567", "STAFF", UserStatus.ACTIVE);
         AccountResponse account = accountResponse(UserStatus.ACTIVE, "STAFF", "Nhan vien trung tam");
         given(userService.adminUpdateUser(accountId, request)).willReturn(account);
 

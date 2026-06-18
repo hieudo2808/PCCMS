@@ -32,7 +32,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.data.domain.PageImpl;
 
 @ExtendWith(MockitoExtension.class)
 class MedicineControllerTest {
@@ -117,7 +118,7 @@ class MedicineControllerTest {
     void should_ReturnPageOfMedicines_when_GetAll() throws Exception {
         UUID id = UUID.randomUUID();
         MedicineResponse response = new MedicineResponse(id, "CODE1", "Medicine 1", null, null, "Box", null, 10, 100L, true);
-        PageResponse<MedicineResponse> pageResponse = PageResponse.of(new org.springframework.data.domain.PageImpl<>(List.of(response)));
+        PageResponse<MedicineResponse> pageResponse = PageResponse.of(new PageImpl<>(List.of(response)));
 
         given(medicineService.getAllMedicines(any(), any(Pageable.class))).willReturn(pageResponse);
 
@@ -162,7 +163,7 @@ class MedicineControllerTest {
 
     @Test
     void should_ReturnPageOfMedicines_when_GetAllWithKeyword() throws Exception {
-        PageResponse<MedicineResponse> pageResponse = PageResponse.of(new org.springframework.data.domain.PageImpl<>(List.of()));
+        PageResponse<MedicineResponse> pageResponse = PageResponse.of(new PageImpl<>(List.of()));
         given(medicineService.searchMedicines(any(), any(), any(), any())).willReturn(pageResponse);
 
         mockMvc.perform(get("/v1/medicines")
@@ -174,7 +175,7 @@ class MedicineControllerTest {
 
     @Test
     void should_ReturnPageOfMedicines_when_SuggestMedicines() throws Exception {
-        PageResponse<MedicineResponse> pageResponse = PageResponse.of(new org.springframework.data.domain.PageImpl<>(List.of()));
+        PageResponse<MedicineResponse> pageResponse = PageResponse.of(new PageImpl<>(List.of()));
         given(medicineService.searchMedicines(any(), any(), any(), any())).willReturn(pageResponse);
 
         mockMvc.perform(get("/v1/medicines/suggestions"))
@@ -184,7 +185,7 @@ class MedicineControllerTest {
 
     @Test
     void should_ReturnPageOfMedicines_when_GetAllWithIsActiveOnly() throws Exception {
-        PageResponse<MedicineResponse> pageResponse = PageResponse.of(new org.springframework.data.domain.PageImpl<>(List.of()));
+        PageResponse<MedicineResponse> pageResponse = PageResponse.of(new PageImpl<>(List.of()));
         given(medicineService.searchMedicines(any(), any(), any(), any())).willReturn(pageResponse);
 
         mockMvc.perform(get("/v1/medicines")

@@ -1,12 +1,9 @@
 import { z } from 'zod';
 
-export const PET_AVATAR_MAX_BYTES = 2 * 1024 * 1024; // 2MB
-
 export const PET_MESSAGES = {
   requiredFields: 'Vui lòng nhập đầy đủ các thông tin bắt buộc',
   requiredFieldsRegister: 'Vui lòng nhập đầy đủ các trường thông tin bắt buộc',
   invalidWeight: 'Cân nặng phải là một con số hợp lệ',
-  imageTooLarge: 'Kích thước ảnh quá lớn',
   createSuccess: 'Thêm thú cưng thành công',
   registerSuccess: 'Đăng ký hồ sơ thú cưng thành công',
   updateSuccess: 'Chỉnh sửa hồ sơ thành công',

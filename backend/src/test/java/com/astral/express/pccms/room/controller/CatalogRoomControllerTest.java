@@ -29,7 +29,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.data.domain.PageImpl;
 
 @ExtendWith(MockitoExtension.class)
 class CatalogRoomControllerTest {
@@ -80,7 +81,7 @@ class CatalogRoomControllerTest {
 
     @Test
     void list_success() throws Exception {
-        PageResponse<LegacyRoomResponse> page = PageResponse.of(new org.springframework.data.domain.PageImpl<>(List.of()));
+        PageResponse<LegacyRoomResponse> page = PageResponse.of(new PageImpl<>(List.of()));
         given(catalogRoomService.list(any(), any(), any(Pageable.class))).willReturn(page);
 
         mockMvc.perform(get("/v1/catalog/rooms"))

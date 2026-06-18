@@ -28,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import org.mockito.Mockito;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -46,7 +47,7 @@ class BoardingBookingUseCaseTest {
     private AppointmentResponseAssembler assembler;
 
     @InjectMocks
-    private BoardingBookingUseCase useCase;
+    private AppointmentBoardingBookingUseCase useCase;
 
     private UUID ownerId;
 
@@ -65,7 +66,7 @@ class BoardingBookingUseCaseTest {
         );
         UUID bookingId = UUID.randomUUID();
         com.astral.express.pccms.boarding.dto.response.BoardingBookingResponse dedicatedResponse =
-                org.mockito.Mockito.mock(com.astral.express.pccms.boarding.dto.response.BoardingBookingResponse.class);
+                Mockito.mock(com.astral.express.pccms.boarding.dto.response.BoardingBookingResponse.class);
         given(dedicatedResponse.id()).willReturn(bookingId);
         given(boardingService.createBooking(any())).willReturn(dedicatedResponse);
 
@@ -73,7 +74,7 @@ class BoardingBookingUseCaseTest {
         booking.setId(bookingId);
         given(boardingBookingRepository.findById(bookingId)).willReturn(Optional.of(booking));
 
-        BoardingBookingResponse expectedResponse = org.mockito.Mockito.mock(BoardingBookingResponse.class);
+        BoardingBookingResponse expectedResponse = Mockito.mock(BoardingBookingResponse.class);
         given(expectedResponse.id()).willReturn(bookingId);
         given(assembler.toBoardingResponse(booking)).willReturn(expectedResponse);
 
@@ -95,7 +96,7 @@ class BoardingBookingUseCaseTest {
         );
         UUID bookingId = UUID.randomUUID();
         com.astral.express.pccms.boarding.dto.response.BoardingBookingResponse dedicatedResponse =
-                org.mockito.Mockito.mock(com.astral.express.pccms.boarding.dto.response.BoardingBookingResponse.class);
+                Mockito.mock(com.astral.express.pccms.boarding.dto.response.BoardingBookingResponse.class);
         given(dedicatedResponse.id()).willReturn(bookingId);
         given(boardingService.createBooking(any())).willReturn(dedicatedResponse);
         given(boardingBookingRepository.findById(bookingId)).willReturn(Optional.empty());
@@ -113,7 +114,7 @@ class BoardingBookingUseCaseTest {
         booking.setId(UUID.randomUUID());
         given(boardingBookingRepository.findByOwnerId(ownerId)).willReturn(List.of(booking));
 
-        BoardingBookingResponse expectedResponse = org.mockito.Mockito.mock(BoardingBookingResponse.class);
+        BoardingBookingResponse expectedResponse = Mockito.mock(BoardingBookingResponse.class);
         given(expectedResponse.id()).willReturn(booking.getId());
         given(assembler.toBoardingResponse(booking)).willReturn(expectedResponse);
 

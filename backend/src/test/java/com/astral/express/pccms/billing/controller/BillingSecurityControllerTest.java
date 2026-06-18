@@ -5,13 +5,12 @@ import com.astral.express.pccms.billing.dto.request.RecordPaymentRequest;
 import com.astral.express.pccms.billing.entity.PaymentMethod;
 import com.astral.express.pccms.billing.service.InvoiceService;
 import com.astral.express.pccms.billing.service.PaymentService;
+import com.astral.express.pccms.common.AbstractIntegrationTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Disabled;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -27,9 +26,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@Disabled("Fails due to ApplicationContext/Docker threshold")
-class BillingSecurityControllerTest {
+class BillingSecurityControllerTest extends AbstractIntegrationTest {
 
     private MockMvc mockMvc;
 

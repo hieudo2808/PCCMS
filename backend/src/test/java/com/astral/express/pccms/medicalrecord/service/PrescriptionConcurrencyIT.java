@@ -53,7 +53,7 @@ class PrescriptionConcurrencyIT {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("spring.jpa.hibernate.ddl-auto", () -> "update");
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
     }
 
     @Autowired
@@ -88,6 +88,8 @@ class PrescriptionConcurrencyIT {
         // Prepare Vet
         Roles vetRole = new Roles();
         vetRole.setCode("VETERINARIAN");
+        vetRole.setName("Veterinarian");
+        vetRole.setIsActive(true);
         vetRole = roleRepository.save(vetRole);
         
         Users vet = Users.builder()

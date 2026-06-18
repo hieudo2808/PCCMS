@@ -14,6 +14,9 @@ public record RegisterRequest(
     @Email(message = "Invalid email format")
     String email,
 
+    @NotBlank(message = "Phone number is required")
+    String phone,
+
     @NotBlank(message = "Password is required")
     @Pattern(
         regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$",

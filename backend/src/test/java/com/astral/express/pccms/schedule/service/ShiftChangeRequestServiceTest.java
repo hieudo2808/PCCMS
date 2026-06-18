@@ -35,7 +35,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.when;
+import com.astral.express.pccms.schedule.entity.Shift;
+import com.astral.express.pccms.user.entity.Roles;
+import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -144,7 +147,7 @@ class ShiftChangeRequestServiceTest {
         req.setTargetStaff(target);
         WorkSchedule schedule = new WorkSchedule();
         schedule.setWorkDate(LocalDate.now().plusDays(2));
-        com.astral.express.pccms.schedule.entity.Shift shift = new com.astral.express.pccms.schedule.entity.Shift();
+        Shift shift = new Shift();
         shift.setId(UUID.randomUUID());
         schedule.setShift(shift);
         req.setSchedule(schedule);
@@ -207,18 +210,18 @@ class ShiftChangeRequestServiceTest {
         Users target = new Users();
         target.setId(userId);
         
-        com.astral.express.pccms.user.entity.Roles targetRole = new com.astral.express.pccms.user.entity.Roles();
+        Roles targetRole = new Roles();
         targetRole.setId(UUID.randomUUID());
         target.setRole(targetRole);
         req.setTargetStaff(target);
         
         WorkSchedule schedule = new WorkSchedule();
         schedule.setWorkDate(LocalDate.now().plusDays(2));
-        com.astral.express.pccms.user.entity.Roles scheduleRole = new com.astral.express.pccms.user.entity.Roles();
+        Roles scheduleRole = new Roles();
         scheduleRole.setId(UUID.randomUUID()); // different role
         schedule.setRole(scheduleRole);
         
-        com.astral.express.pccms.schedule.entity.Shift shift = new com.astral.express.pccms.schedule.entity.Shift();
+        Shift shift = new Shift();
         shift.setId(UUID.randomUUID());
         schedule.setShift(shift);
         req.setSchedule(schedule);
@@ -246,7 +249,7 @@ class ShiftChangeRequestServiceTest {
         
         WorkSchedule schedule = new WorkSchedule();
         schedule.setWorkDate(LocalDate.now().plusDays(2));
-        com.astral.express.pccms.schedule.entity.Shift shift = new com.astral.express.pccms.schedule.entity.Shift();
+        Shift shift = new Shift();
         shift.setId(UUID.randomUUID());
         schedule.setShift(shift);
         req.setSchedule(schedule);
@@ -419,7 +422,7 @@ class ShiftChangeRequestServiceTest {
         schedule.setStatusCode(ScheduleStatus.ASSIGNED);
         schedule.setWorkDate(LocalDate.now().plusDays(2));
         
-        when(workScheduleRepository.findById(scheduleId)).thenReturn(java.util.Optional.of(schedule));
+        when(workScheduleRepository.findById(scheduleId)).thenReturn(Optional.of(schedule));
         when(shiftChangeRequestRepository.existsByScheduleIdAndRequestedByIdAndStatusCode(scheduleId, userId, ShiftRequestStatus.PENDING)).thenReturn(false);
         when(shiftChangeRequestRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         
@@ -435,10 +438,10 @@ class ShiftChangeRequestServiceTest {
         UUID requestId = UUID.randomUUID();
         ShiftChangeRequest request = new ShiftChangeRequest();
         request.setRequestedBy(null);
-        when(shiftChangeRequestRepository.findById(requestId)).thenReturn(java.util.Optional.of(request));
+        when(shiftChangeRequestRepository.findById(requestId)).thenReturn(Optional.of(request));
         
         assertThatThrownBy(() -> service.cancelOwnRequest(requestId))
-            .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class);
+            .isInstanceOf(BusinessException.class);
     }
     
     @Test
@@ -449,8 +452,8 @@ class ShiftChangeRequestServiceTest {
         UUID requestId = UUID.randomUUID();
         ShiftChangeRequest request = new ShiftChangeRequest();
         request.setStatusCode(ShiftRequestStatus.PENDING);
-        when(shiftChangeRequestRepository.findById(requestId)).thenReturn(java.util.Optional.of(request));
-        when(userRepository.findById(userId)).thenReturn(java.util.Optional.of(new Users()));
+        when(shiftChangeRequestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(new Users()));
         when(shiftChangeRequestRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         
         ShiftChangeRequestResponse res = service.updateRequestStatus(requestId, ShiftRequestStatus.REJECTED);
@@ -469,10 +472,10 @@ class ShiftChangeRequestServiceTest {
         request.setTargetStaff(targetStaff);
         request.setStatusCode(ShiftRequestStatus.PENDING);
         
-        when(shiftChangeRequestRepository.findById(requestId)).thenReturn(java.util.Optional.of(request));
+        when(shiftChangeRequestRepository.findById(requestId)).thenReturn(Optional.of(request));
         
         assertThatThrownBy(() -> service.respondToRequest(requestId, ShiftRequestStatus.CANCELLED))
-            .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class);
+            .isInstanceOf(BusinessException.class);
     }
 
     @Test
@@ -487,8 +490,8 @@ class ShiftChangeRequestServiceTest {
         request.setTargetStaff(targetStaff);
         request.setStatusCode(ShiftRequestStatus.PENDING);
         
-        when(shiftChangeRequestRepository.findById(requestId)).thenReturn(java.util.Optional.of(request));
-        when(userRepository.findById(userId)).thenReturn(java.util.Optional.of(new Users()));
+        when(shiftChangeRequestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(new Users()));
         when(shiftChangeRequestRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         
         ShiftChangeRequestResponse res = service.respondToRequest(requestId, ShiftRequestStatus.REJECTED);
@@ -508,16 +511,16 @@ class ShiftChangeRequestServiceTest {
         request.setStatusCode(ShiftRequestStatus.PENDING);
         
         WorkSchedule schedule = new WorkSchedule();
-        com.astral.express.pccms.user.entity.Roles role = new com.astral.express.pccms.user.entity.Roles();
+        Roles role = new Roles();
         role.setId(UUID.randomUUID());
         schedule.setRole(role);
         request.setSchedule(schedule);
         
-        when(shiftChangeRequestRepository.findById(requestId)).thenReturn(java.util.Optional.of(request));
-        when(userRepository.findById(userId)).thenReturn(java.util.Optional.of(targetStaff));
+        when(shiftChangeRequestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(targetStaff));
         
         assertThatThrownBy(() -> service.respondToRequest(requestId, ShiftRequestStatus.ACCEPTED))
-            .isInstanceOf(com.astral.express.pccms.common.exception.BusinessException.class);
+            .isInstanceOf(BusinessException.class);
     }
 
 
@@ -538,7 +541,7 @@ class ShiftChangeRequestServiceTest {
     void should_GetAdminRequests_NullStatusCode_Success() {
         ShiftChangeRequest req = new ShiftChangeRequest();
         Page<ShiftChangeRequest> page = new PageImpl<>(List.of(req));
-        when(shiftChangeRequestRepository.findAll(any(org.springframework.data.domain.Pageable.class))).thenReturn(page);
+        when(shiftChangeRequestRepository.findAll(any(Pageable.class))).thenReturn(page);
         
         PageResponse<ShiftChangeRequestResponse> res = service.getAdminRequests(null, PageRequest.of(0, 10));
         assertThat(res).isNotNull();
@@ -617,7 +620,7 @@ class ShiftChangeRequestServiceTest {
         
         WorkSchedule schedule = new WorkSchedule();
         schedule.setWorkDate(LocalDate.now().plusDays(2));
-        com.astral.express.pccms.schedule.entity.Shift shift = new com.astral.express.pccms.schedule.entity.Shift();
+        Shift shift = new Shift();
         shift.setId(UUID.randomUUID());
         schedule.setShift(shift);
         req.setSchedule(schedule);

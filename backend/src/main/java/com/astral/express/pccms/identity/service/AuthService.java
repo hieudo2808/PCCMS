@@ -18,6 +18,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.AccountStatusException;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -50,6 +52,13 @@ public class AuthService {
         if (userRepository.existsByEmail(request.email())) {
             throw new BusinessException(ErrorCode.ERR_ACC_001_EMAIL_EXISTS);
         }
+        String normalizedPhone = normalize(request.phone());
+        if (normalizedPhone == null) {
+            throw new BusinessException(ErrorCode.ERR_VALIDATION_FAILED);
+        }
+        if (userRepository.findByNormalizedPhone(normalizedPhone).isPresent()) {
+            throw new BusinessException(ErrorCode.ERR_ACC_008_PHONE_EXISTS);
+        }
 
         // Get default role
         Roles role = roleRepository.findByCode(DEFAULT_ROLE)
@@ -59,6 +68,7 @@ public class AuthService {
         Users user = Users.builder()
                 .fullName(request.fullName())
                 .email(request.email())
+                .phone(normalizedPhone)
                 .passwordHash(passwordEncoder.encode(request.password()))
                 .role(role)
                 .statusCode(UserStatus.ACTIVE)
@@ -77,7 +87,9 @@ public class AuthService {
             );
         } catch (BadCredentialsException e) {
             throw new BusinessException(ErrorCode.ERR_IAM_001_INVALID_CREDENTIALS);
-        } catch (org.springframework.security.authentication.InternalAuthenticationServiceException e) {
+        } catch (AccountStatusException e) {
+            throw new BusinessException(ErrorCode.ERR_IAM_002_ACCOUNT_LOCKED);
+        } catch (InternalAuthenticationServiceException e) {
             if (e.getCause() instanceof BusinessException businessException) {
                 throw businessException;
             }
@@ -165,5 +177,12 @@ public class AuthService {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Failed to hash token", e);
         }
+    }
+
+    private String normalize(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 }

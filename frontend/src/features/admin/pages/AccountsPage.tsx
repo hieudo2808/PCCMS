@@ -39,6 +39,10 @@ function getRoleCode(account: Account) {
     return account.roleCode ?? roleCodeByRole[account.roles[0] ?? "owner"];
 }
 
+function isProtectedAdmin(account: Account) {
+    return getRoleCode(account).toUpperCase() === "ADMIN";
+}
+
 function toPayload(values: AccountFormValues): AccountPayload {
     return {
         fullName: values.fullName.trim(),
@@ -141,6 +145,10 @@ export function AccountsPage() {
     };
 
     const toggleMenu = (account: Account, button: HTMLButtonElement) => {
+        if (isProtectedAdmin(account)) {
+            toast.error("Không thể quản trị tài khoản admin từ màn này");
+            return;
+        }
         if (openMenuId === account.accountId) {
             setOpenMenuId(null);
             return;
@@ -240,6 +248,7 @@ export function AccountsPage() {
                                 key={user.accountId}
                                 variant="outline"
                                 className="h-auto px-2 py-1 text-xs"
+                                disabled={isProtectedAdmin(user)}
                                 onClick={(event) => toggleMenu(user, event.currentTarget)}
                                 aria-label={`Thao tác ${user.fullName}`}
                             >

@@ -16,11 +16,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.PageImpl;
-import org.mockito.Mockito;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -35,7 +34,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import com.astral.express.pccms.appointment.entity.GroomingStatus;
 
 @ExtendWith(MockitoExtension.class)
 class AppointmentControllerTest {
@@ -46,8 +46,8 @@ class AppointmentControllerTest {
     @Mock private AppointmentAvailabilityUseCase availabilityUseCase;
     @Mock private AppointmentLifecycleUseCase lifecycleUseCase;
     @Mock private AppointmentQueryUseCase queryUseCase;
-    @Mock private BoardingBookingUseCase boardingBookingUseCase;
-    @Mock private GroomingBookingUseCase groomingBookingUseCase;
+    @Mock private AppointmentBoardingBookingUseCase boardingBookingUseCase;
+    @Mock private AppointmentGroomingBookingUseCase groomingBookingUseCase;
     @Mock private CreateMedicalAppointmentUseCase createMedicalAppointmentUseCase;
     @Mock private QuickCheckInUseCase quickCheckInUseCase;
     @Mock private AppointmentResponseAssembler appointmentResponseAssembler;
@@ -207,7 +207,7 @@ class AppointmentControllerTest {
 
     @Test
     void updateGroomingStatus_success() throws Exception {
-        UpdateGroomingStatusRequest request = new UpdateGroomingStatusRequest(com.astral.express.pccms.appointment.entity.GroomingStatus.COMPLETED);
+        UpdateGroomingStatusRequest request = new UpdateGroomingStatusRequest(GroomingStatus.COMPLETED);
         given(groomingBookingUseCase.updateGroomingStatus(any(), any())).willReturn(null);
 
         mockMvc.perform(patch("/v1/appointments/grooming/{id}/status", UUID.randomUUID())

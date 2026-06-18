@@ -2,6 +2,7 @@ package com.astral.express.pccms.identity.controller;
 
 import java.time.Duration;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -36,6 +37,9 @@ public class AuthController {
     private final OtpService otpService;
     private static final String REFRESH_TOKEN_COOKIE = "refresh_token";
     private static final Duration REFRESH_TOKEN_MAX_AGE = Duration.ofDays(7);
+
+    @Value("${app.auth.refresh-cookie-secure:false}")
+    private boolean refreshCookieSecure;
 
     @PostMapping("/register")
     public ApiResponse<AuthResponse> register(
@@ -123,7 +127,7 @@ public class AuthController {
     private void setRefreshTokenCookie(HttpServletResponse response, String token) {
         ResponseCookie cookie = ResponseCookie.from(REFRESH_TOKEN_COOKIE, token)
                 .httpOnly(true)
-                .secure(false) // Set to true in production with HTTPS
+                .secure(refreshCookieSecure)
                 .sameSite("Lax")
                 .path("/")
                 .maxAge(REFRESH_TOKEN_MAX_AGE)
@@ -135,7 +139,7 @@ public class AuthController {
     private void clearRefreshTokenCookie(HttpServletResponse response) {
         ResponseCookie cookie = ResponseCookie.from(REFRESH_TOKEN_COOKIE, "")
                 .httpOnly(true)
-                .secure(false)
+                .secure(refreshCookieSecure)
                 .sameSite("Lax")
                 .path("/")
                 .maxAge(Duration.ZERO)

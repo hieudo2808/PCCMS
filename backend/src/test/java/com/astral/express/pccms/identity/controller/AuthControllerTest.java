@@ -15,17 +15,23 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import jakarta.servlet.http.Cookie;
+import org.mockito.BDDMockito;
 
 @ExtendWith(MockitoExtension.class)
 class AuthControllerTest {
@@ -52,7 +58,7 @@ class AuthControllerTest {
 
     @Test
     void register_success() throws Exception {
-        RegisterRequest request = new RegisterRequest("Test User", "test@gmail.com", "Password123!");
+        RegisterRequest request = new RegisterRequest("Test User", "test@gmail.com", "0901234567", "Password123!");
         AuthResponse response = new AuthResponse("access_token", "refresh_token", null);
 
         given(authService.register(any(RegisterRequest.class))).willReturn(response);
@@ -64,6 +70,19 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.token").value("access_token"))
                 .andExpect(cookie().exists("refresh_token"));
+    }
+
+    @Test
+    void register_requiresPhone() throws Exception {
+        mockMvc.perform(post("/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"fullName":"Test User","email":"test@gmail.com","password":"Password123!"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.errorCode").value("ERR_VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.errors.phone").exists());
     }
 
     @Test
@@ -83,13 +102,37 @@ class AuthControllerTest {
     }
 
     @Test
+    void login_setsSecureRefreshCookie_WhenConfigured() throws Exception {
+        ReflectionTestUtils.setField(authController, "refreshCookieSecure", true);
+        LoginRequest request = new LoginRequest("test@gmail.com", "Password123!");
+        AuthResponse response = new AuthResponse("access_token", "refresh_token", null);
+
+        given(authService.login(any(LoginRequest.class))).willReturn(response);
+
+        mockMvc.perform(post("/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("Secure")));
+    }
+
+    @Test
+    void logout_clearsSecureRefreshCookie_WhenConfigured() throws Exception {
+        ReflectionTestUtils.setField(authController, "refreshCookieSecure", true);
+
+        mockMvc.perform(post("/v1/auth/logout"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("Secure")));
+    }
+
+    @Test
     void refreshToken_success() throws Exception {
         AuthResponse response = new AuthResponse("access_token", "new_refresh_token", null);
 
         given(authService.refreshAccessToken("old_refresh_token")).willReturn(response);
 
         mockMvc.perform(post("/v1/auth/refresh")
-                        .cookie(new jakarta.servlet.http.Cookie("refresh_token", "old_refresh_token")))
+                        .cookie(new Cookie("refresh_token", "old_refresh_token")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.token").value("access_token"))
@@ -100,7 +143,7 @@ class AuthControllerTest {
     void logout_success() throws Exception {
         mockMvc.perform(post("/v1/auth/logout")
                         .header("Authorization", "Bearer access_token")
-                        .cookie(new jakarta.servlet.http.Cookie("refresh_token", "refresh_token")))
+                        .cookie(new Cookie("refresh_token", "refresh_token")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(cookie().exists("refresh_token"));
@@ -139,14 +182,14 @@ class AuthControllerTest {
         given(authService.refreshAccessToken(any())).willThrow(new RuntimeException("invalid"));
 
         mockMvc.perform(post("/v1/auth/refresh")
-                        .cookie(new jakarta.servlet.http.Cookie("refresh_token", "invalid")))
+                        .cookie(new Cookie("refresh_token", "invalid")))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void refreshToken_empty() throws Exception {
         mockMvc.perform(post("/v1/auth/refresh")
-                        .cookie(new jakarta.servlet.http.Cookie("refresh_token", "")))
+                        .cookie(new Cookie("refresh_token", "")))
                 .andExpect(status().isBadRequest());
     }
 
@@ -158,11 +201,11 @@ class AuthControllerTest {
 
     @Test
     void logout_exception() throws Exception {
-        org.mockito.BDDMockito.willThrow(new RuntimeException("error")).given(authService).logout(any(), any());
+        BDDMockito.willThrow(new RuntimeException("error")).given(authService).logout(any(), any());
 
         mockMvc.perform(post("/v1/auth/logout")
                         .header("Authorization", "Bearer token")
-                        .cookie(new jakarta.servlet.http.Cookie("refresh_token", "invalid")))
+                        .cookie(new Cookie("refresh_token", "invalid")))
                 .andExpect(status().isOk());
     }
 

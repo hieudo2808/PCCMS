@@ -21,12 +21,12 @@ import java.util.UUID;
 public class BoardingTrackingController {
 
     private final BoardingTrackingService boardingTrackingService;
-    private final SecurityContextService SecurityContextService;
+    private final SecurityContextService securityContextService;
 
     @GetMapping("/stays")
     @PreAuthorize("hasAuthority('BOARDING_READ')")
     public ApiResponse<List<BoardingStayResponse>> listActiveStays() {
-        UUID ownerId = SecurityContextService.getCurrentUserId();
+        UUID ownerId = securityContextService.getCurrentUserId();
         return ApiResponse.success(boardingTrackingService.listActiveStays(ownerId));
     }
 
@@ -34,7 +34,7 @@ public class BoardingTrackingController {
     @PreAuthorize("hasAuthority('BOARDING_READ')")
     public ApiResponse<List<CareLogResponse>> listCareLogs(
             @RequestParam(required = false) UUID petId) {
-        UUID ownerId = SecurityContextService.getCurrentUserId();
+        UUID ownerId = securityContextService.getCurrentUserId();
         return ApiResponse.success(boardingTrackingService.listCareLogs(ownerId, petId));
     }
 }

@@ -27,7 +27,6 @@ interface AccountModalProps {
 
 const ROLE_OPTIONS = [
     { value: "", label: "Chọn vai trò" },
-    { value: "ADMIN", label: "Admin" },
     { value: "VETERINARIAN", label: "Bác sĩ thú y" },
     { value: "STAFF", label: "Lễ tân" },
     { value: "OWNER", label: "Khách hàng" },

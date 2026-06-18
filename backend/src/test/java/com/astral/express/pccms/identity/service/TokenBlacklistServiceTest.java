@@ -35,7 +35,7 @@ class TokenBlacklistServiceTest {
         
         tokenBlacklistService.blacklist("my-token", 3600);
         
-        verify(valueOperations).set("jwt:blacklist:my-token", "1", 3600L, java.util.concurrent.TimeUnit.MILLISECONDS);
+        verify(valueOperations).set("jwt:blacklist:my-token", "1", 3600L, TimeUnit.MILLISECONDS);
     }
 
     @Test

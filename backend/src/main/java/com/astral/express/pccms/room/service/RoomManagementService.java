@@ -10,7 +10,6 @@ import com.astral.express.pccms.room.entity.RoomStatus;
 import com.astral.express.pccms.room.entity.RoomType;
 import com.astral.express.pccms.room.repository.RoomRepository;
 import com.astral.express.pccms.room.repository.RoomTypeRepository;
-import com.astral.express.pccms.room.service.RoomManagementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

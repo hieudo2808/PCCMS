@@ -7,7 +7,6 @@ import com.astral.express.pccms.identity.security.SecurityContextService;
 import com.astral.express.pccms.schedule.dto.response.WorkScheduleResponse;
 import com.astral.express.pccms.schedule.entity.WorkSchedule;
 import com.astral.express.pccms.schedule.repository.WorkScheduleRepository;
-import com.astral.express.pccms.schedule.service.PersonalScheduleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,8 +22,9 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class PersonalScheduleService {
     private final WorkScheduleRepository workScheduleRepository;
-    private final SecurityContextService SecurityContextService;
-@PreAuthorize("isAuthenticated()")
+    private final SecurityContextService securityContextService;
+
+    @PreAuthorize("isAuthenticated()")
     public PageResponse<WorkScheduleResponse> getMySchedules(LocalDate fromDate, LocalDate toDate, Pageable pageable) {
         UUID currentUserId = currentUserId();
         validateDateRange(fromDate, toDate);
@@ -32,7 +32,7 @@ public class PersonalScheduleService {
                 currentUserId, fromDate, toDate, pageable);
         return PageResponse.of(schedules.map(ScheduleMapperSupport::toWorkScheduleResponse));
     }
-@PreAuthorize("isAuthenticated()")
+    @PreAuthorize("isAuthenticated()")
     public PageResponse<WorkScheduleResponse> getStaffSchedules(
             UUID staffId,
             LocalDate fromDate,
@@ -49,7 +49,7 @@ public class PersonalScheduleService {
     }
 
     private UUID currentUserId() {
-        UUID currentUserId = SecurityContextService.getCurrentUserId();
+        UUID currentUserId = securityContextService.getCurrentUserId();
         if (currentUserId == null) {
             throw new BusinessException(ErrorCode.ERR_401_UNAUTHORIZED);
         }

@@ -26,7 +26,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.given;
+import org.junit.jupiter.api.Test;
 
 @ExtendWith(MockitoExtension.class)
 class PersonalScheduleServiceTest {
@@ -37,7 +38,7 @@ class PersonalScheduleServiceTest {
     private WorkScheduleRepository workScheduleRepository;
 
     @Mock
-    private SecurityContextService SecurityContextService;
+    private SecurityContextService securityContextService;
 
     @InjectMocks
     private PersonalScheduleService personalScheduleService;
@@ -70,7 +71,7 @@ class PersonalScheduleServiceTest {
     }
 
     private void assertListSuccess(PersonalScheduleCsvInput csv, PageRequest pageable) {
-        given(SecurityContextService.getCurrentUserId()).willReturn(CURRENT_USER_ID);
+        given(securityContextService.getCurrentUserId()).willReturn(CURRENT_USER_ID);
         given(workScheduleRepository.findByStaffIdAndWorkDateBetween(CURRENT_USER_ID, csv.fromDate(), csv.toDate(), pageable))
                 .willReturn(new PageImpl<>(List.of(schedule()), pageable, 1));
 
@@ -82,7 +83,7 @@ class PersonalScheduleServiceTest {
     }
 
     private void assertEmptySuccess(PersonalScheduleCsvInput csv, PageRequest pageable) {
-        given(SecurityContextService.getCurrentUserId()).willReturn(CURRENT_USER_ID);
+        given(securityContextService.getCurrentUserId()).willReturn(CURRENT_USER_ID);
         given(workScheduleRepository.findByStaffIdAndWorkDateBetween(CURRENT_USER_ID, csv.fromDate(), csv.toDate(), pageable))
                 .willReturn(new PageImpl<>(List.of(), pageable, 0));
 
@@ -98,10 +99,10 @@ class PersonalScheduleServiceTest {
             ErrorCode errorCode,
             PageRequest pageable) {
         if ("Unauthenticated request rejected".equals(scenario)) {
-            given(SecurityContextService.getCurrentUserId()).willReturn(null);
+            given(securityContextService.getCurrentUserId()).willReturn(null);
         } else if ("User cannot view another staff schedule".equals(scenario)
                 || "Invalid date range rejected".equals(scenario)) {
-            given(SecurityContextService.getCurrentUserId()).willReturn(CURRENT_USER_ID);
+            given(securityContextService.getCurrentUserId()).willReturn(CURRENT_USER_ID);
         }
 
         if ("User cannot view another staff schedule".equals(scenario)) {
@@ -180,14 +181,14 @@ class PersonalScheduleServiceTest {
     private record PersonalScheduleCsvInput(UUID staffId, LocalDate fromDate, LocalDate toDate) {
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void should_GetStaffSchedules_Success() {
         UUID staffId = CURRENT_USER_ID;
         LocalDate fromDate = LocalDate.now();
         LocalDate toDate = LocalDate.now().plusDays(1);
         PageRequest pageable = PageRequest.of(0, 10);
         
-        given(SecurityContextService.getCurrentUserId()).willReturn(staffId);
+        given(securityContextService.getCurrentUserId()).willReturn(staffId);
         given(workScheduleRepository.findByStaffIdAndWorkDateBetween(staffId, fromDate, toDate, pageable))
                 .willReturn(new PageImpl<>(List.of(schedule()), pageable, 1));
 

@@ -2,6 +2,7 @@ package com.astral.express.pccms.room.service;
 
 import com.astral.express.pccms.common.dto.PageResponse;
 import com.astral.express.pccms.common.exception.BusinessException;
+import com.astral.express.pccms.common.exception.BusinessValidationException;
 import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.room.dto.request.RoomRequest;
 import com.astral.express.pccms.room.dto.request.RoomStatusUpdateRequest;
@@ -13,13 +14,14 @@ import com.astral.express.pccms.room.entity.RoomType;
 import com.astral.express.pccms.room.mapper.RoomMapper;
 import com.astral.express.pccms.room.repository.RoomRepository;
 import com.astral.express.pccms.room.repository.RoomTypeRepository;
-import com.astral.express.pccms.room.service.RoomAdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -119,17 +121,30 @@ public PageResponse<RoomResponse> listRooms(Pageable pageable) {
     }
 
     private void validateRoomTypeRequest(RoomTypeRequest request) {
+        Map<String, String> errors = new LinkedHashMap<>();
         if (request.defaultCapacity() == null || request.defaultCapacity() < 1) {
-            throw new BusinessException(ErrorCode.ERR_VALIDATION_FAILED);
+            errors.put("defaultCapacity", "Default capacity must be at least 1");
         }
         if (request.baseDailyPriceVnd() == null || request.baseDailyPriceVnd() < 0) {
-            throw new BusinessException(ErrorCode.ERR_VALIDATION_FAILED);
+            errors.put("baseDailyPriceVnd", "Base daily price must be zero or greater");
         }
+        throwIfFieldErrors(errors);
     }
 
     private void validateRoomRequest(RoomRequest request) {
-        if (request.capacity() == null || request.capacity() < 1 || request.floor() == null || request.floor() < 1) {
-            throw new BusinessException(ErrorCode.ERR_VALIDATION_FAILED);
+        Map<String, String> errors = new LinkedHashMap<>();
+        if (request.capacity() == null || request.capacity() < 1) {
+            errors.put("capacity", "Capacity must be at least 1");
+        }
+        if (request.floor() == null || request.floor() < 1) {
+            errors.put("floor", "Floor must be at least 1");
+        }
+        throwIfFieldErrors(errors);
+    }
+
+    private void throwIfFieldErrors(Map<String, String> errors) {
+        if (!errors.isEmpty()) {
+            throw new BusinessValidationException(errors);
         }
     }
 

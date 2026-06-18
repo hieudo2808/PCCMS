@@ -1,12 +1,12 @@
 package com.astral.express.pccms.medicine.controller;
 
+import com.astral.express.pccms.common.AbstractIntegrationTest;
 import com.astral.express.pccms.medicine.service.MedicineCategoryService;
 import com.astral.express.pccms.medicine.service.MedicineService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -22,11 +22,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import org.junit.jupiter.api.Disabled;
 
-@SpringBootTest
-@Disabled("Fails due to ApplicationContext failure threshold (1) exceeded in integration test suite")
-class MedicineSecurityControllerTest {
+class MedicineSecurityControllerTest extends AbstractIntegrationTest {
 
     private MockMvc mockMvc;
 
