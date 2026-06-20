@@ -7,7 +7,7 @@ import { appointmentApi } from "~/shared/api/appointmentApi";
 import { invoiceApi } from "~/shared/api/invoiceApi";
 import { boardingApi } from "~/features/boarding/api/boardingApi";
 import { petApi } from "~/shared/api/petApi";
-import { notificationApi } from "~/shared/api/notificationApi";
+import { notificationApi, notificationKeys } from "~/shared/api/notificationApi";
 
 export function OwnerDashboard() {
     const navigate = useNavigate();
@@ -32,7 +32,7 @@ export function OwnerDashboard() {
     });
 
     const { data: notificationsData, isLoading: notifLoading } = useQuery({
-        queryKey: ["owner-notifications"],
+        queryKey: notificationKeys.list({ page: 0, size: 5 }),
         queryFn: () => notificationApi.listMyNotifications({ page: 0, size: 5 }),
     });
 
@@ -150,6 +150,13 @@ export function OwnerDashboard() {
                             ))}
                         </div>
                     )}
+                    <button
+                        type="button"
+                        onClick={() => navigate("/owner/notifications")}
+                        className="mt-4 text-sm font-semibold text-primary-700 hover:text-primary-800"
+                    >
+                        Xem tất cả thông báo
+                    </button>
                 </Card>
             </div>
         </div>

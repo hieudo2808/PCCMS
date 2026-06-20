@@ -13,6 +13,10 @@ vi.mock("~/features/auth/context/AuthContext", () => ({
     }),
 }));
 
+vi.mock("~/shared/notifications", () => ({
+    NotificationBell: () => <button type="button" aria-label="Thông báo" />,
+}));
+
 function renderLayout() {
     return render(
         <MemoryRouter initialEntries={["/owner/dashboard"]}>

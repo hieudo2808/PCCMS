@@ -5,6 +5,8 @@ import com.astral.express.pccms.common.exception.BusinessException;
 import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.identity.security.SecurityContextService;
 import com.astral.express.pccms.notification.dto.response.NotificationResponse;
+import com.astral.express.pccms.notification.dto.response.ReadAllNotificationsResponse;
+import com.astral.express.pccms.notification.dto.response.UnreadCountResponse;
 import com.astral.express.pccms.notification.entity.Notification;
 import com.astral.express.pccms.notification.entity.NotificationStatus;
 import com.astral.express.pccms.notification.repository.NotificationRepository;
@@ -17,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -50,15 +53,36 @@ public class NotificationService {
         notificationPublisher.publish(response);
         return response;
     }
-    public PageResponse<NotificationResponse> listMyNotifications(Pageable pageable) {
+    public PageResponse<NotificationResponse> listMyNotifications(NotificationStatus status, Pageable pageable) {
         UUID currentUserId = requireCurrentUserId();
-        return PageResponse.of(notificationRepository.findByRecipientIdOrderByCreatedAtDesc(currentUserId, pageable)
+        if (status != null) {
+            return PageResponse.of(notificationRepository
+                    .findByRecipientIdAndStatusCodeOrderByCreatedAtDesc(currentUserId, status, pageable)
+                    .map(this::toResponse));
+        }
+        return PageResponse.of(notificationRepository
+                .findByRecipientIdAndStatusCodeInOrderByCreatedAtDesc(
+                        currentUserId, Set.of(NotificationStatus.UNREAD, NotificationStatus.READ), pageable)
                 .map(this::toResponse));
+    }
+
+    public UnreadCountResponse getUnreadCount() {
+        return new UnreadCountResponse(notificationRepository.countByRecipientIdAndStatusCode(
+                requireCurrentUserId(), NotificationStatus.UNREAD));
+    }
+
+    @Transactional
+    public ReadAllNotificationsResponse markAllRead() {
+        int updatedCount = notificationRepository.markAllRead(requireCurrentUserId(), OffsetDateTime.now());
+        return new ReadAllNotificationsResponse(updatedCount);
     }
 
     @Transactional
     public NotificationResponse markRead(UUID notificationId) {
         Notification notification = findMine(notificationId);
+        if (notification.getStatusCode() != NotificationStatus.UNREAD) {
+            return toResponse(notification);
+        }
         notification.setStatusCode(NotificationStatus.READ);
         notification.setReadAt(OffsetDateTime.now());
         return toResponse(notificationRepository.save(notification));

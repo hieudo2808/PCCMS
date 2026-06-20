@@ -20,6 +20,7 @@ import com.astral.express.pccms.boarding.repository.RoomAllocationRepository;
 import com.astral.express.pccms.common.exception.BusinessException;
 import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.identity.security.SecurityContextService;
+import com.astral.express.pccms.notification.service.BusinessNotificationService;
 import com.astral.express.pccms.room.entity.Room;
 import com.astral.express.pccms.room.entity.RoomStatus;
 import com.astral.express.pccms.room.repository.RoomRepository;
@@ -50,6 +51,7 @@ public class BoardingStayLifecycleService {
     private final BoardingMapper boardingMapper;
     private final BoardingPricingPolicy boardingPricingPolicy;
     private final BoardingAvailabilityPolicy boardingAvailabilityPolicy;
+    private final BusinessNotificationService businessNotificationService;
 
     @Transactional
     public BoardingBookingResponse confirmBooking(UUID bookingId, BoardingConfirmRequest request) {
@@ -110,6 +112,8 @@ public class BoardingStayLifecycleService {
         serviceOrderRepository.save(booking.getServiceOrder());
         boardingBookingRepository.save(booking);
         boardingSessionRepository.save(session);
+        businessNotificationService.boardingCheckedIn(
+                booking.getOwner().getId(), booking.getId(), booking.getPet().getName());
         return toBookingResponse(booking, allocation, session);
     }
 
@@ -161,6 +165,8 @@ public class BoardingStayLifecycleService {
         boardingBookingRepository.save(booking);
         boardingSessionRepository.save(session);
         Invoice invoice = billingHandoffService.createBoardingInvoice(booking, session, staff);
+        businessNotificationService.boardingCheckedOut(
+                booking.getOwner().getId(), booking.getId(), booking.getPet().getName());
         return boardingMapper.toBookingResponse(booking, allocation, session, invoice);
     }
 
@@ -190,6 +196,8 @@ public class BoardingStayLifecycleService {
         serviceOrderRepository.save(booking.getServiceOrder());
         boardingBookingRepository.save(booking);
         boardingSessionRepository.save(session);
+        businessNotificationService.boardingCancelled(
+                booking.getOwner().getId(), booking.getId(), booking.getPet().getName());
         return toBookingResponse(booking, allocation.orElse(null), session);
     }
 

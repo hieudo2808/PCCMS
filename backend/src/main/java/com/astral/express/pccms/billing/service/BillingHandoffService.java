@@ -13,6 +13,7 @@ import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.appointment.entity.Appointment;
 import com.astral.express.pccms.appointment.entity.GroomingTicket;
 import com.astral.express.pccms.user.entity.Users;
+import com.astral.express.pccms.notification.service.BusinessNotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,7 @@ public class BillingHandoffService {
 
     private final InvoiceRepository invoiceRepository;
     private final InvoiceLineRepository invoiceLineRepository;
+    private final BusinessNotificationService businessNotificationService;
 @Transactional
     public Invoice createBoardingInvoice(BoardingBooking booking, BoardingSession session, Users createdBy) {
         if (invoiceRepository.existsByServiceOrderId(booking.getServiceOrder().getId())) {
@@ -62,6 +64,8 @@ public class BillingHandoffService {
                 .lineOrder(1)
                 .build();
         invoiceLineRepository.save(line);
+        businessNotificationService.invoiceIssued(
+                savedInvoice.getOwner().getId(), savedInvoice.getId(), savedInvoice.getPet().getName(), totalAmount);
         return savedInvoice;
     }
 @Transactional
@@ -94,6 +98,8 @@ public class BillingHandoffService {
                 .lineOrder(1)
                 .build();
         invoiceLineRepository.save(line);
+        businessNotificationService.invoiceIssued(
+                savedInvoice.getOwner().getId(), savedInvoice.getId(), savedInvoice.getPet().getName(), totalAmount);
         return savedInvoice;
     }
 

@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.time.OffsetDateTime;
 
 @Repository
 @RequiredArgsConstructor
@@ -72,6 +73,22 @@ public class AppointmentReceptionQueryRepository {
                 LEFT JOIN users vet ON vet.id = a.assigned_staff_id
                 WHERE a.id = ?
                 """, APPOINTMENT_ROW_MAPPER, appointmentId).stream().findFirst();
+    }
+
+    public Optional<AppointmentNotificationTarget> findNotificationTarget(UUID appointmentId) {
+        return jdbc.query("""
+                SELECT so.owner_id, p.name AS pet_name, a.scheduled_start_at
+                FROM appointments a
+                JOIN service_orders so ON so.id = a.service_order_id
+                JOIN pets p ON p.id = so.pet_id
+                WHERE a.id = ?
+                """, (rs, rowNum) -> new AppointmentNotificationTarget(
+                rs.getObject("owner_id", UUID.class),
+                rs.getString("pet_name"),
+                rs.getObject("scheduled_start_at", OffsetDateTime.class)), appointmentId).stream().findFirst();
+    }
+
+    public record AppointmentNotificationTarget(UUID ownerId, String petName, OffsetDateTime scheduledAt) {
     }
 
     private static String emptyToNull(String value) {

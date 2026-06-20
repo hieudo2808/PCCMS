@@ -21,12 +21,14 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -109,11 +111,11 @@ class NotificationServiceTest {
         Page<Notification> page = new PageImpl<>(List.of(notif));
         
         given(securityContextService.getCurrentUserId()).willReturn(currentUserId);
-        given(notificationRepository.findByRecipientIdOrderByCreatedAtDesc(any(UUID.class), any(Pageable.class)))
+        given(notificationRepository.findByRecipientIdAndStatusCodeInOrderByCreatedAtDesc(any(UUID.class), any(Set.class), any(Pageable.class)))
                 .willReturn(page);
 
         // WHEN
-        PageResponse<NotificationResponse> response = notificationService.listMyNotifications(Pageable.unpaged());
+        PageResponse<NotificationResponse> response = notificationService.listMyNotifications(null, Pageable.unpaged());
 
         // THEN
         assertThat(response.data().content()).hasSize(1);
@@ -126,7 +128,7 @@ class NotificationServiceTest {
         given(securityContextService.getCurrentUserId()).willReturn(null);
 
         // WHEN & THEN
-        assertThatThrownBy(() -> notificationService.listMyNotifications(Pageable.unpaged()))
+        assertThatThrownBy(() -> notificationService.listMyNotifications(null, Pageable.unpaged()))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ERR_401_UNAUTHORIZED);
     }
@@ -220,6 +222,62 @@ class NotificationServiceTest {
 
         assertThat(response.statusCode()).isEqualTo(NotificationStatus.ARCHIVED);
         assertThat(response.readAt()).isNotNull();
+    }
+
+    @Test
+    void listMyNotifications_shouldFilterByRequestedStatus() {
+        UUID currentUserId = UUID.randomUUID();
+        given(securityContextService.getCurrentUserId()).willReturn(currentUserId);
+        given(notificationRepository.findByRecipientIdAndStatusCodeOrderByCreatedAtDesc(
+                currentUserId, NotificationStatus.ARCHIVED, Pageable.unpaged()))
+                .willReturn(Page.empty());
+
+        notificationService.listMyNotifications(NotificationStatus.ARCHIVED, Pageable.unpaged());
+
+        verify(notificationRepository).findByRecipientIdAndStatusCodeOrderByCreatedAtDesc(
+                currentUserId, NotificationStatus.ARCHIVED, Pageable.unpaged());
+    }
+
+    @Test
+    void unreadCount_shouldOnlyCountCurrentUsersUnreadNotifications() {
+        UUID currentUserId = UUID.randomUUID();
+        given(securityContextService.getCurrentUserId()).willReturn(currentUserId);
+        given(notificationRepository.countByRecipientIdAndStatusCode(currentUserId, NotificationStatus.UNREAD))
+                .willReturn(7L);
+
+        assertThat(notificationService.getUnreadCount().unreadCount()).isEqualTo(7L);
+    }
+
+    @Test
+    void markAllRead_shouldUpdateOnlyCurrentUsersUnreadNotifications() {
+        UUID currentUserId = UUID.randomUUID();
+        given(securityContextService.getCurrentUserId()).willReturn(currentUserId);
+        given(notificationRepository.markAllRead(eq(currentUserId), any(OffsetDateTime.class))).willReturn(3);
+
+        assertThat(notificationService.markAllRead().updatedCount()).isEqualTo(3);
+    }
+
+    @Test
+    void markRead_shouldLeaveArchivedNotificationArchived() {
+        UUID currentUserId = UUID.randomUUID();
+        UUID notificationId = UUID.randomUUID();
+        Users recipient = new Users();
+        recipient.setId(currentUserId);
+        OffsetDateTime readAt = OffsetDateTime.now().minusDays(1);
+        Notification notification = Notification.builder()
+                .id(notificationId)
+                .recipient(recipient)
+                .statusCode(NotificationStatus.ARCHIVED)
+                .readAt(readAt)
+                .build();
+        given(securityContextService.getCurrentUserId()).willReturn(currentUserId);
+        given(notificationRepository.findByIdAndRecipientId(notificationId, currentUserId))
+                .willReturn(Optional.of(notification));
+
+        NotificationResponse response = notificationService.markRead(notificationId);
+
+        assertThat(response.statusCode()).isEqualTo(NotificationStatus.ARCHIVED);
+        assertThat(response.readAt()).isEqualTo(readAt);
     }
 
 }

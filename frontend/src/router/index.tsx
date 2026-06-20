@@ -26,6 +26,7 @@ import {
     PetMedicalRecordsPage,
 } from "~/features/owner";
 import { ProfilePage } from "~/shared/pages/ProfilePage";
+import { NotificationsPage } from "~/shared/notifications";
 
 import {
     ReceptionDashboard,
@@ -128,6 +129,7 @@ export const router = createBrowserRouter([
             { path: "pets/:petId/medical-records", element: <PetMedicalRecordsPage /> },
             { path: "payments", element: <PaymentsPage /> },
             { path: "profile", element: <ProfilePage /> },
+            { path: "notifications", element: <NotificationsPage /> },
         ],
     },
 
@@ -146,6 +148,7 @@ export const router = createBrowserRouter([
             { path: "boarding-log", element: <BoardingLogPage /> },
             { path: "my-schedule", element: <ReceptionMySchedulePage /> },
             { path: "profile", element: <ProfilePage /> },
+            { path: "notifications", element: <NotificationsPage /> },
         ],
     },
     {
@@ -164,6 +167,7 @@ export const router = createBrowserRouter([
             { path: "medical-records/appointment/:appointmentId", element: <MedicalRecordPage /> },
             { path: "my-schedule", element: <DoctorMySchedulePage /> },
             { path: "profile", element: <ProfilePage /> },
+            { path: "notifications", element: <NotificationsPage /> },
         ],
     },
     {
@@ -182,6 +186,7 @@ export const router = createBrowserRouter([
             { path: "shift-requests", element: <ShiftChangeRequestPage /> },
             { path: "reports", element: <ReportsPage /> },
             { path: "profile", element: <ProfilePage /> },
+            { path: "notifications", element: <NotificationsPage /> },
         ],
     },
 

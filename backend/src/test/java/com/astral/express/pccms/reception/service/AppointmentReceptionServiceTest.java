@@ -3,6 +3,7 @@ package com.astral.express.pccms.reception.service;
 import com.astral.express.pccms.common.exception.BusinessException;
 import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.identity.security.SecurityContextService;
+import com.astral.express.pccms.notification.service.BusinessNotificationService;
 import com.astral.express.pccms.reception.dto.request.AppointmentCancelRequest;
 import com.astral.express.pccms.reception.dto.request.AppointmentReceiveRequest;
 import com.astral.express.pccms.reception.dto.request.QuickAppointmentRequest;
@@ -40,6 +41,8 @@ import org.mockito.quality.Strictness;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class AppointmentReceptionServiceTest {
+    @Mock
+    private BusinessNotificationService businessNotificationService;
 
     @Mock
     private JdbcTemplate jdbc;

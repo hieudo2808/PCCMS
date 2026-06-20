@@ -2,7 +2,7 @@ package com.astral.express.pccms.reception.service;
 
 import com.astral.express.pccms.common.exception.BusinessException;
 import com.astral.express.pccms.common.exception.ErrorCode;
-import com.astral.express.pccms.notification.service.NotificationService;
+import com.astral.express.pccms.notification.service.BusinessNotificationService;
 import com.astral.express.pccms.reception.dto.request.GroomingStatusUpdateRequest;
 import com.astral.express.pccms.reception.dto.response.GroomingTicketResponse;
 import com.astral.express.pccms.reception.repository.GroomingBoardCommandRepository;
@@ -44,7 +44,7 @@ class GroomingBoardServiceTest {
     private JdbcTemplate jdbc;
 
     @Mock
-    private NotificationService notificationService;
+    private BusinessNotificationService businessNotificationService;
 
     @Mock
     private GroomingBoardQueryRepository groomingBoardQueryRepository;
@@ -118,7 +118,7 @@ class GroomingBoardServiceTest {
         // THEN
         assertThat(response).isNotNull();
         assertThat(response.id()).isEqualTo(ticketId);
-        verifyNoInteractions(notificationService);
+        verifyNoInteractions(businessNotificationService);
     }
 
     @Test
@@ -140,14 +140,7 @@ class GroomingBoardServiceTest {
 
         // THEN
         assertThat(response).isNotNull();
-        verify(notificationService).createNotification(
-                eq(ownerId),
-                eq("GROOMING_TICKET"),
-                eq(ticketId),
-                eq("GROOMING"),
-                anyString(),
-                ArgumentMatchers.contains("Rex")
-        );
+        verify(businessNotificationService).groomingCompleted(ownerId, ticketId, "Rex");
     }
 
     @Test
@@ -192,7 +185,7 @@ class GroomingBoardServiceTest {
 
         // THEN
         assertThat(response).isNotNull();
-        verifyNoInteractions(notificationService);
+        verifyNoInteractions(businessNotificationService);
     }
 
 }

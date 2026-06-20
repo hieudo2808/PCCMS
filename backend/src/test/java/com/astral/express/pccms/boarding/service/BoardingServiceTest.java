@@ -2,6 +2,7 @@ package com.astral.express.pccms.boarding.service;
 
 import com.astral.express.pccms.billing.repository.InvoiceRepository;
 import com.astral.express.pccms.billing.service.BillingHandoffService;
+import com.astral.express.pccms.notification.service.BusinessNotificationService;
 import com.astral.express.pccms.boarding.dto.request.BoardingBookingCreateRequest;
 import com.astral.express.pccms.boarding.entity.BoardingBooking;
 import com.astral.express.pccms.boarding.entity.BoardingSession;
@@ -130,6 +131,9 @@ class BoardingServiceTest {
     @Mock
     private InvoiceRepository invoiceRepository;
 
+    @Mock
+    private BusinessNotificationService businessNotificationService;
+
     private BoardingService boardingService;
 
     @BeforeEach
@@ -167,7 +171,8 @@ class BoardingServiceTest {
                 invoiceRepository,
                 boardingMapper,
                 boardingPricingPolicy,
-                boardingAvailabilityPolicy);
+                boardingAvailabilityPolicy,
+                businessNotificationService);
         BoardingCareLogApplicationService boardingCareLogApplicationService = new BoardingCareLogApplicationService(
                 securityContextService,
                 userRepository,

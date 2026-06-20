@@ -21,6 +21,11 @@ vi.mock("~/features/admin", () => ({
     ReportsPage: () => <div>Admin Reports Route</div>,
 }));
 
+vi.mock("~/shared/notifications", () => ({
+    NotificationBell: () => <button type="button" aria-label="Thông báo" />,
+    NotificationsPage: () => <div>Notifications Route</div>,
+}));
+
 import { router } from "~/router";
 
 describe("admin routes", () => {

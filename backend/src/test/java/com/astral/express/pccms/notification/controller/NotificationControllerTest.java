@@ -3,6 +3,9 @@ package com.astral.express.pccms.notification.controller;
 import com.astral.express.pccms.common.dto.PageResponse;
 import com.astral.express.pccms.common.exception.GlobalExceptionHandler;
 import com.astral.express.pccms.notification.dto.response.NotificationResponse;
+import com.astral.express.pccms.notification.dto.response.ReadAllNotificationsResponse;
+import com.astral.express.pccms.notification.dto.response.UnreadCountResponse;
+import com.astral.express.pccms.notification.entity.NotificationStatus;
 import com.astral.express.pccms.notification.service.NotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,11 +51,39 @@ class NotificationControllerTest {
     @Test
     void listMyNotifications_success() throws Exception {
         PageResponse<NotificationResponse> page = PageResponse.of(new PageImpl<>(List.of()));
-        given(notificationService.listMyNotifications(any(Pageable.class))).willReturn(page);
+        given(notificationService.listMyNotifications(any(), any(Pageable.class))).willReturn(page);
 
         mockMvc.perform(get("/v1/notifications/my"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void listMyNotifications_withStatusFilter() throws Exception {
+        PageResponse<NotificationResponse> page = PageResponse.of(new PageImpl<>(List.of()));
+        given(notificationService.listMyNotifications(any(NotificationStatus.class), any(Pageable.class))).willReturn(page);
+
+        mockMvc.perform(get("/v1/notifications/my").param("status", "UNREAD"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void unreadCount_success() throws Exception {
+        given(notificationService.getUnreadCount()).willReturn(new UnreadCountResponse(4));
+
+        mockMvc.perform(get("/v1/notifications/unread-count"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.unreadCount").value(4));
+    }
+
+    @Test
+    void markAllRead_success() throws Exception {
+        given(notificationService.markAllRead()).willReturn(new ReadAllNotificationsResponse(2));
+
+        mockMvc.perform(patch("/v1/notifications/read-all"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.updatedCount").value(2));
     }
 
     @Test

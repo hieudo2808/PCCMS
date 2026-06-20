@@ -11,6 +11,7 @@ import com.astral.express.pccms.common.exception.BusinessException;
 import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.user.entity.Users;
 import com.astral.express.pccms.user.repository.UserRepository;
+import com.astral.express.pccms.notification.service.BusinessNotificationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -30,6 +31,8 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class AppointmentLifecycleUseCaseTest {
+    @Mock
+    private BusinessNotificationService businessNotificationService;
 
     @Mock
     private AppointmentRepository appointmentRepository;

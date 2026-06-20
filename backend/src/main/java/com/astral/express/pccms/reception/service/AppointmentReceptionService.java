@@ -3,6 +3,7 @@ package com.astral.express.pccms.reception.service;
 import com.astral.express.pccms.common.exception.BusinessException;
 import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.identity.security.SecurityContextService;
+import com.astral.express.pccms.notification.service.BusinessNotificationService;
 import com.astral.express.pccms.reception.dto.request.AppointmentCancelRequest;
 import com.astral.express.pccms.reception.dto.request.AppointmentReceiveRequest;
 import com.astral.express.pccms.reception.dto.request.QuickAppointmentRequest;
@@ -25,6 +26,7 @@ public class AppointmentReceptionService {
     private final SecurityContextService securityContextService;
     private final AppointmentReceptionQueryRepository appointmentReceptionQueryRepository;
     private final AppointmentReceptionCommandRepository appointmentReceptionCommandRepository;
+    private final BusinessNotificationService businessNotificationService;
 
     @Transactional(readOnly = true)
     public List<AppointmentReceptionResponse> listAppointments(String keyword, String status) {
@@ -86,12 +88,21 @@ public class AppointmentReceptionService {
                 securityContextService.getCurrentUserId(),
                 doctorId,
                 request == null ? null : request.note());
+        appointmentReceptionQueryRepository.findNotificationTarget(appointmentId).ifPresent(target ->
+                businessNotificationService.appointmentConfirmed(
+                        target.ownerId(), appointmentId, target.petName(), target.scheduledAt()));
         return getById(appointmentId);
     }
 
     @Transactional
     public AppointmentReceptionResponse cancel(UUID appointmentId, AppointmentCancelRequest request) {
+        String previousStatus = appointmentReceptionCommandRepository.findAppointmentStatus(appointmentId).orElse(null);
         appointmentReceptionCommandRepository.cancelAppointment(appointmentId, request == null ? null : request.reason());
+        if (previousStatus != null && !"CANCELLED".equals(previousStatus)) {
+            appointmentReceptionQueryRepository.findNotificationTarget(appointmentId).ifPresent(target ->
+                    businessNotificationService.appointmentCancelled(
+                            target.ownerId(), appointmentId, target.petName()));
+        }
         return getById(appointmentId);
     }
 

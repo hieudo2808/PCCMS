@@ -12,6 +12,7 @@ import com.astral.express.pccms.billing.repository.PaymentRepository;
 import com.astral.express.pccms.common.exception.BusinessException;
 import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.identity.security.SecurityContextService;
+import com.astral.express.pccms.notification.service.BusinessNotificationService;
 import com.astral.express.pccms.user.entity.Users;
 import com.astral.express.pccms.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class PaymentService {
     private final UserRepository userRepository;
     private final SecurityContextService securityContextService;
     private final PaymentTransitionPolicy paymentTransitionPolicy;
+    private final BusinessNotificationService businessNotificationService;
 
     @Transactional
     public PaymentResponse recordPayment(RecordPaymentRequest request) {
@@ -61,11 +63,13 @@ public class PaymentService {
                 .build();
         Payment savedPayment = paymentRepository.save(payment);
 
+        InvoiceStatus previousInvoiceStatus = invoice.getStatusCode();
         invoice.setPaidAmountVnd(invoice.getPaidAmountVnd() + request.amountVnd());
         invoice.setStatusCode(invoice.getPaidAmountVnd() >= invoice.getTotalAmountVnd()
                 ? InvoiceStatus.PAID
                 : InvoiceStatus.PARTIALLY_PAID);
         invoiceRepository.save(invoice);
+        notifyPaidInvoice(previousInvoiceStatus, invoice);
 
         return toResponse(savedPayment);
     }
@@ -157,11 +161,25 @@ public class PaymentService {
         if (remainingAmount == 0L || amountVnd > remainingAmount) {
             throw new BusinessException(ErrorCode.ERR_BILLING_003_INVALID_PAYMENT_AMOUNT);
         }
+        InvoiceStatus previousStatus = invoice.getStatusCode();
         invoice.setPaidAmountVnd(invoice.getPaidAmountVnd() + amountVnd);
         invoice.setStatusCode(invoice.getPaidAmountVnd() >= invoice.getTotalAmountVnd()
                 ? InvoiceStatus.PAID
                 : InvoiceStatus.PARTIALLY_PAID);
         invoiceRepository.save(invoice);
+        notifyPaidInvoice(previousStatus, invoice);
+    }
+
+    private void notifyPaidInvoice(InvoiceStatus previousStatus, Invoice invoice) {
+        if (previousStatus != InvoiceStatus.PAID
+                && invoice.getStatusCode() == InvoiceStatus.PAID
+                && invoice.getOwner() != null) {
+            businessNotificationService.invoicePaid(
+                    invoice.getOwner().getId(),
+                    invoice.getId(),
+                    invoice.getPet() == null ? null : invoice.getPet().getName(),
+                    invoice.getTotalAmountVnd());
+        }
     }
 
     private String buildOwnerPaymentNote(OwnerPaymentRequest request) {

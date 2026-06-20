@@ -9,6 +9,7 @@ import com.astral.express.pccms.appointment.entity.ServiceOrderStatus;
 import com.astral.express.pccms.appointment.repository.AppointmentRepository;
 import com.astral.express.pccms.common.exception.BusinessException;
 import com.astral.express.pccms.common.exception.ErrorCode;
+import com.astral.express.pccms.notification.service.BusinessNotificationService;
 import com.astral.express.pccms.user.entity.Users;
 import com.astral.express.pccms.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class AppointmentLifecycleUseCase {
     private final UserRepository userRepository;
     private final AppointmentResponseAssembler assembler;
     private final ReceptionTicketService receptionService;
+    private final BusinessNotificationService businessNotificationService;
 
     @Transactional
     public AppointmentResponse checkIn(UUID appointmentId, UUID staffId) {
@@ -54,6 +56,7 @@ public class AppointmentLifecycleUseCase {
         order.setUpdatedBy(staffId);
 
         int nextQueue = receptionService.receiveAppointment(appointment, staff, vet);
+        notifyAppointmentConfirmed(appointment);
 
         return assembler.toResponse(appointment, nextQueue);
     }
@@ -112,6 +115,7 @@ public class AppointmentLifecycleUseCase {
         }
         order.setCompletedAt(now);
         order.setUpdatedBy(vetId);
+        notifyAppointmentCompleted(appointment);
     }
 
     @Transactional
@@ -137,6 +141,7 @@ public class AppointmentLifecycleUseCase {
         order.setStatusCode(ServiceOrderStatus.CANCELLED);
         order.setCancelledAt(ClinicDateTime.now());
         order.setUpdatedBy(actorId);
+        notifyAppointmentCancelled(appointment);
 
         return assembler.toResponse(appointment, receptionService.getQueueNumberForAppointment(appointmentId));
     }
@@ -144,6 +149,34 @@ public class AppointmentLifecycleUseCase {
     private Appointment findAppointmentOrThrow(UUID appointmentId) {
         return appointmentRepository.findDetailById(appointmentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ERR_APT_001_NOT_FOUND));
+    }
+
+    private boolean hasNotificationTarget(Appointment appointment) {
+        return appointment.getServiceOrder().getOwner() != null && appointment.getServiceOrder().getPet() != null;
+    }
+
+    private void notifyAppointmentConfirmed(Appointment appointment) {
+        if (hasNotificationTarget(appointment)) {
+            ServiceOrder order = appointment.getServiceOrder();
+            businessNotificationService.appointmentConfirmed(
+                    order.getOwner().getId(), appointment.getId(), order.getPet().getName(), appointment.getScheduledStartAt());
+        }
+    }
+
+    private void notifyAppointmentCompleted(Appointment appointment) {
+        if (hasNotificationTarget(appointment)) {
+            ServiceOrder order = appointment.getServiceOrder();
+            businessNotificationService.appointmentCompleted(
+                    order.getOwner().getId(), appointment.getId(), order.getPet().getName());
+        }
+    }
+
+    private void notifyAppointmentCancelled(Appointment appointment) {
+        if (hasNotificationTarget(appointment)) {
+            ServiceOrder order = appointment.getServiceOrder();
+            businessNotificationService.appointmentCancelled(
+                    order.getOwner().getId(), appointment.getId(), order.getPet().getName());
+        }
     }
 
     private void ensureMedicalAppointment(Appointment appointment) {

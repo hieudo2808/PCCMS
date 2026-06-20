@@ -11,6 +11,7 @@ import com.astral.express.pccms.common.exception.BusinessException;
 import com.astral.express.pccms.pet.entity.Pets;
 import com.astral.express.pccms.room.entity.RoomType;
 import com.astral.express.pccms.user.entity.Users;
+import com.astral.express.pccms.notification.service.BusinessNotificationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -44,6 +45,9 @@ class BillingHandoffServiceTest {
 
     @Mock
     private InvoiceLineRepository invoiceLineRepository;
+
+    @Mock
+    private BusinessNotificationService businessNotificationService;
 
     @InjectMocks
     private BillingHandoffService billingHandoffService;

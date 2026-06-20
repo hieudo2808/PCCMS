@@ -13,6 +13,7 @@ import com.astral.express.pccms.billing.repository.PaymentRepository;
 import com.astral.express.pccms.common.exception.BusinessException;
 import com.astral.express.pccms.common.exception.ErrorCode;
 import com.astral.express.pccms.identity.security.SecurityContextService;
+import com.astral.express.pccms.notification.service.BusinessNotificationService;
 import com.astral.express.pccms.user.entity.Users;
 import com.astral.express.pccms.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -38,6 +39,8 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class PaymentServiceTest {
+    @Mock
+    private BusinessNotificationService businessNotificationService;
 
     @Mock
     private InvoiceRepository invoiceRepository;

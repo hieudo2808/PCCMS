@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { PawPrint, Bell, ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
+import { PawPrint, ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
 import { cx } from "~/utils/cx";
 import { roles } from "~/constants/roles";
 import { screenMeta } from "~/constants/screenMeta";
 import type { RoleKey, ScreenKey } from "~/types/navigation";
 import { useAuth } from "~/features/auth/context/AuthContext";
+import { NotificationBell } from "~/shared/notifications";
 
 function resolveRole(pathname: string): RoleKey {
     if (pathname.startsWith("/owner")) return "owner";
@@ -62,7 +63,9 @@ export function DashboardLayout() {
     const currentScreen = Object.entries(screenMeta).find(
         ([, meta]) => meta.path === pathname
     )?.[0] as ScreenKey | undefined;
-    const title = currentScreen ? screenMeta[currentScreen].label : "Trang chủ";
+    const title = pathname.endsWith("/notifications")
+        ? "Thông báo"
+        : currentScreen ? screenMeta[currentScreen].label : "Trang chủ";
 
     return (
         <div className="flex min-h-screen bg-surface">
@@ -202,13 +205,7 @@ export function DashboardLayout() {
                     </div>
 
                     <div className="flex shrink-0 items-center gap-1 sm:gap-3">
-                        <button
-                            type="button"
-                            aria-label="Thông báo"
-                            className="relative rounded-full p-2 text-text-muted transition hover:bg-slate-100 hover:text-text-main"
-                        >
-                            <Bell className="h-5 w-5" />
-                        </button>
+                        <NotificationBell role={role} />
 
                         <div className="hidden h-6 w-px bg-border-main sm:block" />
 
